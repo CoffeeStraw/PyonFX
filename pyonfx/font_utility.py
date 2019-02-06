@@ -19,9 +19,11 @@ This file contains the Font class definition, which has some functions
 to help getting informations from a specific font
 """
 import sys
-import win32gui
-import win32ui
-import win32con
+
+if sys.platform == "Win32":
+	import win32gui
+	import win32ui
+	import win32con
 
 # CONFIGURATION
 FONT_PRECISION = 64	# Font scale for better precision output from native font system
@@ -73,20 +75,26 @@ class Font:
 			raise NotImplementedError
 
 	def get_metrics(self):
-		metrics = win32gui.GetTextMetrics(self.dc)
+		if sys.platform == "win32":
+			metrics = win32gui.GetTextMetrics(self.dc)
 
-		return (
-			#'height': metrics['Height'] * self.downscale * self.yscale,
-			metrics['Ascent'] * self.downscale * self.yscale,
-			metrics['Descent'] * self.downscale * self.yscale,
-			metrics['InternalLeading'] * self.downscale * self.yscale,
-			metrics['ExternalLeading'] * self.downscale * self.yscale
-		)
+			return (
+				#'height': metrics['Height'] * self.downscale * self.yscale,
+				metrics['Ascent'] * self.downscale * self.yscale,
+				metrics['Descent'] * self.downscale * self.yscale,
+				metrics['InternalLeading'] * self.downscale * self.yscale,
+				metrics['ExternalLeading'] * self.downscale * self.yscale
+			)
+		else:
+			raise NotImplementedError
 
 	def get_text_extents(self, text):
-		cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
+		if sys.platform == "win32":
+			cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
-		return (
-			(cx * self.downscale + self.hspace) * self.xscale,
-			cy * self.downscale * self.yscale
-		)
+			return (
+				(cx * self.downscale + self.hspace) * self.xscale,
+				cy * self.downscale * self.yscale
+			)
+		else:
+			raise NotImplementedError
