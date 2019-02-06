@@ -1,0 +1,8 @@
+.pytest_cache/
+docs/build/
+examples/__pycache__/
+examples/Output.ass
+pyonfx/__pycache__/
+tests/Ass - Crazy/
+tests/__pycache__/
+tests/Output.ass
