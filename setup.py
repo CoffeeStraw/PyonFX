@@ -9,7 +9,7 @@ setuptools.setup(
     version=__version__,
     license='GNU LGPL 3.0 or later',
     description="An easy way to do KFX and complex typesetting based on subtitle format ASS (Advanced Substation Alpha).",
-    long_description=open('README.rst', 'rt').read(),
+    long_description=open('README.md').read(),
     packages=['pyonfx'],
     install_requires=["pywin32"],
     classifiers=[
