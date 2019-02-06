@@ -11,7 +11,7 @@ setuptools.setup(
     description="An easy way to do KFX and complex typesetting based on subtitle format ASS (Advanced Substation Alpha).",
     long_description=open('README.rst', 'rt').read(),
     packages=['pyonfx'],
-    install_requires=[],
+    install_requires=["pywin32"],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Programming Language :: Python',
