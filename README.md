@@ -23,6 +23,10 @@ pip install ...
 
 *Examples* directory contains templates which are ready to go for testing, for absolute beginners until advanced users. You can load and execute them, look into the code, reuse parts of them, learn by doing.
 
+# Documentation
+
+A fully documentation of the project containing an explanation of all the functions and variables can be found on [Read The Docs](https://pyonfx.readthedocs.io/en/latest/).
+
 ## Contributing
 
 If you want to contribute to PyonFX, be sure to review the [contribution
