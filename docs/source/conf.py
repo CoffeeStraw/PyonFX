@@ -4,6 +4,7 @@
 
 import os
 import sys
+import sphinx_rtd_theme
 
 # Updating path
 sys.path.insert(0, os.path.abspath('..//..'))
@@ -20,8 +21,7 @@ author = 'Antonio Strippoli (CoffeeStraw/YellowFlash)'
 # The short X.Y version
 version = ''
 # The full version, including alpha/beta/rc tags
-release = __version__
-
+release = __version__ 
 
 # -- General configuration ---------------------------------------------------
 extensions = [
@@ -71,6 +71,25 @@ html_static_path = ['_static']
 
 html_logo = "_static/PyonFX Logo.png"
 
+# The theme to use for HTML and HTML Help pages.  See the documentation for 
+# a list of builtin themes. 
+html_theme = 'sphinx_rtd_theme' 
+htm_theme_path = [sphinx_rtd_theme.get_html_theme_path()]   
+
+ # Theme options are theme-specific and customize the look and feel of a theme  
+# further.  
+html_theme_options = {  
+    'canonical_url': '',    
+    'logo_only': True,  
+    'display_version': True,    
+    'prev_next_buttons_location': 'bottom', 
+    'style_external_links': True,   
+    'collapse_navigation': True,    
+    'sticky_navigation': True,  
+    'navigation_depth': 4,  
+    'includehidden': True,  
+    'titles_only': False    
+}
 
 # -- Options for HTMLHelp output ---------------------------------------------
 
@@ -113,7 +132,7 @@ man_pages = [
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'PyonFX', 'PyonFX Documentation',
-     author, 'PyonFX', 'One line description of project.',
+     author, 'PyonFX', 'An easy way to do KFX and complex typesetting based on subtitle format ASS (Advanced Substation Alpha).',
      'Miscellaneous'),
 ]
 
@@ -123,20 +142,14 @@ texinfo_documents = [
 # Bibliographic Dublin Core info.
 epub_title = project
 
-# The unique identifier of the text. This can be a ISBN number
-# or the project homepage.
-#
-# epub_identifier = ''
-
-# A unique identification for the text.
-#
-# epub_uid = ''
-
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
+extensions = ['sphinx.ext.napoleon']
+napoleon_google_docstring = True
+napoleon_use_admonition_for_examples = True
 
 # -- Options for intersphinx extension ---------------------------------------
 
