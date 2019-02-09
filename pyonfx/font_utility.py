@@ -20,7 +20,7 @@ to help getting informations from a specific font
 """
 import sys
 
-if sys.platform == "Win32":
+if sys.platform == "win32":
 	import win32gui
 	import win32ui
 	import win32con
