@@ -28,6 +28,8 @@ class Convert:
 	def time(ass_ms):
 		"""Converts between milliseconds and ASS timestamp.
 
+		You can probably ignore that function, you will not make use of it for KFX or typesetting generation.
+
 		Parameters:
 			ass_ms (either int or str): If int, than milliseconds are expected, else ASS timestamp as str is expected.
 
@@ -60,6 +62,20 @@ class Convert:
 		Returns:
 			According to the parameters, either an rgb + optionally alpha as multiple returns value or a str containing either an ASS color+alpha, an ASS color or an ASS alpha.
 		
+		Examples:
+			..  code-block:: python3
+				
+				print( Convert.coloralpha(0) )
+				print( Convert.coloralpha("&HFF&") + "\\n" )
+
+				print( Convert.coloralpha("&H0000FF&") )
+				print( Convert.coloralpha(255, 0, 0) + "\\n" )
+
+			>>> &HFF&
+			>>> 0
+			>>> 
+			>>> (255, 0, 0)
+			>>> &H0000FF&
 		"""
 		# Alpha / red numeric?
 		if type(ass_r_a) == int and ass_r_a >= 0 and ass_r_a <= 255:
