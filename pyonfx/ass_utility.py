@@ -375,9 +375,9 @@ class Char:
 class Ass:
 	"""Contains all the informations about a file in the ASS format and the methods to work with it.
 	
-	Usually you will create an Ass object and use it for input and output (see example_ section).
-	PyonFX set automatically an absolute path for all the info in the output, so that wherever you will 
-	put your generated file, it will always take the right path for the video and the audio.
+	| Usually you will create an Ass object and use it for input and output (see example_ section).
+	| PyonFX set automatically an absolute path for all the info in the output, so that wherever you will 
+	  put your generated file, it should always load correctly video and audio.
 
 	Args:
 		path_input (str): Path for the input file (either relative or absolute).
@@ -394,9 +394,10 @@ class Ass:
 
 	.. _example:
 	Example:
-		>>> io = Ass("in.ass")
-		>>> meta, styles, lines = io.get_data()
+		..  code-block:: python3
 
+			io = Ass("in.ass")
+			meta, styles, lines = io.get_data()
     """
 	def __init__(self, path_input="", path_output="Output.ass", extended=True, vertical_kanji=True):
 		# Starting to take process time
