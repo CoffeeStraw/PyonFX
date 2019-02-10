@@ -104,6 +104,7 @@ latex_elements = {
     'pointsize': '10pt',
     'preamble': '',
     'figure_align': 'htbp',
+    'extraclassoptions': 'openany,oneside'
 }
 
 # Grouping the document tree into LaTeX files. List of tuples

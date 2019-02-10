@@ -131,8 +131,8 @@ class FrameUtility:
 	
 	Examples:
 		..  code-block:: python3
-
 			:emphasize-lines: 1
+
 			FU = FrameUtility(0, 100)
 			for s, e, i, n in FU:
 				print(f"Frame {i}/{n}: {s} - {e}")
@@ -178,8 +178,8 @@ class FrameUtility:
 
 		Examples:
 			..  code-block:: python3
-			
 				:emphasize-lines: 4,5
+				
 				FU = FrameUtility(0, 105, 40)
 				for s, e, i, n in FU:
 					fsc = 100
