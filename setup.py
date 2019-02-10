@@ -2,7 +2,7 @@ import setuptools
 from pyonfx import __version__
 
 setuptools.setup(
-    name="PyonFX",
+    name="pyonfx",
     url="https://github.com/CoffeeStraw/PyonFX",
     author="Antonio Strippoli",
     author_email="clarantonio98@gmail.com",
