@@ -6,7 +6,7 @@ Quick Start Guide
 First of all, you need to know how you're creating what. You will need to learn (if you've not already) the following:
 
 * **ASS format**. PyonFX is still an advanced tool for typesetter and karaokers, it is meant to be used by experienced typesetters that knows all the tags rendered by Libass.
-* **Python3 scripting language**. A programming language like Python offers you to define what you want in which case, how often, attended to this or that... Basically you're more free. You're not limited to buttons, sliders or text fields with just a few commands in a completely graphical interface.
+* **Python3 scripting language**. A programming language like Python offers you to define what you want in which case, how often, attended to this or that... Basically you're more free. You're not limited to buttons, sliders or text fields with just a few commands in a completely graphical interface. You can find the link to some good tutorial in the footnote [#f1]_.
 
 To start generating, you will only have to write, as written before, a script in Python3, which will describes the process of your KFX or advanced typesetting creation.
 
@@ -49,3 +49,11 @@ Tips
 * Use modern styles to impress (light, curves, particles, gradients) and old ones for readability (solid colors, thick borders, static positions);
 * When background is too flashy, try to insert a panel shape to put your text on 'safe terrain';
 * Adjust to karaoke times and voice. Fast sung lines haven't syllable durations for effects which need some time to get seen.
+
+----------
+
+.. rubric:: Footnotes
+.. [#f1] Suggested tutorials for Python3 learning:
+   
+   * Italian: https://github.com/AllenDowney/ThinkPythonItalian/blob/master/thinkpython_italian.pdf
+   * English: http://greenteapress.com/thinkpython2/thinkpython2.pdf
