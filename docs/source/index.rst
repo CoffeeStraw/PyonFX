@@ -1,7 +1,7 @@
 The PyonFX Library Documentation
 ********************************
 
-	"PyonFX is an easy way to do KFX (Karaoke Effect) and complex typesetting based on subtitle format ASS (Advanced Substation Alpha)."
+	"PyonFX is an easy way to do KFX (Karaoke Effects) and complex typesetting based on subtitle format ASS (Advanced Substation Alpha)."
 
 PyonFX is a Python library that helps you to combine tags, text and shapes in ASS format, eventually changing times and layers, with the help of all the automatically extracted data from an input file in ASS format.
 
