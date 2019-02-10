@@ -438,10 +438,12 @@ class Ass:
 			# Parsing Meta data
 			elif section == "Script Info" or section == "Aegisub Project Garbage":
 				# Internal function that tries to get the absolute path for media files in meta
-				def get_media_abs_path(subfile, mediafile):
-					if not os.path.isfile(mediafile):
+				def get_media_abs_path(mediafile):
+					# If this is not a dummy video, let's try to get the absolute path for the video
+					if not mediafile.startswith("?dummy"):
 						tmp = mediafile
-						media_dir = os.path.dirname(subfile)
+						media_dir = os.path.dirname(self.path_input)
+
 						while mediafile.startswith("../"):
 							media_dir = os.path.dirname(media_dir)
 							mediafile = mediafile[3:]
@@ -449,6 +451,7 @@ class Ass:
 						mediafile = os.path.normpath("%s%s%s" % (media_dir, os.sep, mediafile))
 						if not os.path.isfile(mediafile):
 							mediafile = tmp
+
 					return mediafile
 
 				# Switch
@@ -461,11 +464,13 @@ class Ass:
 				elif re.match(r"^PlayResY: *?(\d+)$", line):
 					self.meta.play_res_y = int(line[10:].strip())
 				elif re.match(r"^Audio File: *?(.*)$", line):
-					self.meta.audio = get_media_abs_path(self.meta.sub, line[11:].strip())
+					self.meta.audio = get_media_abs_path(line[11:].strip())
 					line = "Audio File: %s\n" % self.meta.audio
 				elif re.match(r"^Video File: *?(.*)$", line):
-					self.meta.video = get_media_abs_path(self.meta.sub, line[11:].strip())
+					self.meta.video = get_media_abs_path(line[11:].strip())
 					line = "Video File: %s\n" % self.meta.video
+
+				print(self.meta.audio)
 
 				# Appending line to output
 				self.__output.append(line)
