@@ -25,8 +25,7 @@ for everyone who want to create something more visually complex with the ASS for
   <a href="#acknowledgments">Acknowledgments</a>
 </p>
 
-<center>
-<img src="https://github.com/CoffeeStraw/PyonFX/blob/master/docs/source/_static/Screenshot.jpg?raw=true" alt="Screenshot"></center>
+<p align="center"><img src="https://github.com/CoffeeStraw/PyonFX/blob/master/docs/source/_static/Screenshot.jpg?raw=true" alt="Screenshot"></p>
 
 # Documentation
 
