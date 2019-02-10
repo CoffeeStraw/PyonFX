@@ -7,4 +7,4 @@ from .convert import Convert
 from .utils import Utils, FrameUtility
 from .settings import Settings
 
-__version__ = '0.1.0'
+__version__ = '0.2.1'
