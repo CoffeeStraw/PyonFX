@@ -470,8 +470,6 @@ class Ass:
 					self.meta.video = get_media_abs_path(line[11:].strip())
 					line = "Video File: %s\n" % self.meta.video
 
-				print(self.meta.audio)
-
 				# Appending line to output
 				self.__output.append(line)
 			# Parsing Styles
