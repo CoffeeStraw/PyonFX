@@ -32,13 +32,13 @@ class Utils:
 			lines_chars_syls_or_words (list of :class:`Line<pyonfx.ass_utility.Line>`, :class:`Char<pyonfx.ass_utility.Char>`, :class:`Syllable<pyonfx.ass_utility.Syllable>` or :class:`Word<pyonfx.ass_utility.Word>`)
 
 		Returns:
-			An enumerate object containing lines_chars_syls_or_words without objects with duration equals to zero or without some text except spaces.
+			A list containing lines_chars_syls_or_words without objects with duration equals to zero or blank text (no text or only spaces).
 		"""
 		out = []
 		for obj in lines_chars_syls_or_words:
 			if obj.text.strip() and obj.duration > 0:
 				out.append(obj) 
-		return enumerate(out)
+		return out
 
 	@staticmethod
 	def clean_tags(text):
