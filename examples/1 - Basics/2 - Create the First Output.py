@@ -11,7 +11,7 @@ and print it back on the output changing only the text.
 
 It's not a good idea doing it this way because the original line text is overwritten and
 for future manipulations you will not be able to take the line's original values anymore
-without re parsing again the input file creating a new Ass object.
+without re parsing again the input file by creating a new Ass object.
 
 Instead, you should always create a copy of line to save the original, we will see how in the following examples.
 

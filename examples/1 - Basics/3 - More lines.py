@@ -13,7 +13,7 @@ from pyonfx import *
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
-for li, line in enumerate(lines):
+for line in lines:
 	l = line.copy()
 
 	l.start_time += 2000

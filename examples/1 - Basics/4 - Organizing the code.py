@@ -37,7 +37,7 @@ def sub(line, l):
 	# You will write here :P
 	pass
 
-for li, line in enumerate(lines):
+for line in lines:
 	# Generating lines
 	if line.styleref.alignment >= 7:
 		romaji(line, line.copy())
