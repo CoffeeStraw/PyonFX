@@ -24,6 +24,35 @@ from .font_utility import Font
 from .convert import Convert
 from .settings import Settings
 
+def pretty_print(obj, indent=0, name=""):
+	# Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
+	if   type(obj) == Line:
+		out = ' ' * indent + f"lines[{obj.i}] ({type(obj).__name__}):\n"
+	elif type(obj) == Word:
+		out = ' ' * indent + f"words[{obj.i}] ({type(obj).__name__}):\n"
+	elif type(obj) == Syllable:
+		out = ' ' * indent + f"syls[{obj.i}] ({type(obj).__name__}):\n"
+	elif type(obj) == Char:
+		out = ' ' * indent + f"chars[{obj.i}] ({type(obj).__name__}):\n"
+	else:
+		out = ' ' * indent + f"{name}({type(obj).__name__}):\n"
+
+	# Let's print all this object fields
+	indent += 4
+	for k, v in obj.__dict__.items():
+		if '__dict__' in dir(v):
+			# Work recursively to print another object
+			out += pretty_print(v, indent, k + " ")
+		elif type(v) == list:
+			for i, el in enumerate(v):
+				# Work recursively to print other objects inside a list
+				out += pretty_print(el, indent, f"{k}[{i}] ")
+		else:
+			# Just print a field of this object
+			out += ' ' * indent +  f"{k}: {str(v)}\n"
+
+	return out
+
 
 class Meta:
 	"""Meta object contains informations about the Ass.
@@ -38,17 +67,8 @@ class Meta:
 		audio (str): Loaded audio path (absolute)
 		video (str): Loaded video path (absolute)
     """
-	wrap_style 				 = 0
-	scaled_border_and_shadow = True
-	play_res_x 				 = 0
-	play_res_y 				 = 0
-	audio 					 = ""
-	video 					 = ""
-
 	def __repr__(self):
-		return f"Meta Object {id(self)}:\n\tWrap Style: {self.wrap_style}\n\tScaled Border And Shadow: {self.scaled_border_and_shadow}\n\t"\
-			   f"Play Resolution X: {self.play_res_x}\n\tPlay Resolution Y: {self.play_res_y}\n\t"\
-			   f"Audio: {self.audio}\n\tVideo: {self.video}"
+		return pretty_print(self)
 
 
 class Style:
@@ -84,35 +104,8 @@ class Style:
 		margin_v (int): Distance from the bottom (or top if alignment >= 7) of the video frame
 		encoding (int): Codepage used to map codepoints to glyphs
     """
-	fontname 			= ""
-	fontsize 			= 0
-	color1 				= ""
-	alpha1 				= ""
-	color2 				= ""
-	alpha2 				= ""
-	color3 				= ""
-	alpha3 				= ""
-	color4 				= ""
-	alpha4 				= ""
-	bold 				= False
-	italic 				= False
-	underline 			= False
-	strikeout 			= False
-	scale_x 			= 100.0
-	scale_y 			= 100.0
-	spacing 			= 0.0
-	angle 				= 0.0
-	border_style 		= False
-	outline 			= 2.0
-	shadow 				= 0.0
-	alignment 			= 8
-	margin_l 			= 30
-	margin_r 			= 30
-	margin_v 			= 30
-	encoding 			= 1
-
 	def __repr__(self):
-		return str(self.__dict__)
+		return pretty_print(self)
 
 
 class Line:
@@ -122,6 +115,7 @@ class Line:
 		(*) = This field is available only if :class:`extended<Ass>` = True
 
 	Attributes:
+		i (int): Line index number
 		comment (bool): If *True*, this line will not be displayed on the screen.
 		layer (int): Layer for the line. Higher layer numbers are drawn on top of lower ones.
 		start_time (int): Line start time (in milliseconds).
@@ -156,21 +150,8 @@ class Line:
 		syls (list): List containing objects :class:`Syllable` in this line (if available) (*).
 		chars (list): List containing objects :class:`Char` in this line (*).
 	"""
-	comment 			= False
-	layer 				= 0
-	start_time 			= 0
-	end_time			= 0
-	style 				= ""
-	actor 				= ""
-	margin_l 			= 0
-	margin_r 			= 0
-	margin_v 			= 0
-	effect 				= ""
-	text  				= ""
-	text_stripped 		= ""
-
 	def __repr__(self):
-		return str(self.__dict__)
+		return pretty_print(self)
 
 	def copy(self):
 		"""
@@ -187,6 +168,7 @@ class Word:
 	(e.g.: In the string "What a beautiful world!", "beautiful" and "world" are both distinct words).
 
 	Attributes:
+		i (int): Word index number
 		start_time (int): Word start time (same as line start time) (in milliseconds).
 		end_time (int): Word end time (same as line end time) (in milliseconds).
 		duration (int): Word duration (same as line duration) (in milliseconds).
@@ -238,7 +220,7 @@ class Word:
 	bottom 				= 0
 
 	def __repr__(self):
-		return str(self.__dict__)
+		return pretty_print(self)
 
 
 class Syllable:
@@ -248,6 +230,7 @@ class Syllable:
 	(e.g.: In "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", "Pyon" and "FX" are distinct syllables),
 
 	Attributes:
+		i (int): Syllable index number
 		word_i (int): Syllable word index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", syl "Pyon" will have word_i=1).
 		start_time (int): Syllable start time (in milliseconds).
 		end_time (int): Syllable end time (in milliseconds).
@@ -271,40 +254,8 @@ class Syllable:
 		middle (float): Syllable text position middle.
 		bottom (float): Syllable text position bottom.
 	"""
-	word_i 				= 0
-
-	start_time 			= 0
-	end_time 			= 0
-	duration 			= 0
-
-	text 				= ""
-	inline_fx 			= ""
-
-	prespace 			= 0
-	postspace 			= 0
-
-	width 				= 0
-	height 				= 0
-	
-	ascent 				= 0
-	descent 			= 0
-	
-	internal_leading 	= 0
-	external_leading 	= 0
-	
-	x 					= 0
-	y 					= 0
-
-	left 				= 0
-	center 				= 0
-	right 				= 0
-
-	top 				= 0
-	middle 				= 0
-	bottom 				= 0
-
 	def __repr__(self):
-		return str(self.__dict__)
+		return pretty_print(self)
 
 
 class Char:
@@ -313,6 +264,7 @@ class Char:
 	A char is defined by some text between two karaoke tags (k, ko, kf).
 
 	Attributes:
+		i (int): Char index number
 		word_i (int): Char word index (e.g.: In line text "Hello PyonFX users!", letter "u" will have word_i=2).
 		syl_i (int): Char syl index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", letter "F" will have syl_i=3).
 		syl_char_i (int): Char invidual syl index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", letter "e" of "users" will have syl_char_i=2).
@@ -338,38 +290,8 @@ class Char:
 		middle (float): Char text position middle.
 		bottom (float): Char text position bottom.
 	"""
-	word_i 				= -1
-	syl_i 				= -1
-	syl_char_i 			= -1
-
-	start_time 			= 0
-	end_time 			= 0
-	duration 			= 0
-
-	text 				= ""
-
-	width 				= 0
-	height 				= 0
-	
-	ascent 				= 0
-	descent 			= 0
-	
-	internal_leading 	= 0
-	external_leading 	= 0
-	
-	x 					= 0
-	y 					= 0
-
-	left 				= 0
-	center 				= 0
-	right 				= 0
-
-	top 				= 0
-	middle 				= 0
-	bottom 				= 0
-
 	def __repr__(self):
-		return str(self.__dict__)
+		return pretty_print(self)
 
 
 class Ass:
@@ -424,8 +346,9 @@ class Ass:
 			raise FileNotFoundError("Invalid path for the Subtitle file: %s" % path_input)
 
 		self.meta.sub = path_input
-		section = ""
 		self.__output = [] 
+		section = ""
+		li = 0
 		for line in open(self.meta.sub, "r", encoding="utf-8-sig"):
 			# Getting section
 			section_pattern = re.compile(r"^\[([^\]]*)")
@@ -538,6 +461,10 @@ class Ass:
 				if line:
 					# Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 					tmp = Line()
+					
+					tmp.i = li
+					li += 1
+					
 					tmp.comment = line.group(1) == "Comment"
 					line = [el for el in line.group(2).split(',')]
 
@@ -564,7 +491,7 @@ class Ass:
 		if extended:
 			lines_by_styles = {}
 			# Let the fun begin (Pyon!)
-			for li, line in enumerate(self.lines):				
+			for li, line in enumerate(self.lines):
 				try:
 					line.styleref = self.styles[line.style]
 				except KeyError:
@@ -624,8 +551,12 @@ class Ass:
 					# Adding words
 					line.words = []
 
+					wi = 0
 					for prespace, word_text, postspace in re.findall(r"(\s*)(\w+)(\s*)", line.text_stripped):
 						word = Word()
+
+						word.i = wi
+						wi += 1
 
 						word.start_time = line.start_time
 						word.end_time = line.end_time
@@ -733,11 +664,12 @@ class Ass:
 					# Adding syls
 					last_time = 0
 					line.syls = []
-					for text_chunk in text_chunks:
+					for si, text_chunk in enumerate(text_chunks):
 						try:
 							pretags, kdur, posttags = re.findall(r"(.*?)\\[kK][of]?(\d+)(.*?)", text_chunk['tags'])[0][:]
 							syl = Syllable()
 
+							syl.i = si
 							syl.word_i = text_chunk['word_i']
 							
 							syl.start_time = last_time
@@ -849,8 +781,10 @@ class Ass:
 						tmp = line.syls[0]
 
 					# Getting chars
-					for char_i, char_text in enumerate(list(line.text_stripped)):
+					for ci, char_text in enumerate(list(line.text_stripped)):
 						char = Char()
+
+						char.i = ci
 
 						char.start_time = line.start_time
 						char.end_time = line.end_time
