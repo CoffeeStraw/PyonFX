@@ -341,16 +341,15 @@ class Ass:
 
 		self.path_input = path_input
 		self.path_output = path_output
+		self.__output = []
 
 		# Checking sub file validity (does it exists?)
 		if not os.path.isfile(path_input):
 			raise FileNotFoundError("Invalid path for the Subtitle file: %s" % path_input)
 
-		self.meta.sub = path_input
-		self.__output = [] 
 		section = ""
 		li = 0
-		for line in open(self.meta.sub, "r", encoding="utf-8-sig"):
+		for line in open(self.path_input, "r", encoding="utf-8-sig"):
 			# Getting section
 			section_pattern = re.compile(r"^\[([^\]]*)")
 			if section_pattern.match(line):
@@ -941,7 +940,9 @@ class Ass:
 			print("Produced lines: %d\nProcess duration (in seconds): %.3f" % (self.__plines, time.time() - self.__ptime))
 		
 		# Check if mpv is usable
-		if self.meta.video.startswith("?dummy"):
+		if self.meta.video.startswith("?dummy") and not Settings.mpv_options["video_file"]:
+			print("[WARNING] Cannot use MPV (if you've it in your PATH) for file preview, since your .ass contains a dummy video.\n"\
+				  "You can specify a new video source using Settings.mpv_options[\"video_file\"], check the documentation for this.")
 			Settings.mpv = False
 
 		# Open with mpv?
@@ -956,6 +957,8 @@ class Ass:
 				cmd.append("--start="+Settings.mpv_options["video_start"])
 			if Settings.mpv_options["full_screen"]:
 				cmd.append("--fs")
+
+			cmd.append("--sub-file="+self.path_output)
 
 			try:
 				subprocess.call(cmd)
