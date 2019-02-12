@@ -20,6 +20,7 @@ import sys
 import time
 import re
 import copy
+import subprocess
 from .font_utility import Font
 from .convert import Convert
 from .settings import Settings
@@ -939,6 +940,30 @@ class Ass:
 		if not quiet:
 			print("Produced lines: %d\nProcess duration (in seconds): %.3f" % (self.__plines, time.time() - self.__ptime))
 		
+		# Check if mpv is usable
+		if self.meta.video.startswith("?dummy"):
+			Settings.mpv = False
+
+		# Open with mpv?
+		if Settings.mpv:
+			cmd = ["mpv"]
+			
+			if not Settings.mpv_options["video_file"]:
+				cmd.append(self.meta.video)
+			else:
+				cmd.append(Settings.mpv_options["video_file"])
+			if Settings.mpv_options["video_start"]:
+				cmd.append("--start="+Settings.mpv_options["video_start"])
+			if Settings.mpv_options["full_screen"]:
+				cmd.append("--fs")
+
+			try:
+				subprocess.call(cmd)
+			except FileNotFoundError:
+				print("[WARNING] MPV not found in your environment variables.\n"\
+					  "Please refer to the documentation's \"Quick Start\" section if you don't know how to solve or "\
+					  "simply set as False \"Settings.mpv\".")
+
 		# Open with Aegisub?
 		if Settings.aegisub:
 			os.startfile(self.path_output)
