@@ -10,6 +10,9 @@ https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.html#pyonfx.ass_
 """
 from pyonfx import *
 
+Settings.mpv = False
+Settings.aegisub = True
+
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 

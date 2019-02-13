@@ -21,6 +21,11 @@ For more info: https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.h
 """
 from pyonfx import *
 
+# From now on, we will set to automatically open the output with Aegisub using these lines,
+# disabling mpv autoplay since we're using dummy videos in our input.ass
+Settings.mpv = False
+Settings.aegisub = True
+
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 

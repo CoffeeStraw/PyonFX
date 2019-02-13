@@ -22,6 +22,9 @@ We will create our first effect in the next section: 2 - Beginner
 """
 from pyonfx import *
 
+Settings.mpv = False
+Settings.aegisub = True
+
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
