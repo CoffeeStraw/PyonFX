@@ -505,11 +505,15 @@ class Ass:
 				line.duration = line.end_time - line.start_time
 				line.text_stripped = re.sub(r"\{.*?\}", "", line.text)
 
+
 				# Add dialog text sizes and positions (if possible)
 				if line.styleref:
+					# Creating a Font object and saving return values of font.get_metrics() for the future
 					font = Font(line.styleref)
+					font_metrics = font.get_metrics()
+		
 					line.width, line.height = font.get_text_extents(line.text_stripped)
-					line.ascent, line.descent, line.internal_leading, line.external_leading = font.get_metrics()
+					line.ascent, line.descent, line.internal_leading, line.external_leading = font_metrics
 					if self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
 						# Horizontal position
 						if (line.styleref.alignment-1) % 3 == 0:
@@ -568,7 +572,7 @@ class Ass:
 						word.postspace = len(postspace)
 
 						word.width, word.height = font.get_text_extents(word.text)
-						word.ascent, word.descent, word.internal_leading, word.external_leading = font.get_metrics()
+						word.ascent, word.descent, word.internal_leading, word.external_leading = font_metrics
 
 						line.words.append(word)
 
@@ -682,7 +686,7 @@ class Ass:
 							
 							syl.prespace, syl.postspace = len(syl.prespace), len(syl.postspace)
 							syl.width, syl.height = font.get_text_extents(syl.text)
-							syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font.get_metrics()
+							syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font_metrics
 							
 							line.syls.append(syl)
 							last_time = syl.end_time
@@ -769,57 +773,40 @@ class Ass:
 					# Adding chars
 					line.chars = []
 
-					# Creating some local variables to avoid some useless iterations during the additions of some fields in char obj
-					word_index = 0
-					syl_index = 0
-					char_index = 0
-
-					tmp = ""
-					if line.words:
-						tmp = line.words[0]
+					# If we have syls in line, we prefert to work with them to provide more informations
 					if line.syls:
-						tmp = line.syls[0]
+						words_or_syls = line.syls
+					else:
+						words_or_syls = line.words
 
 					# Getting chars
-					for ci, char_text in enumerate(list(line.text_stripped)):
-						char = Char()
+					char_index = 0
+					for el in words_or_syls:
+						el_text = "{}{}{}".format(" "*el.prespace, el.text, " "*el.postspace)
+						for ci, char_text in enumerate(list(el_text)):
+							char = Char()
+							char.i = ci
 
-						char.i = ci
+							# If we're working with syls, we can add some indexes
+							char.i = char_index
+							char_index += 1
+							if line.syls:
+								char.word_i = el.word_i
+								char.syl_i = el.i
+							else:
+								char.word_i = el.i
 
-						char.start_time = line.start_time
-						char.end_time = line.end_time
-						char.duration = line.duration
+							# Adding last fields based on the existance of syls or not
+							char.start_time = el.start_time
+							char.end_time = el.end_time
+							char.duration = el.duration
 
-						char.text = char_text
+							char.text = char_text
 
-						# Adding indexes
-						if line.syls:
-							if char_index >= len("{}{}{}".format(" "*tmp.prespace, tmp.text, " "*tmp.postspace)):
-								char_index = 0
-								syl_index += 1
-								tmp = line.syls[syl_index]
-
-							char.word_i = tmp.word_i
-							char.syl_i = syl_index
-							char.syl_char_i = char_index
-						else: # We have no syls, let's only work with words
-							if char_index >= len("{}{}{}".format(" "*tmp.prespace, tmp.text, " "*tmp.postspace)):
-								char_index = 0
-								word_index += 1
-								tmp = line.words[syl_index]
-
-							char.word_i = word_index
-
-						# Adding last fields based on the existance of syls or not
-						char.start_time = tmp.start_time
-						char.end_time = tmp.end_time
-						char.duration = tmp.duration
-
-						char.width, char.height = font.get_text_extents(char.text)
-						char.ascent, char.descent, char.internal_leading, char.external_leading = font.get_metrics()
-						
-						line.chars.append(char)
-						char_index += 1
+							char.width, char.height = font.get_text_extents(char.text)
+							char.ascent, char.descent, char.internal_leading, char.external_leading = font_metrics
+							
+							line.chars.append(char)
 
 					# Calculate character positions with all characters data already available
 					if len(line.chars) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
