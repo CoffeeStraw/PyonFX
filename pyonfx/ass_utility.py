@@ -940,7 +940,7 @@ class Ass:
 			print("Produced lines: %d\nProcess duration (in seconds): %.3f" % (self.__plines, time.time() - self.__ptime))
 		
 		# Check if mpv is usable
-		if self.meta.video.startswith("?dummy") and not Settings.mpv_options["video_file"]:
+		if self.meta.video.startswith("?dummy") and not Settings.mpv_options["video_file"] and Settings.mpv:
 			print("[WARNING] Cannot use MPV (if you've it in your PATH) for file preview, since your .ass contains a dummy video.\n"\
 				  "You can specify a new video source using Settings.mpv_options[\"video_file\"], check the documentation for this.")
 			Settings.mpv = False
