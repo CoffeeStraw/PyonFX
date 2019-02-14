@@ -793,6 +793,7 @@ class Ass:
 							if line.syls:
 								char.word_i = el.word_i
 								char.syl_i = el.i
+								char.syl_char_i = ci
 							else:
 								char.word_i = el.i
 
