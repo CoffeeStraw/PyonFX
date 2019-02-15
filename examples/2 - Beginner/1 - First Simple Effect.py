@@ -89,9 +89,6 @@ def kanji(line, l):
 		# Main Effect
 		l.layer = 1
 
-		if line.syls[char.syl_i].start_time != char.start_time:
-			print("Error")
-
 		l.start_time = line.start_time + char.start_time
 		l.end_time = line.start_time + char.end_time
 		l.dur = l.end_time - l.start_time
