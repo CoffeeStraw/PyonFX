@@ -6,4 +6,4 @@ from .convert import Convert
 from .utils import Utils, FrameUtility
 from .settings import Settings
 
-__version__ = '0.4.5'
+__version__ = '0.4.6'
