@@ -896,8 +896,8 @@ class Ass:
 			self.__output.append("\n%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s" % (
 				"Comment" if line.comment else "Dialogue",
 				line.layer,
-				Convert.time(int(line.start_time)),
-				Convert.time(int(line.end_time)),
+				Convert.time(max(0, int(line.start_time))),
+				Convert.time(max(0, int(line.end_time))),
 				line.style,
 				line.actor,
 				line.margin_l,
