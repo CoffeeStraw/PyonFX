@@ -21,7 +21,7 @@ import math
 class Convert:
 	"""
 	This class is a collection of static methods that will help
-	the user toconvert everything needed to the ASS format.
+	the user to convert everything needed to the ASS format.
 	"""
 
 	@staticmethod
