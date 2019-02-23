@@ -24,6 +24,8 @@ version = ''
 release = __version__ 
 
 # -- General configuration ---------------------------------------------------
+autodoc_member_order = "bysource"
+
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.intersphinx',
