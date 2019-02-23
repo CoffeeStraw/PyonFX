@@ -303,8 +303,8 @@ class Ass:
 	  put your generated file, it should always load correctly video and audio.
 
 	Args:
-		path_input (str): Path for the input file (either relative or absolute).
-		path_output (str): Path for the output file (either relative or absolute) (DEFAULT: "Output.ass").
+		path_input (str): Path for the input file (either relative to your .py file or absolute).
+		path_output (str): Path for the output file (either relative to your .py file or absolute) (DEFAULT: "Output.ass").
 		extended (bool): Calculate more informations from lines (usually you will not have to touch this).
 		vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically.
 
@@ -333,6 +333,10 @@ class Ass:
 		if not os.path.isabs(path_input):
 			path_input = os.path.join(dirname, path_input)
 
+		# Checking sub file validity (does it exists?)
+		if not os.path.isfile(path_input):
+			raise FileNotFoundError("Invalid path for the Subtitle file: %s" % path_input)
+
 		# Getting absolute output file path
 		if path_output == "Output.ass":
 			path_output = os.path.join(dirname, path_output)
@@ -342,10 +346,6 @@ class Ass:
 		self.path_input = path_input
 		self.path_output = path_output
 		self.__output = []
-
-		# Checking sub file validity (does it exists?)
-		if not os.path.isfile(path_input):
-			raise FileNotFoundError("Invalid path for the Subtitle file: %s" % path_input)
 
 		section = ""
 		li = 0
