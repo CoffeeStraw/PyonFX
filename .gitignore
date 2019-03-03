@@ -5,6 +5,7 @@ examples/Output.ass
 examples/1 - Basics/Output.ass
 examples/2 - Beginner/Output.ass
 examples/3 - Advanced/Output.ass
+examples/scripts/
 pyonfx/__pycache__/
 tests/Ass - Crazy/
 tests/__pycache__/
