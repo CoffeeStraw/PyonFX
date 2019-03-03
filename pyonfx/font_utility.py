@@ -93,7 +93,7 @@ class Font:
 			cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
 			return (
-				(cx * self.downscale + self.hspace) * self.xscale,
+				(cx * self.downscale + self.hspace*(len(text)-1)) * self.xscale,
 				cy * self.downscale * self.yscale
 			)
 		else:

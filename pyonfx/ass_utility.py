@@ -505,7 +505,6 @@ class Ass:
 				line.duration = line.end_time - line.start_time
 				line.text_stripped = re.sub(r"\{.*?\}", "", line.text)
 
-
 				# Add dialog text sizes and positions (if possible)
 				if line.styleref:
 					# Creating a Font object and saving return values of font.get_metrics() for the future
@@ -549,14 +548,15 @@ class Ass:
 							line.bottom = line.top + line.height
 							line.y = line.bottom
 					
-					# Calculating space width
+					# Calculating space width and saving spacing
 					space_width = font.get_text_extents(" ")[0]
+					style_spacing = line.styleref.spacing
 				
 					# Adding words
 					line.words = []
 
 					wi = 0
-					for prespace, word_text, postspace in re.findall(r"(\s*)(\w+)(\s*)", line.text_stripped):
+					for prespace, word_text, postspace in re.findall(r"(\s*)([^\s]+)(\s*)", line.text_stripped):
 						word = Word()
 
 						word.i = wi
@@ -582,7 +582,7 @@ class Ass:
 							cur_x = line.left
 							for word in line.words:
 								# Horizontal position
-								cur_x = cur_x + word.prespace * space_width
+								cur_x = cur_x + word.prespace * (space_width + style_spacing)
 								
 								word.left = cur_x
 								word.center = word.left + word.width / 2
@@ -602,7 +602,7 @@ class Ass:
 								word.y = line.y
 								
 								# Updating cur_x
-								cur_x = cur_x + word.width + word.postspace * space_width
+								cur_x = cur_x + word.width + word.postspace * (space_width + style_spacing) + style_spacing
 						else:
 							max_width, sum_height = 0, 0
 							for word in line.words:
@@ -699,7 +699,7 @@ class Ass:
 						if line.styleref.alignment > 6 or line.styleref.alignment < 4 or not vertical_kanji:
 							cur_x = line.left
 							for syl in line.syls:
-								cur_x = cur_x + syl.prespace * space_width
+								cur_x = cur_x + syl.prespace * (space_width + style_spacing)
 								# Horizontal position
 								syl.left = cur_x
 								syl.center = syl.left + syl.width / 2
@@ -712,7 +712,7 @@ class Ass:
 								else:
 									syl.x = syl.right
 								
-								cur_x = cur_x + syl.width + syl.postspace * space_width
+								cur_x = cur_x + syl.width + syl.postspace * (space_width + style_spacing) + style_spacing
 								
 								# Vertical position
 								syl.top = line.top
@@ -826,7 +826,7 @@ class Ass:
 								else:
 									char.x = char.right
 								
-								cur_x = cur_x + char.width
+								cur_x = cur_x + char.width + style_spacing
 								
 								# Vertical position
 								char.top = line.top
