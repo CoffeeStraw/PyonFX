@@ -17,6 +17,8 @@
 
 import re
 import math
+from .font_utility import Font
+from .shape import Shape
 
 class Convert:
 	"""
@@ -78,16 +80,17 @@ class Convert:
 			>>> &H0000FF&
 		"""
 		# Alpha / red numeric?
-		if type(ass_r_a) == int and ass_r_a >= 0 and ass_r_a <= 255:
+		if (type(ass_r_a) == int or type(ass_r_a) == float) and ass_r_a >= 0 and ass_r_a <= 255:
 			# Green + blue numeric?
-			if type(g) == int and g >= 0 and g <= 255 and type(b) == int and b >= 0 and b <= 255: 	
+			if (type(g) == int or type(g) == float) and g >= 0 and g <= 255 and \
+			   (type(b) == int or type(b) == float) and b >= 0 and b <= 255: 	
 				# Alpha numeric?
-				if type(a) == int and a >= 0 and a <= 255:
-					return "&H{:02X}{:02X}{:02X}{:02X}".format(255 - a, b, g, ass_r_a)
+				if (type(a) == int or type(a) == float) and a >= 0 and a <= 255:
+					return "&H{:02X}{:02X}{:02X}{:02X}".format(255 - int(a), int(b), int(g), int(ass_r_a))
 				else:
-					return "&H{:02X}{:02X}{:02X}&".format(b, g, ass_r_a)
+					return "&H{:02X}{:02X}{:02X}&".format(int(b), int(g), int(ass_r_a))
 			else:
-				return "&H{:02X}&".format(255 - ass_r_a)
+				return "&H{:02X}&".format(255 - int(ass_r_a))
 		# ASS value?
 		elif type(ass_r_a) == str:
 			# ASS alpha?
@@ -105,15 +108,111 @@ class Convert:
 			raise ValueError("Color, Alpha, Color+Alpha as numeric or ASS expected")
 
 	@staticmethod
-	def shape_to_pixels(shape):
-		pass
+	def text_to_shape(obj, fscx=None, fscy=None):
+		"""Converts text with given style information to an ASS shape.
+
+		Using this, you can easily create impressive text masks or deforming effects.
+		
+		Parameters:
+			obj (Line, Word, Syllable or Char): An object of class Line, Word, Syllable or Char.
+			fscx (float, optional): The scale_x value for the shape.
+			fscy (float, optional): The scale_y value for the shape.
+		
+		Returns:
+			A shape as a string, representing the text with the style format values of the object.
+
+		Examples:
+			..  code-block:: python3
+				
+				line = Line.copy(lines[1])
+				line.text = "{\\an7\\pos(%.3f,%.3f)\\p1}%s" % (line.left, line.top, convert.text_to_shape(line))
+				io.write_line(line)
+		"""
+		# Obtaining information and editing values of style if requested
+		original_scale_x = obj.styleref.scale_x
+		original_scale_y = obj.styleref.scale_y
+		
+		# Editing temporary the style to properly get the shape
+		if fscx:
+			obj.styleref.scale_x = fscx
+		if fscy:
+			obj.styleref.scale_y = fscy
+
+		# Obtaining font information from style and obtaining shape
+		font = Font(obj.styleref)
+		shape = font.text_to_shape(obj.text)
+
+		# Restoring values of style and returning the shape converted
+		if fscx:
+			obj.styleref.scale_x = original_scale_x
+		if fscy:
+			obj.styleref.scale_y = original_scale_y
+		return shape
 
 	@staticmethod
-	def text_to_shape(text, style):
-		pass
+	def text_to_clip(obj, an=5, fscx=None, fscy=None):
+		"""Converts text with given style information to an ASS shape, applying some translation/scaling to it since
+		it is not possible to position a shape with \\pos() once it is in a clip.
+
+		This is an high level function since it does some additional operations, check text_to_shape for further infromations.
+		
+		Parameters:
+			obj (Line, Word, Syllable or Char): An object of class Line, Word, Syllable or Char.
+			an (integer, optional): The alignment wanted for the shape.
+			fscx (float, optional): The scale_x value for the shape.
+			fscy (float, optional): The scale_y value for the shape.
+		
+		Returns:
+			A shape as a string, representing the text with the style format values of the object.
+
+		Examples:
+			..  code-block:: python3
+				
+				line = Line.copy(lines[1])
+				line.text = "{\\an5\\pos(%.3f,%.3f)\\clip(%s)}%s" % (line.center, line.middle, convert.text_to_clip(line), line.text)
+				io.write_line(line)
+		"""
+		# Checking for errors
+		if an < 1 or an > 9:
+			raise ValueError("Alignment value must be an integer between 1 and 9")
+
+		# Setting default values
+		if not fscx:
+			fscx = obj.styleref.scale_x
+		if not fscy:
+			fscy = obj.styleref.scale_y
+
+		# Obtaining text converted to shape
+		shape = Convert.text_to_shape(obj, fscx, fscy)
+
+		# Setting mult_x based on alignment
+		if an % 3 == 1: # an=1 or an=4 or an=7
+			mult_x = 0
+		elif an % 3 == 2: # an=2 or an=5 or an=8
+			mult_x = 1/2
+		else:
+			mult_x = 1
+
+		# Setting mult_y based on alignment
+		if an < 4:
+			mult_y = 1
+		elif an < 7:
+			mult_y = 1/2
+		else:
+			mult_y = 0
+
+		# Calculating offsets
+		cx = obj.left - obj.width*mult_x * (fscx-obj.styleref.scale_x) / obj.styleref.scale_x
+		cy = obj.top - obj.height*mult_y * (fscy-obj.styleref.scale_y) / obj.styleref.scale_y
+
+		return Shape.move(shape, cx, cy)
 
 	@staticmethod
 	def text_to_pixels(text, style, off_x=0, off_y=0):
+		pass
+
+	@staticmethod
+	def shape_to_pixels(shape):
 		pass
 
 	@staticmethod

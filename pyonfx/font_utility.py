@@ -19,6 +19,7 @@ This file contains the Font class definition, which has some functions
 to help getting informations from a specific font
 """
 import sys
+from .shape import Shape, shape_value_format
 
 if sys.platform == "win32":
 	import win32gui
@@ -26,7 +27,7 @@ if sys.platform == "win32":
 	import win32con
 
 # CONFIGURATION
-FONT_PRECISION = 64	# Font scale for better precision output from native font system
+FONT_PRECISION = 64 # Font scale for better precision output from native font system
 
 class Font:
 	"""
@@ -96,5 +97,72 @@ class Font:
 				(cx * self.downscale + self.hspace*(len(text)-1)) * self.xscale,
 				cy * self.downscale * self.yscale
 			)
+		else:
+			raise NotImplementedError
+
+	def text_to_shape(self, text):
+		if sys.platform == "win32":
+			# Calcultating distance between origins of character cells (just in case of spacing)
+			# TO BE DONE
+			pass
+
+			# Add path to device context
+			win32gui.BeginPath(self.dc)
+			win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, text)
+			win32gui.EndPath(self.dc)
+			# Getting Path produced by Microsoft API
+			points, type_points = win32gui.GetPath(self.dc)
+
+			# Checking for errors
+			if len(points) == 0 or len(points) != len(type_points):
+				raise RuntimeError("This should never happen: function win32gui.GetPath has returned something unexpected.\nPlease report this to the developer")
+
+			# Defining variables
+			shape, last_type = [], None
+			mult_x, mult_y = self.downscale*self.xscale, self.downscale*self.yscale
+
+			# Convert points to shape
+			i = 0
+			while i < len(points):
+				cur_point, cur_type = points[i], type_points[i]
+
+				if cur_type == win32con.PT_MOVETO:
+					if last_type != win32con.PT_MOVETO: # Avoid repetition of command tags
+						shape.append("m")
+						last_type = cur_type
+					shape.extend([
+						shape_value_format(cur_point[0]*mult_x),
+						shape_value_format(cur_point[1]*mult_y)
+					])
+					i += 1
+				elif cur_type == win32con.PT_LINETO or cur_type == (win32con.PT_LINETO | win32con.PT_CLOSEFIGURE):
+					if last_type != win32con.PT_LINETO: # Avoid repetition of command tags
+						shape.append("l")
+						last_type = cur_type
+					shape.extend([
+						shape_value_format(cur_point[0]*mult_x),
+						shape_value_format(cur_point[1]*mult_y)
+					])
+					i += 1
+				elif cur_type == win32con.PT_BEZIERTO or cur_type == (win32con.PT_BEZIERTO | win32con.PT_CLOSEFIGURE):
+					if last_type != win32con.PT_BEZIERTO: # Avoid repetition of command tags
+						shape.append("b")
+						last_type = cur_type
+					shape.extend([
+						shape_value_format(cur_point[0]*mult_x),
+						shape_value_format(cur_point[1]*mult_y),
+						shape_value_format(points[i+1][0]*mult_x),
+						shape_value_format(points[i+1][1]*mult_y),
+						shape_value_format(points[i+2][0]*mult_x),
+						shape_value_format(points[i+2][1]*mult_y)
+					])
+					i += 3
+				else: # If there is an invalid type -> skip, for safeness
+					i += 1
+
+			# Clear device context path
+			win32gui.AbortPath(self.dc)
+
+			return ' '.join(shape)
 		else:
 			raise NotImplementedError

@@ -131,8 +131,8 @@ class Line:
 		margin_r (int): Right margin for this line.
 		margin_v (int): Vertical margin for this line.
 		effect (str): Effect field.
-		text (str): Line raw text.
-		text_stripped (str): Line stripped text.
+		raw_text (str): Line raw text.
+		text (str): Line stripped text (no tags).
 		width (float): Line text width (*).
 		height (float): Line text height (*).
 		ascent (float): Line font ascent (*).
@@ -173,15 +173,12 @@ class Word:
 		start_time (int): Word start time (same as line start time) (in milliseconds).
 		end_time (int): Word end time (same as line end time) (in milliseconds).
 		duration (int): Word duration (same as line duration) (in milliseconds).
+		styleref (obj): Reference to the Style object of this object original line.
 		text (str): Word text.
 		prespace (int): Word free space before text.
 		postspace (int): Word free space after text.
 		width (float): Word text width.
 		height (float): Word text height.
-		ascent (float): Word font ascent.
-		descent (float): Word font descent.
-		internal_leading (float): Word font internal lead.
-		external_leading (float): Word font external lead.
 		x (float): Word text position horizontal (depends on alignment).
 		y (float): Word text position vertical (depends on alignment).
 		left (float): Word text position left.
@@ -191,35 +188,6 @@ class Word:
 		middle (float): Word text position middle.
 		bottom (float): Word text position bottom.
 	"""
-	start_time 			= 0
-	end_time 			= 0
-	duration 			= 0
-
-	text 				= ""
-
-	prespace 			= 0
-	postspace 			= 0
-
-	width 				= 0
-	height 				= 0
-
-	ascent 				= 0
-	descent 			= 0
-
-	internal_leading 	= 0
-	external_leading 	= 0
-
-	x 					= 0
-	y 					= 0
-
-	left 				= 0
-	center 				= 0
-	right 				= 0
-
-	top 				= 0
-	middle 				= 0
-	bottom 				= 0
-
 	def __repr__(self):
 		return pretty_print(self)
 
@@ -236,16 +204,14 @@ class Syllable:
 		start_time (int): Syllable start time (in milliseconds).
 		end_time (int): Syllable end time (in milliseconds).
 		duration (int): Syllable duration (in milliseconds).
+		styleref (obj): Reference to the Style object of this object original line.
 		text (str): Syllable text.
+		tags (str): All the remaining tags before syl text apart \\k ones.
 		inline_fx (str): Syllable inline effect (marked as \\-EFFECT in karaoke-time).
 		prespace (int): Syllable free space before text.
 		postspace (int): Syllable free space after text.
 		width (float): Syllable text width.
 		height (float): Syllable text height.
-		ascent (float): Syllable font ascent.
-		descent (float): Syllable font descent.
-		internal_leading (float): Syllable font internal lead.
-		external_leading (float): Syllable font external lead.
 		x (float): Syllable text position horizontal (depends on alignment).
 		y (float): Syllable text position vertical (depends on alignment).
 		left (float): Syllable text position left.
@@ -272,16 +238,13 @@ class Char:
 		start_time (int): Char start time (in milliseconds).
 		end_time (int): Char end time (in milliseconds).
 		duration (int): Char duration (in milliseconds).
+		styleref (obj): Reference to the Style object of this object original line.
 		text (str): Char text.
 		inline_fx (str): Char inline effect (marked as \\-EFFECT in karaoke-time).
 		prespace (int): Char free space before text.
 		postspace (int): Char free space after text.
 		width (float): Char text width.
 		height (float): Char text height.
-		ascent (float): Char font ascent.
-		descent (float): Char font descent.
-		internal_leading (float): Char font internal lead.
-		external_leading (float): Char font external lead.
 		x (float): Char text position horizontal (depends on alignment).
 		y (float): Char text position vertical (depends on alignment).
 		left (float): Char text position left.
@@ -305,6 +268,7 @@ class Ass:
 	Args:
 		path_input (str): Path for the input file (either relative to your .py file or absolute).
 		path_output (str): Path for the output file (either relative to your .py file or absolute) (DEFAULT: "Output.ass").
+		keep_original (bool): If True, you will find all the lines of the input file commented before the new lines generated.
 		extended (bool): Calculate more informations from lines (usually you will not have to touch this).
 		vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically.
 
@@ -322,7 +286,7 @@ class Ass:
 			io = Ass("in.ass")
 			meta, styles, lines = io.get_data()
     """
-	def __init__(self, path_input="", path_output="Output.ass", extended=True, vertical_kanji=True):
+	def __init__(self, path_input="", path_output="Output.ass", keep_original=True, extended=True, vertical_kanji=True):
 		# Starting to take process time
 		self.__plines = 0
 		self.__ptime = time.time()
@@ -452,8 +416,9 @@ class Ass:
 					self.styles[style[0]] = tmp
 			# Parsing Dialogues
 			elif section == "Events":
-				# Appending line to output (commented)
-				self.__output.append(re.sub(r"^(Dialogue|Comment):", "Comment:", line))
+				# Appending line to output (commented) if keep_original is True
+				if keep_original:
+					self.__output.append(re.sub(r"^(Dialogue|Comment):", "Comment:", line))
 
 				# Analyzing line
 				line = re.match(r"^(Dialogue|Comment): (.+?)$", line)
@@ -482,398 +447,402 @@ class Ass:
 					
 					tmp.effect = line[8]
 					
-					tmp.text = ','.join(line[9:])
+					tmp.raw_text = ','.join(line[9:])
 
 					self.lines.append(tmp)
 
 
 		# Adding informations to lines and meta?
-		if extended:
-			lines_by_styles = {}
-			# Let the fun begin (Pyon!)
-			for li, line in enumerate(self.lines):
-				try:
-					line.styleref = self.styles[line.style]
-				except KeyError:
-					line.styleref = None
+		if not extended:
+			return None
+			
+		lines_by_styles = {}
+		# Let the fun begin (Pyon!)
+		for li, line in enumerate(self.lines):
+			try:
+				line.styleref = self.styles[line.style]
+			except KeyError:
+				line.styleref = None
 
-				# Append dialog to styles (for leadin and leadout later)
-				if line.style not in lines_by_styles:
-					lines_by_styles[line.style] = []
-				lines_by_styles[line.style].append(line)
+			# Append dialog to styles (for leadin and leadout later)
+			if line.style not in lines_by_styles:
+				lines_by_styles[line.style] = []
+			lines_by_styles[line.style].append(line)
 
-				line.duration = line.end_time - line.start_time
-				line.text_stripped = re.sub(r"\{.*?\}", "", line.text)
+			line.duration = line.end_time - line.start_time
+			line.text = re.sub(r"\{.*?\}", "", line.raw_text)
 
-				# Add dialog text sizes and positions (if possible)
-				if line.styleref:
-					# Creating a Font object and saving return values of font.get_metrics() for the future
-					font = Font(line.styleref)
-					font_metrics = font.get_metrics()
-		
-					line.width, line.height = font.get_text_extents(line.text_stripped)
-					line.ascent, line.descent, line.internal_leading, line.external_leading = font_metrics
-					if self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
-						# Horizontal position
-						if (line.styleref.alignment-1) % 3 == 0:
-							line.left = line.margin_l if line.margin_l != 0 else line.styleref.margin_l
-							line.center = line.left + line.width / 2
-							line.right = line.left + line.width
-							line.x = line.left
-						elif (line.styleref.alignment-2) % 3 == 0:
-							line.left = self.meta.play_res_x / 2 - line.width / 2
-							line.center = line.left + line.width / 2
-							line.right = line.left + line.width
-							line.x = line.center
-						else:
-							line.left = self.meta.play_res_x - (line.margin_r if line.margin_r != 0 else line.styleref.margin_r) - line.width
-							line.center = line.left + line.width / 2
-							line.right = line.left + line.width
-							line.x = line.right
-						
-						# Vertical position
-						if line.styleref.alignment > 6:
-							line.top = line.margin_v if line.margin_v != 0 else line.styleref.margin_v
-							line.middle = line.top + line.height / 2
-							line.bottom = line.top + line.height
-							line.y = line.top
-						elif line.styleref.alignment > 3:
-							line.top = self.meta.play_res_y / 2 - line.height / 2
-							line.middle = line.top + line.height / 2
-							line.bottom = line.top + line.height
-							line.y = line.middle
-						else:
-							line.top = self.meta.play_res_y - (line.margin_v if line.margin_v != 0 else line.styleref.margin_v) - line.height
-							line.middle = line.top + line.height / 2
-							line.bottom = line.top + line.height
-							line.y = line.bottom
+			# Add dialog text sizes and positions (if possible)
+			if line.styleref:
+				# Creating a Font object and saving return values of font.get_metrics() for the future
+				font = Font(line.styleref)
+				font_metrics = font.get_metrics()
+	
+				line.width, line.height = font.get_text_extents(line.text)
+				line.ascent, line.descent, line.internal_leading, line.external_leading = font_metrics
+				if self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+					# Horizontal position
+					if (line.styleref.alignment-1) % 3 == 0:
+						line.left = line.margin_l if line.margin_l != 0 else line.styleref.margin_l
+						line.center = line.left + line.width / 2
+						line.right = line.left + line.width
+						line.x = line.left
+					elif (line.styleref.alignment-2) % 3 == 0:
+						line.left = self.meta.play_res_x / 2 - line.width / 2
+						line.center = line.left + line.width / 2
+						line.right = line.left + line.width
+						line.x = line.center
+					else:
+						line.left = self.meta.play_res_x - (line.margin_r if line.margin_r != 0 else line.styleref.margin_r) - line.width
+						line.center = line.left + line.width / 2
+						line.right = line.left + line.width
+						line.x = line.right
 					
-					# Calculating space width and saving spacing
-					space_width = font.get_text_extents(" ")[0]
-					style_spacing = line.styleref.spacing
+					# Vertical position
+					if line.styleref.alignment > 6:
+						line.top = line.margin_v if line.margin_v != 0 else line.styleref.margin_v
+						line.middle = line.top + line.height / 2
+						line.bottom = line.top + line.height
+						line.y = line.top
+					elif line.styleref.alignment > 3:
+						line.top = self.meta.play_res_y / 2 - line.height / 2
+						line.middle = line.top + line.height / 2
+						line.bottom = line.top + line.height
+						line.y = line.middle
+					else:
+						line.top = self.meta.play_res_y - (line.margin_v if line.margin_v != 0 else line.styleref.margin_v) - line.height
+						line.middle = line.top + line.height / 2
+						line.bottom = line.top + line.height
+						line.y = line.bottom
 				
-					# Adding words
-					line.words = []
+				# Calculating space width and saving spacing
+				space_width = font.get_text_extents(" ")[0]
+				style_spacing = line.styleref.spacing
+			
+				# Adding words
+				line.words = []
 
-					wi = 0
-					for prespace, word_text, postspace in re.findall(r"(\s*)([^\s]+)(\s*)", line.text_stripped):
-						word = Word()
+				wi = 0
+				for prespace, word_text, postspace in re.findall(r"(\s*)([^\s]+)(\s*)", line.text):
+					word = Word()
 
-						word.i = wi
-						wi += 1
+					word.i = wi
+					wi += 1
 
-						word.start_time = line.start_time
-						word.end_time = line.end_time
-						word.duration = line.duration
+					word.start_time = line.start_time
+					word.end_time = line.end_time
+					word.duration = line.duration
 
-						word.text = word_text
-						
-						word.prespace = len(prespace)
-						word.postspace = len(postspace)
+					word.styleref = line.styleref
+					word.text = word_text
+					
+					word.prespace = len(prespace)
+					word.postspace = len(postspace)
 
-						word.width, word.height = font.get_text_extents(word.text)
-						word.ascent, word.descent, word.internal_leading, word.external_leading = font_metrics
+					word.width, word.height = font.get_text_extents(word.text)
+					word.ascent, word.descent, word.internal_leading, word.external_leading = font_metrics
 
-						line.words.append(word)
+					line.words.append(word)
 
-					# Calculate word positions with all words data already available
-					if len(line.words) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
-						if line.styleref.alignment > 6 or line.styleref.alignment < 4:
-							cur_x = line.left
-							for word in line.words:
-								# Horizontal position
-								cur_x = cur_x + word.prespace * (space_width + style_spacing)
-								
-								word.left = cur_x
+				# Calculate word positions with all words data already available
+				if len(line.words) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+					if line.styleref.alignment > 6 or line.styleref.alignment < 4:
+						cur_x = line.left
+						for word in line.words:
+							# Horizontal position
+							cur_x = cur_x + word.prespace * (space_width + style_spacing)
+							
+							word.left = cur_x
+							word.center = word.left + word.width / 2
+							word.right = word.left + word.width
+							
+							if (line.styleref.alignment-1) % 3 == 0:
+								word.x = word.left
+							elif (line.styleref.alignment-2) % 3 == 0:
+								word.x = word.center
+							else:
+								word.x = word.right
+
+							# Vertical position
+							word.top = line.top
+							word.middle = line.middle
+							word.bottom = line.bottom
+							word.y = line.y
+							
+							# Updating cur_x
+							cur_x = cur_x + word.width + word.postspace * (space_width + style_spacing) + style_spacing
+					else:
+						max_width, sum_height = 0, 0
+						for word in line.words:
+							max_width = max(max_width, word.width)
+							sum_height = sum_height + word.height
+
+						cur_y = x_fix = self.meta.play_res_y / 2 - sum_height / 2
+						for word in line.words:
+							# Horizontal position
+							x_fix = (max_width - word.width) / 2
+							
+							if line.styleref.alignment == 4:
+								word.left = line.left + x_fix
 								word.center = word.left + word.width / 2
 								word.right = word.left + word.width
-								
-								if (line.styleref.alignment-1) % 3 == 0:
-									word.x = word.left
-								elif (line.styleref.alignment-2) % 3 == 0:
-									word.x = word.center
-								else:
-									word.x = word.right
+								word.x = word.left
+							elif line.styleref.alignment == 5:
+								word.left = self.meta.play_res_x / 2 - word.width / 2
+								word.center = word.left + word.width / 2
+								word.right = word.left + word.width
+								word.x = word.center
+							else:
+								word.left = line.right - word.width - x_fix
+								word.center = word.left + word.width / 2
+								word.right = word.left + word.width
+								word.x = word.right
 
-								# Vertical position
-								word.top = line.top
-								word.middle = line.middle
-								word.bottom = line.bottom
-								word.y = line.y
-								
-								# Updating cur_x
-								cur_x = cur_x + word.width + word.postspace * (space_width + style_spacing) + style_spacing
-						else:
-							max_width, sum_height = 0, 0
-							for word in line.words:
-								max_width = max(max_width, word.width)
-								sum_height = sum_height + word.height
-
-							cur_y = x_fix = self.meta.play_res_y / 2 - sum_height / 2
-							for word in line.words:
-								# Horizontal position
-								x_fix = (max_width - word.width) / 2
-								
-								if line.styleref.alignment == 4:
-									word.left = line.left + x_fix
-									word.center = word.left + word.width / 2
-									word.right = word.left + word.width
-									word.x = word.left
-								elif line.styleref.alignment == 5:
-									word.left = self.meta.play_res_x / 2 - word.width / 2
-									word.center = word.left + word.width / 2
-									word.right = word.left + word.width
-									word.x = word.center
-								else:
-									word.left = line.right - word.width - x_fix
-									word.center = word.left + word.width / 2
-									word.right = word.left + word.width
-									word.x = word.right
-
-								# Vertical position
-								word.top = cur_y
-								word.middle = word.top + word.height / 2
-								word.bottom = word.top + word.height
-								word.y = word.middle
-								cur_y = cur_y + word.height
+							# Vertical position
+							word.top = cur_y
+							word.middle = word.top + word.height / 2
+							word.bottom = word.top + word.height
+							word.y = word.middle
+							cur_y = cur_y + word.height
 
 
-					# Add dialog text chunks, to create syllables
-					text_chunks = []
-					tag_pattern = re.compile(r"\{.*?\}")
-					tag = tag_pattern.search(line.text)
-					word_i = 0
+				# Add dialog text chunks, to create syllables
+				text_chunks = []
+				tag_pattern = re.compile(r"\{.*?\}")
+				tag = tag_pattern.search(line.raw_text)
+				word_i = 0
 
-					if not tag:
-						# No tags found
-						text_chunks.append({'tags': "", 'text': line.text})
-					else:
-						# First chunk without tags
-						if tag.start() != 0:
-							text_chunks.append({'tags': "", 'text': line.text[0:tag.start()]})
+				if not tag:
+					# No tags found
+					text_chunks.append({'tags': "", 'text': line.raw_text})
+				else:
+					# First chunk without tags
+					if tag.start() != 0:
+						text_chunks.append({'tags': "", 'text': line.raw_text[0:tag.start()]})
 
-						# Searching for other tags
-						while True:
-							next_tag = tag_pattern.search(line.text, tag.end())
-							tmp = {'tags': line.text[tag.start()+1:tag.end()-1], 'text': line.text[tag.end():(next_tag.start() if next_tag else None)], 'word_i': word_i}
-							text_chunks.append(tmp)
-							
-							if len(re.findall(r"(.*?)(\s*)$", tmp['text'])[0][1]) > 0:
-								word_i = word_i + 1
+					# Searching for other tags
+					while True:
+						next_tag = tag_pattern.search(line.raw_text, tag.end())
+						tmp = {'tags': line.raw_text[tag.start()+1:tag.end()-1], 'text': line.raw_text[tag.end():(next_tag.start() if next_tag else None)], 'word_i': word_i}
+						text_chunks.append(tmp)
+						
+						if len(re.findall(r"(.*?)(\s*)$", tmp['text'])[0][1]) > 0:
+							word_i = word_i + 1
 
-							if not next_tag:
-								break
-							tag = next_tag
-
-					# Adding syls
-					last_time = 0
-					line.syls = []
-					for si, text_chunk in enumerate(text_chunks):
-						try:
-							pretags, kdur, posttags = re.findall(r"(.*?)\\[kK][of]?(\d+)(.*?)", text_chunk['tags'])[0][:]
-							syl = Syllable()
-
-							syl.i = si
-							syl.word_i = text_chunk['word_i']
-							
-							syl.start_time = last_time
-							syl.end_time = last_time + int(kdur) * 10
-							syl.duration = int(kdur) * 10
-							
-							syl.inline_fx = ""
-							syl.tags = pretags + posttags
-							syl.prespace, syl.text, syl.postspace = re.findall(r"^(\s*)(.*?)(\s*)$", text_chunk['text'])[0][:]
-							
-							syl.prespace, syl.postspace = len(syl.prespace), len(syl.postspace)
-							syl.width, syl.height = font.get_text_extents(syl.text)
-							syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font_metrics
-							
-							line.syls.append(syl)
-							last_time = syl.end_time
-						except IndexError:
-							line.syls.clear()
+						if not next_tag:
 							break
+						tag = next_tag
 
-					# Calculate syllables positions with all syllables data already available
-					if len(line.syls) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
-						if line.styleref.alignment > 6 or line.styleref.alignment < 4 or not vertical_kanji:
-							cur_x = line.left
-							for syl in line.syls:
-								cur_x = cur_x + syl.prespace * (space_width + style_spacing)
-								# Horizontal position
-								syl.left = cur_x
+				# Adding syls
+				last_time = 0
+				line.syls = []
+				for si, text_chunk in enumerate(text_chunks):
+					try:
+						pretags, kdur, posttags = re.findall(r"(.*?)\\[kK][of]?(\d+)(.*)", text_chunk['tags'])[0][:]
+						syl = Syllable()
+
+						syl.i = si
+						syl.word_i = text_chunk['word_i']
+						
+						syl.start_time = last_time
+						syl.end_time = last_time + int(kdur) * 10
+						syl.duration = int(kdur) * 10
+						
+						syl.styleref = line.styleref
+						syl.tags = pretags + posttags
+						syl.inline_fx = re.findall(r".*\\\-([^\\]+)", syl.tags)
+						syl.inline_fx = syl.inline_fx[0] if syl.inline_fx else ""
+						syl.prespace, syl.text, syl.postspace = re.findall(r"^(\s*)(.*?)(\s*)$", text_chunk['text'])[0][:]
+						syl.prespace, syl.postspace = len(syl.prespace), len(syl.postspace)
+
+						syl.width, syl.height = font.get_text_extents(syl.text)
+						syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font_metrics
+						
+						line.syls.append(syl)
+						last_time = syl.end_time
+					except IndexError:
+						line.syls.clear()
+						break
+
+				# Calculate syllables positions with all syllables data already available
+				if len(line.syls) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+					if line.styleref.alignment > 6 or line.styleref.alignment < 4 or not vertical_kanji:
+						cur_x = line.left
+						for syl in line.syls:
+							cur_x = cur_x + syl.prespace * (space_width + style_spacing)
+							# Horizontal position
+							syl.left = cur_x
+							syl.center = syl.left + syl.width / 2
+							syl.right = syl.left + syl.width
+
+							if (line.styleref.alignment-1) % 3 == 0:
+								syl.x = syl.left
+							elif (line.styleref.alignment-2) % 3 == 0:
+								syl.x = syl.center
+							else:
+								syl.x = syl.right
+							
+							cur_x = cur_x + syl.width + syl.postspace * (space_width + style_spacing) + style_spacing
+							
+							# Vertical position
+							syl.top = line.top
+							syl.middle = line.middle
+							syl.bottom = line.bottom
+							syl.y = line.y
+
+					else: # Kanji vertical position
+						max_width, sum_height = 0, 0
+						for syl in line.syls:
+							max_width = max(max_width, syl.width)
+							sum_height = sum_height + syl.height
+						
+						cur_y = self.meta.play_res_y / 2 - sum_height / 2
+
+						# Fixing line positions
+						line.top = cur_y
+						line.middle = self.meta.play_res_y / 2
+						line.bottom = line.top + sum_height
+						line.width = max_width
+						line.height = sum_height
+						if line.styleref.alignment == 4:
+							line.center = line.left + max_width / 2
+							line.right = line.left + max_width
+						elif line.styleref.alignment == 5:
+							line.left = line.center - max_width / 2
+							line.right = line.left + max_width
+						else:
+							line.left = line.right - max_width
+							line.center = line.left + max_width / 2
+
+						for syl in line.syls:
+							# Horizontal position
+							x_fix = (max_width - syl.width) / 2
+							if line.styleref.alignment == 4:
+								syl.left = line.left + x_fix
 								syl.center = syl.left + syl.width / 2
 								syl.right = syl.left + syl.width
-
-								if (line.styleref.alignment-1) % 3 == 0:
-									syl.x = syl.left
-								elif (line.styleref.alignment-2) % 3 == 0:
-									syl.x = syl.center
-								else:
-									syl.x = syl.right
-								
-								cur_x = cur_x + syl.width + syl.postspace * (space_width + style_spacing) + style_spacing
-								
-								# Vertical position
-								syl.top = line.top
-								syl.middle = line.middle
-								syl.bottom = line.bottom
-								syl.y = line.y
-
-						else: # Kanji vertical position
-							max_width, sum_height = 0, 0
-							for syl in line.syls:
-								max_width = max(max_width, syl.width)
-								sum_height = sum_height + syl.height
-							
-							cur_y = self.meta.play_res_y / 2 - sum_height / 2
-
-							# Fixing line positions
-							line.top = cur_y
-							line.middle = self.meta.play_res_y / 2
-							line.bottom = line.top + sum_height
-							line.width = max_width
-							line.height = sum_height
-							if line.styleref.alignment == 4:
-								line.center = line.left + max_width / 2
-								line.right = line.left + max_width
+								syl.x = syl.left
 							elif line.styleref.alignment == 5:
-								line.left = line.center - max_width / 2
-								line.right = line.left + max_width
+								syl.left = line.center - syl.width / 2
+								syl.center = syl.left + syl.width / 2
+								syl.right = syl.left + syl.width
+								syl.x = syl.center
 							else:
-								line.left = line.right - max_width
-								line.center = line.left + max_width / 2
+								syl.left = line.right - syl.width - x_fix
+								syl.center = syl.left + syl.width / 2
+								syl.right = syl.left + syl.width
+								syl.x = syl.right
 
-							for syl in line.syls:
-								# Horizontal position
-								x_fix = (max_width - syl.width) / 2
-								if line.styleref.alignment == 4:
-									syl.left = line.left + x_fix
-									syl.center = syl.left + syl.width / 2
-									syl.right = syl.left + syl.width
-									syl.x = syl.left
-								elif line.styleref.alignment == 5:
-									syl.left = line.center - syl.width / 2
-									syl.center = syl.left + syl.width / 2
-									syl.right = syl.left + syl.width
-									syl.x = syl.center
-								else:
-									syl.left = line.right - syl.width - x_fix
-									syl.center = syl.left + syl.width / 2
-									syl.right = syl.left + syl.width
-									syl.x = syl.right
+							# Vertical position
+							syl.top = cur_y
+							syl.middle = syl.top + syl.height / 2
+							syl.bottom = syl.top + syl.height
+							syl.y = syl.middle
+							cur_y = cur_y + syl.height
 
-								# Vertical position
-								syl.top = cur_y
-								syl.middle = syl.top + syl.height / 2
-								syl.bottom = syl.top + syl.height
-								syl.y = syl.middle
-								cur_y = cur_y + syl.height
+				# Adding chars
+				line.chars = []
 
-					# Adding chars
-					line.chars = []
+				# If we have syls in line, we prefert to work with them to provide more informations
+				if line.syls:
+					words_or_syls = line.syls
+				else:
+					words_or_syls = line.words
 
-					# If we have syls in line, we prefert to work with them to provide more informations
-					if line.syls:
-						words_or_syls = line.syls
-					else:
-						words_or_syls = line.words
+				# Getting chars
+				char_index = 0
+				for el in words_or_syls:
+					el_text = "{}{}{}".format(" "*el.prespace, el.text, " "*el.postspace)
+					for ci, char_text in enumerate(list(el_text)):
+						char = Char()
+						char.i = ci
 
-					# Getting chars
-					char_index = 0
-					for el in words_or_syls:
-						el_text = "{}{}{}".format(" "*el.prespace, el.text, " "*el.postspace)
-						for ci, char_text in enumerate(list(el_text)):
-							char = Char()
-							char.i = ci
+						# If we're working with syls, we can add some indexes
+						char.i = char_index
+						char_index += 1
+						if line.syls:
+							char.word_i = el.word_i
+							char.syl_i = el.i
+							char.syl_char_i = ci
+						else:
+							char.word_i = el.i
 
-							# If we're working with syls, we can add some indexes
-							char.i = char_index
-							char_index += 1
-							if line.syls:
-								char.word_i = el.word_i
-								char.syl_i = el.i
-								char.syl_char_i = ci
-							else:
-								char.word_i = el.i
+						# Adding last fields based on the existance of syls or not
+						char.start_time = el.start_time
+						char.end_time = el.end_time
+						char.duration = el.duration
 
-							# Adding last fields based on the existance of syls or not
-							char.start_time = el.start_time
-							char.end_time = el.end_time
-							char.duration = el.duration
+						char.styleref = line.styleref
+						char.text = char_text
 
-							char.text = char_text
+						char.width, char.height = font.get_text_extents(char.text)
+						char.ascent, char.descent, char.internal_leading, char.external_leading = font_metrics
+						
+						line.chars.append(char)
 
-							char.width, char.height = font.get_text_extents(char.text)
-							char.ascent, char.descent, char.internal_leading, char.external_leading = font_metrics
+				# Calculate character positions with all characters data already available
+				if len(line.chars) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+					if line.styleref.alignment > 6 or line.styleref.alignment < 4:
+						cur_x = line.left
+						for char in line.chars:
+							# Horizontal position
+							char.left = cur_x
+							char.center = char.left + char.width / 2
+							char.right = char.left + char.width
 							
-							line.chars.append(char)
+							if (line.styleref.alignment-1) % 3 == 0:
+								char.x = char.left
+							elif (line.styleref.alignment-2) % 3 == 0:
+								char.x = char.center
+							else:
+								char.x = char.right
+							
+							cur_x = cur_x + char.width + style_spacing
+							
+							# Vertical position
+							char.top = line.top
+							char.middle = line.middle
+							char.bottom = line.bottom
+							char.y = line.y
+					else:
+						max_width, sum_height = 0, 0
+						for char in line.chars:
+							max_width = max(max_width, char.width)
+							sum_height = sum_height + char.height
 
-					# Calculate character positions with all characters data already available
-					if len(line.chars) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
-						if line.styleref.alignment > 6 or line.styleref.alignment < 4:
-							cur_x = line.left
-							for char in line.chars:
-								# Horizontal position
-								char.left = cur_x
+						cur_y = x_fix = self.meta.play_res_y / 2 - sum_height / 2
+						for char in line.chars:
+							# Horizontal position
+							x_fix = (max_width - char.width) / 2
+							if line.styleref.alignment == 4:
+								char.left = line.left + x_fix
 								char.center = char.left + char.width / 2
 								char.right = char.left + char.width
-								
-								if (line.styleref.alignment-1) % 3 == 0:
-									char.x = char.left
-								elif (line.styleref.alignment-2) % 3 == 0:
-									char.x = char.center
-								else:
-									char.x = char.right
-								
-								cur_x = cur_x + char.width + style_spacing
-								
-								# Vertical position
-								char.top = line.top
-								char.middle = line.middle
-								char.bottom = line.bottom
-								char.y = line.y
-						else:
-							max_width, sum_height = 0, 0
-							for char in line.chars:
-								max_width = max(max_width, char.width)
-								sum_height = sum_height + char.height
+								char.x = char.left
+							elif line.styleref.alignment == 5:
+								char.left = self.meta.play_res_x / 2 - char.width / 2
+								char.center = char.left + char.width / 2
+								char.right = char.left + char.width
+								char.x = char.center
+							else:
+								char.left = line.right - char.width - x_fix
+								char.center = char.left + char.width / 2
+								char.right = char.left + char.width
+								char.x = char.right
 
-							cur_y = x_fix = self.meta.play_res_y / 2 - sum_height / 2
-							for char in line.chars:
-								# Horizontal position
-								x_fix = (max_width - char.width) / 2
-								if line.styleref.alignment == 4:
-									char.left = line.left + x_fix
-									char.center = char.left + char.width / 2
-									char.right = char.left + char.width
-									char.x = char.left
-								elif line.styleref.alignment == 5:
-									char.left = self.meta.play_res_x / 2 - char.width / 2
-									char.center = char.left + char.width / 2
-									char.right = char.left + char.width
-									char.x = char.center
-								else:
-									char.left = line.right - char.width - x_fix
-									char.center = char.left + char.width / 2
-									char.right = char.left + char.width
-									char.x = char.right
-
-								# Vertical position
-								char.top = cur_y
-								char.middle = char.top + char.height / 2
-								char.bottom = char.top + char.height
-								char.y = char.middle
-								cur_y = cur_y + char.height
-		
-			# Add durations between dialogs
-			for style in lines_by_styles:
-				lines_by_styles[style].sort(key=lambda x: x.start_time)
-				for li, line in enumerate(lines_by_styles[style]):
-					line.leadin = 1000.1 if li == 0 else line.start_time - lines_by_styles[style][li-1].end_time
-					line.leadout =  1000.1 if li == len(lines_by_styles[style])-1 else lines_by_styles[style][li+1].start_time - line.end_time
-
-		# Done
+							# Vertical position
+							char.top = cur_y
+							char.middle = char.top + char.height / 2
+							char.bottom = char.top + char.height
+							char.y = char.middle
+							cur_y = cur_y + char.height
+	
+		# Add durations between dialogs
+		for style in lines_by_styles:
+			lines_by_styles[style].sort(key=lambda x: x.start_time)
+			for li, line in enumerate(lines_by_styles[style]):
+				line.leadin = 1000.1 if li == 0 else line.start_time - lines_by_styles[style][li-1].end_time
+				line.leadout =  1000.1 if li == len(lines_by_styles[style])-1 else lines_by_styles[style][li+1].start_time - line.end_time
 
 	def get_data(self):
 		"""Utility function to retrieve easily meta styles and lines.

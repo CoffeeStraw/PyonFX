@@ -35,8 +35,8 @@ def test_line_values():
 	assert line.margin_r == 0
 	assert line.margin_v == 0
 	assert line.effect == ""
-	assert line.text == "{\\k56}su{\\k13}re{\\k22}chi{\\k36}ga{\\k48}u{\\k25} {\\k34}ko{\\k33}to{\\k50}ba {\\k15}no {\\k17}u{\\k34}ra {\\k46}ni{\\k33} {\\k28}to{\\k36}za{\\k65}sa{\\k33}{\\k30}re{\\k51}ta{\\k16} {\\k33}ko{\\k33}ko{\\k78}ro {\\k15}no {\\k24}ka{\\k95}gi"
-	assert line.text_stripped == "surechigau kotoba no ura ni tozasareta kokoro no kagi"
+	assert line.raw_text == "{\\k56}su{\\k13}re{\\k22}chi{\\k36}ga{\\k48}u{\\k25} {\\k34}ko{\\k33}to{\\k50}ba {\\k15}no {\\k17}u{\\k34}ra {\\k46}ni{\\k33} {\\k28}to{\\k36}za{\\k65}sa{\\k33}{\\k30}re{\\k51}ta{\\k16} {\\k33}ko{\\k33}ko{\\k78}ro {\\k15}no {\\k24}ka{\\k95}gi"
+	assert line.text == "surechigau kotoba no ura ni tozasareta kokoro no kagi"
 	# Values taken from YutilsCore to test
 	assert line.width == 941.703125
 	assert line.height == 48.0
