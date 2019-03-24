@@ -83,7 +83,7 @@ def sub(line, l):
 
 	# Writing border
 	l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,%d)}%s" % (
-		line.center, line.middle, line.leadin/2, line.leadout/2, line.text_stripped)
+		line.center, line.middle, line.leadin/2, line.leadout/2, line.text)
 
 	io.write_line(l)
 
@@ -101,7 +101,7 @@ def sub(line, l):
 		color = Utils.interpolate(i/n, "&H00FFF7&", "&H0000FF&", 1.4)
 
 		l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,%d)\\clip(%s)\\bord0\\1c%s}%s" % (
-			line.center, line.middle, line.leadin/2, line.leadout/2, clip, color, line.text_stripped)
+			line.center, line.middle, line.leadin/2, line.leadout/2, clip, color, line.text)
 
 		io.write_line(l)
 

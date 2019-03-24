@@ -390,6 +390,42 @@ class Shape:
 		raise NotImplementedError
 
 	@staticmethod
+	def ring(out_r, in_r):
+		try:
+			out_r2, in_r2 = out_r*2, in_r*2
+			off = out_r - in_r
+			off_in_r = off + in_r
+			off_in_r2 = off + in_r2
+		except TypeError:
+			raise TypeError("Number(s) expected")
+
+		if in_r >= out_r:
+			raise ValueError("Valid number expected. Inner radius must be less than outer radius")
+
+		r = shape_value_format
+		return "m 0 %s "\
+		"b 0 %s 0 0 %s 0 "\
+		"%s 0 %s 0 %s %s "\
+		"%s %s %s %s %s %s "\
+		"%s %s 0 %s 0 %s "\
+		"m %s %s "\
+		"b %s %s %s %s %s %s "\
+		"%s %s %s %s %s %s "\
+		"%s %s %s %s %s %s "\
+		"%s %s %s %s %s %s" % (
+			r(out_r),																			# outer move
+			r(out_r), r(out_r),																	# outer curve 1
+			r(out_r), r(out_r2), r(out_r2), r(out_r),											# outer curve 2
+			r(out_r2), r(out_r), r(out_r2), r(out_r2), r(out_r), r(out_r2),						# outer curve 3
+			r(out_r), r(out_r2), r(out_r2), r(out_r),											# outer curve 4
+			r(off), r(off_in_r),																# inner move
+			r(off), r(off_in_r), r(off), r(off_in_r2), r(off_in_r), r(off_in_r2),				# inner curve 1
+			r(off_in_r), r(off_in_r2), r(off_in_r2), r(off_in_r2), r(off_in_r2), r(off_in_r),	# inner curve 2
+			r(off_in_r2), r(off_in_r), r(off_in_r2), r(off), r(off_in_r), r(off),				# inner curve 3
+			r(off_in_r), r(off), r(off), r(off), r(off), r(off_in_r)							# inner curve 4
+		)
+
+	@staticmethod
 	def ellipse(w, h):
 		"""Returns a shape command of an ellipse with given width and height.
 
@@ -402,14 +438,75 @@ class Shape:
 		Returns:
 			A shape command represeting an ellipse.
 		"""
-		if type(w) is not int and type(w) is not float and type(h) is not int and type(h) is not float:
-			raise ValueError("Number and number expected")
+		try:
+			w2, h2 = w/2, h/2
+		except TypeError:
+			raise TypeError("Number(s) expected")
 
-		w2, h2 = w/2, h/2
-		return "m %s %s b %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s %s" % (
-							0, h2,	# move
-							0, h2, 0, 0, w2, 0,	# curve 1
-							w2, 0, w, 0, w, h2,	# curve 2
-							w, h2, w, h, w2, h,	# curve 3
-							w2, h, 0, h, 0, h2	# curve 4
+		r = shape_value_format
+		return "m 0 %s "\
+		"b 0 %s 0 0 %s 0 "\
+		"%s 0 %s 0 %s %s "\
+		"%s %s %s %s %s %s "\
+		"%s %s 0 %s 0 %s" % (
+			r(h2),									# move
+			r(h2), r(w2),							# curve 1
+			r(w2), r(w), r(w), r(h2),				# curve 2
+			r(w), r(h2), r(w), r(h), r(w2), r(h),	# curve 3
+			r(w2), r(h), r(h), r(h2)				# curve 4
 		)
+
+	@staticmethod
+	def heart(size, offset=0):
+		# Build shape from template
+		try:
+			mult = size / 30
+		except TypeError:
+			raise TypeError("Size parameter must be a number")
+		shape = Shape.filter("m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30", lambda x, y: (x * mult, y * mult) )
+
+		# Shift mid point of heart vertically
+		count = 0
+		def shift_mid_point(x, y):
+			nonlocal count
+			count += 1
+
+			if count == 7:
+				try:
+					return x, y+offset
+				except:
+					raise TypeError("Offset parameter must be a number")		
+			return x, y
+
+		# Return result
+		return Shape.filter(shape, shift_mid_point)
+
+	@staticmethod
+	def rectangle(w=1, h=1):
+		"""Returns a shape command of a rectangle with given width and height.
+
+		Remember that a rectangle with width=1 and height=1 is a pixel.
+
+		Parameters:
+			w (int or float): The width for the rectangle.
+			h (int or float): The height for the rectangle.
+		
+		Returns:
+			A shape command represeting an rectangle.
+		"""
+		try:
+			r = shape_value_format
+			return "m 0 0 l %s 0 %s %s 0 %s 0 0" % (r(w), r(w), r(h), r(h))
+		except TypeError:
+			raise TypeError("Number(s) expected")
+
+	@staticmethod
+	def triangle(size):
+		try:
+			h = math.sqrt(3) * size / 2
+			base = -h / 6
+		except TypeError:
+			raise TypeError("Number expected")
+
+		r = shape_value_format
+		return "m %s %s l %s %s 0 %s %s %s" % (r(size/2), r(base), r(size), r(base+h), r(base+h), r(size/2), r(base))

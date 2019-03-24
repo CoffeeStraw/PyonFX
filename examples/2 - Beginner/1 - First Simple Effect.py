@@ -120,7 +120,7 @@ def sub(line, l):
 	l.dur = l.end_time - l.start_time
 
 	l.text = "{\\fad(%d,%d)}%s" % (
-		line.leadin/2, line.leadout/2, line.text_stripped)
+		line.leadin/2, line.leadout/2, line.text)
 
 	io.write_line(l)
 
