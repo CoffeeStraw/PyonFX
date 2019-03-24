@@ -107,9 +107,11 @@ class Shape:
 
 		Examples:
 			..  code-block:: python3
-			
-				original = "m -100.5 0 l 100 0 b 100 100 -100 100 -100.5 0 c"
-				x0, y0, x1, y1 = Shape.bounding(original)
+				
+				print("Left-top: %d %d\\nRight-bottom: %d %d" % (Shape.bounding("m 10 5 l 25 5 25 42 10 42")) )
+	
+			>>> Left-top: 10 5
+			>>> Right-bottom: 25 42
 		"""
 		
 		# Bounding data
@@ -141,6 +143,13 @@ class Shape:
 
 		Returns:
 			The shape moved to the new position.
+		
+		Examples:
+			..  code-block:: python3
+				
+				print( Shape.move("m 0 0 l 30 0 30 20 0 20", -5, 10) )
+			
+			>>> m -5 10 l 25 10 25 30 -5 30
 		"""
 		if not x and not y:
 			x, y = [-el for el in Shape.bounding(shape)[0:2]]
@@ -155,8 +164,7 @@ class Shape:
 	def flatten(shape, tolerance=1.0):
 		"""Splits shape's bezier curves into lines.
 
-		| You should use this before using shape.filter to work with more outline points for smoother deforming.
-		| Additionally, it is suggested to call also shape.split, to increase the precision.
+		| This is a low level function. Instead, you should use Shape.split() which already calls this function.
 
 		Parameters:
 			shape (str): The shape in ASS format as a string.
@@ -273,7 +281,7 @@ class Shape:
 
 	@staticmethod
 	def split(shape, max_len=10):
-		"""Splits shape lines into shorter segments with maximum given length.
+		"""Splits shape bezier curves into lines. Additional, it splits lines into shorter segments with maximum given length.
 
 		You can call this before using Shape.filter
 		to work with more outline points for smoother deforming.
@@ -284,6 +292,13 @@ class Shape:
 
 		Returns:
 			A new shape as string with lines splitted.
+
+		Examples:
+			..  code-block:: python3
+				
+				print( Shape.split("m -100.5 0 l 100 0 b 100 100 -100 100 -100.5 0 c") )
+	
+			>>> m -100.5 0 l -100 0 -90 0 -80 0 -70 0 -60 0 -50 0 -40 0 -30 0 -20 0 -10 0 0 0 10 0 20 0 30 0 40 0 50 0 60 0 70 0 80 0 90 0 100 0 l 99.964 2.325 99.855 4.614 99.676 6.866 99.426 9.082 99.108 11.261 98.723 13.403 98.271 15.509 97.754 17.578 97.173 19.611 96.528 21.606 95.822 23.566 95.056 25.488 94.23 27.374 93.345 29.224 92.403 31.036 91.405 32.812 90.352 34.552 89.246 36.255 88.086 37.921 86.876 39.551 85.614 41.144 84.304 42.7 82.945 44.22 81.54 45.703 80.088 47.15 78.592 48.56 77.053 49.933 75.471 51.27 73.848 52.57 72.184 53.833 70.482 55.06 68.742 56.25 66.965 57.404 65.153 58.521 63.307 59.601 61.427 60.645 59.515 61.652 57.572 62.622 55.599 63.556 53.598 64.453 51.569 65.314 49.514 66.138 47.433 66.925 45.329 67.676 43.201 68.39 41.052 69.067 38.882 69.708 36.692 70.312 34.484 70.88 32.259 71.411 27.762 72.363 23.209 73.169 18.61 73.828 13.975 74.341 9.311 74.707 4.629 74.927 -0.062 75 -4.755 74.927 -9.438 74.707 -14.103 74.341 -18.741 73.828 -23.343 73.169 -27.9 72.363 -32.402 71.411 -34.63 70.88 -36.841 70.312 -39.033 69.708 -41.207 69.067 -43.359 68.39 -45.49 67.676 -47.599 66.925 -49.683 66.138 -51.743 65.314 -53.776 64.453 -55.782 63.556 -57.759 62.622 -59.707 61.652 -61.624 60.645 -63.509 59.601 -65.361 58.521 -67.178 57.404 -68.961 56.25 -70.707 55.06 -72.415 53.833 -74.085 52.57 -75.714 51.27 -77.303 49.933 -78.85 48.56 -80.353 47.15 -81.811 45.703 -83.224 44.22 -84.59 42.7 -85.909 41.144 -87.178 39.551 -88.397 37.921 -89.564 36.255 -90.68 34.552 -91.741 32.812 -92.748 31.036 -93.699 29.224 -94.593 27.374 -95.428 25.488 -96.205 23.566 -96.92 21.606 -97.575 19.611 -98.166 17.578 -98.693 15.509 -99.156 13.403 -99.552 11.261 -99.881 9.082 -100.141 6.866 -100.332 4.614 -100.452 2.325 -100.5 0
 		"""
 		if type(shape) is not str or type(max_len) is not int:
 			raise TypeError("String and/or integer expected")
@@ -314,7 +329,7 @@ class Shape:
 				return f"{x1} {y1}", [x1, y1]
 
 		# Getting all points and commands in a list
-		cmds_and_points = shape.split()
+		cmds_and_points = Shape.flatten(shape).split()
 		i = 0
 		n = len(cmds_and_points)
 		
@@ -391,6 +406,17 @@ class Shape:
 
 	@staticmethod
 	def ring(out_r, in_r):
+		"""Returns a shape command of a ring with given inner and outer radius.
+
+		A ring with increasing inner radius, starting from 0, can look like an outfading point.
+
+		Parameters:
+			out_r (int or float): The outer radius for the ring.
+			in_r (int or float): The inner radius for the ring.
+		
+		Returns:
+			A shape command representing a ring.
+		"""
 		try:
 			out_r2, in_r2 = out_r*2, in_r*2
 			off = out_r - in_r
@@ -436,7 +462,7 @@ class Shape:
 			h (int or float): The height for the ellipse.
 		
 		Returns:
-			A shape command represeting an ellipse.
+			A shape command representing an ellipse.
 		"""
 		try:
 			w2, h2 = w/2, h/2
@@ -458,11 +484,22 @@ class Shape:
 
 	@staticmethod
 	def heart(size, offset=0):
-		# Build shape from template
+		"""Returns a shape command of a heart object with given size (width&height) and vertical offset of center point.
+
+		An offset size*(2/3) results in a splitted heart.
+
+		Parameters:
+			size (int or float): The width&height for the heart.
+			offset (int or float): The vertical offset of center point.
+		
+		Returns:
+			A shape command representing an heart.
+		"""
 		try:
 			mult = size / 30
 		except TypeError:
 			raise TypeError("Size parameter must be a number")
+		# Build shape from template
 		shape = Shape.filter("m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30", lambda x, y: (x * mult, y * mult) )
 
 		# Shift mid point of heart vertically
@@ -474,7 +511,7 @@ class Shape:
 			if count == 7:
 				try:
 					return x, y+offset
-				except:
+				except TypeError:
 					raise TypeError("Offset parameter must be a number")		
 			return x, y
 
@@ -492,7 +529,7 @@ class Shape:
 			h (int or float): The height for the rectangle.
 		
 		Returns:
-			A shape command represeting an rectangle.
+			A shape command representing an rectangle.
 		"""
 		try:
 			r = shape_value_format
@@ -502,6 +539,14 @@ class Shape:
 
 	@staticmethod
 	def triangle(size):
+		"""Returns a shape command of an equilateral triangle with given side length.
+
+		Parameters:
+			size (int or float): The side length for the triangle.
+		
+		Returns:
+			A shape command representing an triangle.
+		"""
 		try:
 			h = math.sqrt(3) * size / 2
 			base = -h / 6
