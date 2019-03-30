@@ -521,7 +521,7 @@ class Shape:
 		return Shape.filter(shape, shift_mid_point)
 
 	@staticmethod
-	def __glance_or_star(edges, inner_size, outer_size, star=True):
+	def __glance_or_star(edges, inner_size, outer_size, g_or_s):
 		"""
 		General function to create a shape command representing star or glance.
 		"""
@@ -533,7 +533,7 @@ class Shape:
 			return Quaternion(axis=[0,0,1],angle=theta).rotate(point)
 
 		# Building shape
-		shape = ["m 0 %s %s" % (-outer_size, "l" if star else "b")]
+		shape = ["m 0 %s %s" % (-outer_size, g_or_s)]
 		inner_p, outer_p = 0, 0
 
 		for i in range(1, edges+1):
@@ -542,7 +542,7 @@ class Shape:
 			# Outer edge
 			outer_p = rotate_on_axis_z([0, -outer_size, 0], (i / edges) * 360)
 			# Add curve / line
-			if star:
+			if g_or_s == "l":
 				shape.append("%s %s %s %s" % (r(inner_p[0]), r(inner_p[1]), r(outer_p[0]), r(outer_p[1])) )
 			else:
 				shape.append("%s %s %s %s %s %s" % (r(inner_p[0]), r(inner_p[1]), r(inner_p[0]), r(inner_p[1]), r(outer_p[0]), r(outer_p[1])) )
@@ -566,7 +566,7 @@ class Shape:
 		Returns:
 			A shape command as a string representing a star.
 		"""
-		return Shape.__glance_or_star(edges, inner_size, outer_size)
+		return Shape.__glance_or_star(edges, inner_size, outer_size, "l")
 
 	@staticmethod
 	def glance(edges, inner_size, outer_size):
@@ -582,7 +582,7 @@ class Shape:
 		Returns:
 			A shape command as a string representing a glance.
 		"""
-		return Shape.__glance_or_star(edges, inner_size, outer_size, star=False)
+		return Shape.__glance_or_star(edges, inner_size, outer_size, "b")
 
 	@staticmethod
 	def rectangle(w=1, h=1):
