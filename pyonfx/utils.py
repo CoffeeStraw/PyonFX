@@ -239,7 +239,7 @@ class ColorUtility:
 		
 		# Compiling regex
 		tag_all = re.compile(r"{.*?}")
-		tag_t   = re.compile(r"\\t\( *?(\d+?) *?, *?(\d+?) *?, *(.+?) *?\)")
+		tag_t   = re.compile(r"\\t\( *?(-?\d+?) *?, *?(-?\d+?) *?, *(.+?) *?\)")
 		tag_c1  = re.compile(r"\\1c(&H.{6}&)")
 		tag_c3  = re.compile(r"\\3c(&H.{6}&)")
 		tag_c4  = re.compile(r"\\4c(&H.{6}&)")
