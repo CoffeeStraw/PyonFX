@@ -30,7 +30,7 @@ def romaji(line, l):
 		# Leadin Effect
 		l.layer = 0
 
-		l.start_time = line.start_time  + 25*(syl.i) - delay
+		l.start_time = line.start_time  + 25*syl.i - delay
 		l.end_time = line.start_time + syl.start_time
 		l.dur = l.end_time - l.start_time
 
