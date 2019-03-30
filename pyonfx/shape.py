@@ -17,6 +17,7 @@
 
 import re
 import math
+from pyquaternion import Quaternion
 from inspect import signature
 
 def shape_value_format(x, prec=3):
@@ -280,7 +281,7 @@ class Shape:
 		return ' '.join(cmds_and_points)
 
 	@staticmethod
-	def split(shape, max_len=10):
+	def split(shape, max_len=16):
 		"""Splits shape bezier curves into lines. Additional, it splits lines into shorter segments with maximum given length.
 
 		You can call this before using Shape.filter
@@ -392,16 +393,17 @@ class Shape:
 		return ' '.join(cmds_and_points)
 
 	@staticmethod
-	def to_outline(shape, bord_xy, bord_y=None, mode="round"):
-		#Converts shape command for filling to a shape command for stroking.
+	def __to_outline(shape, bord_xy, bord_y=None, mode="round"):
+		"""Converts shape command for filling to a shape command for stroking.
 
-		#You could use this for border textures.
+		You could use this for border textures.
 
-		#Parameters:
-		#	shape (str): The shape in ASS format as a string.
+		Parameters:
+			shape (str): The shape in ASS format as a string.
 
-		#Returns:
-		#	A new shape as string, representing the border of the input.
+		Returns:
+			A new shape as string, representing the border of the input.
+		"""
 		raise NotImplementedError
 
 	@staticmethod
@@ -486,7 +488,7 @@ class Shape:
 	def heart(size, offset=0):
 		"""Returns a shape command of a heart object with given size (width&height) and vertical offset of center point.
 
-		An offset size*(2/3) results in a splitted heart.
+		An offset=size*(2/3) results in a splitted heart.
 
 		Parameters:
 			size (int or float): The width&height for the heart.
@@ -517,6 +519,70 @@ class Shape:
 
 		# Return result
 		return Shape.filter(shape, shift_mid_point)
+
+	@staticmethod
+	def __glance_or_star(edges, inner_size, outer_size, star=True):
+		"""
+		General function to create a shape command representing star or glance.
+		"""
+		# Defining utility functions
+		r = shape_value_format
+		def rotate_on_axis_z(point, theta):
+			# Internal function to rotate a point around z axis by a given angle.
+			theta = math.radians(theta)
+			return Quaternion(axis=[0,0,1],angle=theta).rotate(point)
+
+		# Building shape
+		shape = ["m 0 %s %s" % (-outer_size, "l" if star else "b")]
+		inner_p, outer_p = 0, 0
+
+		for i in range(1, edges+1):
+			# Inner edge
+			inner_p = rotate_on_axis_z([0, -inner_size, 0], ((i - 0.5) / edges) * 360)
+			# Outer edge
+			outer_p = rotate_on_axis_z([0, -outer_size, 0], (i / edges) * 360)
+			# Add curve / line
+			if star:
+				shape.append("%s %s %s %s" % (r(inner_p[0]), r(inner_p[1]), r(outer_p[0]), r(outer_p[1])) )
+			else:
+				shape.append("%s %s %s %s %s %s" % (r(inner_p[0]), r(inner_p[1]), r(inner_p[0]), r(inner_p[1]), r(outer_p[0]), r(outer_p[1])) )
+
+		shape = " ".join(shape)
+
+		# Return result centered
+		return Shape.move(shape)
+
+	@staticmethod
+	def star(edges, inner_size, outer_size):
+		"""Returns a shape command of a star object with given number of outer edges and sizes.
+
+		Different numbers of edges and edge distances allow individual n-angles.
+
+		Parameters:
+			edges (int): The number of edges of the star.
+			inner_size (int or float): The inner edges distance from center.
+			outer_size (int or float): The outer edges distance from center.
+		
+		Returns:
+			A shape command as a string representing a star.
+		"""
+		return Shape.__glance_or_star(edges, inner_size, outer_size)
+
+	@staticmethod
+	def glance(edges, inner_size, outer_size):
+		"""Returns a shape command of a glance object with given number of outer edges and sizes.
+
+		Glance is similar to Star, but with curves instead of inner edges between the outer edges.
+
+		Parameters:
+			edges (int): The number of edges of the star.
+			inner_size (int or float): The inner edges distance from center.
+			outer_size (int or float): The control points for bezier curves between edges distance from center.
+		
+		Returns:
+			A shape command as a string representing a glance.
+		"""
+		return Shape.__glance_or_star(edges, inner_size, outer_size, star=False)
 
 	@staticmethod
 	def rectangle(w=1, h=1):
