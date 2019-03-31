@@ -1,6 +1,6 @@
 """
 Inline effects is a method to define exclusive effects for syllables.
-Fields "Actor" and "Effect" can also be used to define exclusive effects, but generally applies to all the line.
+Fields "Actor" and "Effect" can also be used to define exclusive effects, but you will define them for the whole line.
 
 In this example, romajis are looking for inline effects
 "m1" and "m2" to choose a main effect to apply to syls' text.
