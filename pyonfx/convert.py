@@ -125,7 +125,7 @@ class Convert:
 			..  code-block:: python3
 				
 				line = Line.copy(lines[1])
-				line.text = "{\\an7\\pos(%.3f,%.3f)\\p1}%s" % (line.left, line.top, convert.text_to_shape(line))
+				line.text = "{\\\\an7\\\\pos(%.3f,%.3f)\\\\p1}%s" % (line.left, line.top, convert.text_to_shape(line))
 				io.write_line(line)
 		"""
 		# Obtaining information and editing values of style if requested
@@ -169,7 +169,7 @@ class Convert:
 			..  code-block:: python3
 				
 				line = Line.copy(lines[1])
-				line.text = "{\\an5\\pos(%.3f,%.3f)\\clip(%s)}%s" % (line.center, line.middle, convert.text_to_clip(line), line.text)
+				line.text = "{\\\\an5\\\\pos(%.3f,%.3f)\\\\clip(%s)}%s" % (line.center, line.middle, convert.text_to_clip(line), line.text)
 				io.write_line(line)
 		"""
 		# Checking for errors
