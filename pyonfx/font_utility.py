@@ -70,10 +70,14 @@ class Font:
 				'pitch and family': win32con.DEFAULT_PITCH + win32con.FF_DONTCARE,
 				'name': self.family
 			}
-			font = win32ui.CreateFont(font_spec)
-			win32gui.SelectObject(self.dc, font.GetSafeHandle())
+			self.pycfont = win32ui.CreateFont(font_spec)
+			win32gui.SelectObject(self.dc, self.pycfont.GetSafeHandle())
 		else:
 			raise NotImplementedError
+
+	def __del__(self):
+		win32gui.DeleteObject(self.pycfont.GetSafeHandle())
+		win32gui.DeleteDC(self.dc)
 
 	def get_metrics(self):
 		if sys.platform == "win32":

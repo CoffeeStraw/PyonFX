@@ -141,6 +141,8 @@ class Convert:
 		# Obtaining font information from style and obtaining shape
 		font = Font(obj.styleref)
 		shape = font.text_to_shape(obj.text)
+		# Clearing resources to not let overflow errors take over
+		del font
 
 		# Restoring values of style and returning the shape converted
 		if fscx:
