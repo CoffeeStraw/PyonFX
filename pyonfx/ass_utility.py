@@ -545,7 +545,7 @@ class Ass:
 					line.words.append(word)
 
 				# Calculate word positions with all words data already available
-				if len(line.words) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+				if line.words and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
 					if line.styleref.alignment > 6 or line.styleref.alignment < 4:
 						cur_x = line.left
 						for word in line.words:
@@ -636,6 +636,7 @@ class Ass:
 				# Adding syls
 				last_time = 0
 				line.syls = []
+				one_try = False
 				for si, text_chunk in enumerate(text_chunks):
 					try:
 						pretags, kdur, posttags = re.findall(r"(.*?)\\[kK][of]?(\d+)(.*)", text_chunk['tags'])[0][:]
@@ -661,11 +662,15 @@ class Ass:
 						line.syls.append(syl)
 						last_time = syl.end_time
 					except IndexError:
+						# We give the user only one try (only one {tags} present at the beginning of the line, if more than line is invalid)
+						if not one_try:
+							one_try = True
+							continue
 						line.syls.clear()
 						break
 
 				# Calculate syllables positions with all syllables data already available
-				if len(line.syls) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+				if line.syls and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
 					if line.styleref.alignment > 6 or line.styleref.alignment < 4 or not vertical_kanji:
 						cur_x = line.left
 						for syl in line.syls:
@@ -781,7 +786,7 @@ class Ass:
 						line.chars.append(char)
 
 				# Calculate character positions with all characters data already available
-				if len(line.chars) > 0 and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+				if line.chars and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
 					if line.styleref.alignment > 6 or line.styleref.alignment < 4:
 						cur_x = line.left
 						for char in line.chars:

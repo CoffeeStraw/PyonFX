@@ -7,4 +7,4 @@ from .shape import Shape
 from .utils import Utils, FrameUtility, ColorUtility
 from .settings import Settings
 
-__version__ = '0.6.2'
+__version__ = '0.6.3'

@@ -368,19 +368,23 @@ class ColorUtility:
 					base_c4 = color_change['c4']
 			elif color_change['start'] <= line.end_time:
 				# We have found a valid color change, append it to the transform
-				start_time = max( color_change['start'] - line.start_time, 1 )
-				end_time   = max( color_change['end']   - line.start_time, 1 )
+				start_time = color_change['start'] - line.start_time
+				end_time   = color_change['end']   - line.start_time
+
+				# We don't want to have times = 0
+				start_time = 1 if start_time == 0 else start_time
+				end_time   = 1 if end_time   == 0 else end_time
 
 				transform += "\\t(%d,%d," % (start_time, end_time)
 
 				if color_change['acc'] != 1:
 					transform += str(color_change['acc'])
 
-				if c1:
+				if c1 and color_change['c1']:
 					transform += color_change['c1']
-				if c3:
+				if c3 and color_change['c3']:
 					transform += color_change['c3']
-				if c4:
+				if c4 and color_change['c4']:
 					transform += color_change['c4']
 
 				transform += ")"
@@ -453,11 +457,11 @@ class ColorUtility:
 		# If we have passed the end of the lastest color change available, then take the final values of it
 		if current_time >= self.color_changes[latest_index]['end']:
 			colors = ""
-			if c1:
+			if c1 and self.color_changes[latest_index]['c1']:
 				colors += self.color_changes[latest_index]['c1']
-			if c3:
+			if c3 and self.color_changes[latest_index]['c3']:
 				colors += self.color_changes[latest_index]['c3']
-			if c4:
+			if c4 and self.color_changes[latest_index]['c4']:
 				colors += self.color_changes[latest_index]['c4']
 			return colors
 
@@ -469,11 +473,11 @@ class ColorUtility:
 		# If we're in the first color_change, interpolate with base colors
 		if latest_index == 0:
 			colors = ""
-			if c1:
+			if c1 and self.color_changes[latest_index]['c1']:
 				colors += "\\1c" + Utils.interpolate(pct, base_c1[3:], self.color_changes[latest_index]['c1'][3:], self.color_changes[latest_index]['acc'])
-			if c3:
+			if c3 and self.color_changes[latest_index]['c3']:
 				colors += "\\3c" + Utils.interpolate(pct, base_c3[3:], self.color_changes[latest_index]['c3'][3:], self.color_changes[latest_index]['acc'])
-			if c4:
+			if c4 and self.color_changes[latest_index]['c4']:
 				colors += "\\4c" + Utils.interpolate(pct, base_c4[3:], self.color_changes[latest_index]['c4'][3:], self.color_changes[latest_index]['acc'])
 			return colors
 
