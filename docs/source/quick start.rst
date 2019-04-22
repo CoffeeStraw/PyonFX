@@ -25,6 +25,18 @@ Run this command below, which will use pip to install and eventually update the 
 
 That's all. Nothing else is needed, every time you will have to update, just run again this command.
 
+Installation - Extra Step
++++++++++++++++++++++++++
+
+This step is not needed to start working with the library, but personally Aegisub is quite old/heavy and I needed a more comfortable way to work.
+
+That's why PyonFX integrates an additional way to reproduce your works in softsub faster after each generation, using the `MPV player <https://mpv.io/>`_. Installing it should be enough to make everything work if your're NOT on Windows.
+
+If you're on Windows, all you need to do once you have installed it (check the website for that), is to add it to the PATH, so that the library will be able to utilize it. There are several guide for that, `here <https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/>`_ you can find one.
+
+You need to add the folder that contains the .exe of mpv, generally C:\\Program Files\\mpv.
+
+
 Starting
 ++++++++
 
