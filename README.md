@@ -12,9 +12,9 @@ for everyone who want to create something more visually complex with the ASS for
     <img src="https://forthebadge.com/images/badges/made-with-python.svg"
          alt="Python3">
   </a>
-  <a href="https://forthebadge.com">
-    <img src="https://forthebadge.com/images/badges/its-not-a-lie-if-you-believe-it.svg"
-         alt="Not a Lie">
+  <a href="https://discord.gg/Xxy3YAv">
+    <img src="https://img.shields.io/discord/562766544061595650.svg?label=Discord%20Server&style=for-the-badge"
+         alt="Discord Official Server">
   </a>
 </p>
 
