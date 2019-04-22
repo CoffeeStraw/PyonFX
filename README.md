@@ -13,7 +13,7 @@ for everyone who want to create something more visually complex with the ASS for
          alt="Python3">
   </a>
   <a href="https://discord.gg/Xxy3YAv">
-    <img src="https://img.shields.io/discord/562766544061595650.svg?label=Discord%20Server&style=for-the-badge"
+    <img src="https://img.shields.io/discord/562766544061595650.svg?label=Discord%20Server&logo=discord&style=for-the-badge"
          alt="Discord Official Server">
   </a>
 </p>
