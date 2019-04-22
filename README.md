@@ -9,7 +9,7 @@ for everyone who want to create something more visually complex with the ASS for
 
 <p align="center">
   <a href="https://www.python.org/">
-    <img src="https://forthebadge.com/images/badges/made-with-python.svg"
+    <img src="https://forthebadge.com/images/badges/made-with-python.svg" height=28
          alt="Python3">
   </a>
   <a href="https://discord.gg/Xxy3YAv">
