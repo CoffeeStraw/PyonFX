@@ -19,7 +19,7 @@ This file contains the Font class definition, which has some functions
 to help getting informations from a specific font
 """
 import sys
-from .shape import Shape, shape_value_format
+from .shape import Shape
 
 if sys.platform == "win32":
 	import win32gui
@@ -135,8 +135,8 @@ class Font:
 						shape.append("m")
 						last_type = cur_type
 					shape.extend([
-						shape_value_format(cur_point[0]*mult_x),
-						shape_value_format(cur_point[1]*mult_y)
+						Shape.format_value(cur_point[0]*mult_x),
+						Shape.format_value(cur_point[1]*mult_y)
 					])
 					i += 1
 				elif cur_type == win32con.PT_LINETO or cur_type == (win32con.PT_LINETO | win32con.PT_CLOSEFIGURE):
@@ -144,8 +144,8 @@ class Font:
 						shape.append("l")
 						last_type = cur_type
 					shape.extend([
-						shape_value_format(cur_point[0]*mult_x),
-						shape_value_format(cur_point[1]*mult_y)
+						Shape.format_value(cur_point[0]*mult_x),
+						Shape.format_value(cur_point[1]*mult_y)
 					])
 					i += 1
 				elif cur_type == win32con.PT_BEZIERTO or cur_type == (win32con.PT_BEZIERTO | win32con.PT_CLOSEFIGURE):
@@ -153,12 +153,12 @@ class Font:
 						shape.append("b")
 						last_type = cur_type
 					shape.extend([
-						shape_value_format(cur_point[0]*mult_x),
-						shape_value_format(cur_point[1]*mult_y),
-						shape_value_format(points[i+1][0]*mult_x),
-						shape_value_format(points[i+1][1]*mult_y),
-						shape_value_format(points[i+2][0]*mult_x),
-						shape_value_format(points[i+2][1]*mult_y)
+						Shape.format_value(cur_point[0]*mult_x),
+						Shape.format_value(cur_point[1]*mult_y),
+						Shape.format_value(points[i+1][0]*mult_x),
+						Shape.format_value(points[i+1][1]*mult_y),
+						Shape.format_value(points[i+2][0]*mult_x),
+						Shape.format_value(points[i+2][1]*mult_y)
 					])
 					i += 3
 				else: # If there is an invalid type -> skip, for safeness
@@ -167,6 +167,6 @@ class Font:
 			# Clear device context path
 			win32gui.AbortPath(self.dc)
 
-			return ' '.join(shape)
+			return Shape(' '.join(shape))
 		else:
 			raise NotImplementedError

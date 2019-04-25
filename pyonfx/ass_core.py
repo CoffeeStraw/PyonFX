@@ -23,7 +23,6 @@ import copy
 import subprocess
 from .font_utility import Font
 from .convert import Convert
-from .settings import Settings
 
 def pretty_print(obj, indent=0, name=""):
 	# Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
@@ -259,7 +258,7 @@ class Char:
 
 
 class Ass:
-	"""Contains all the informations about a file in the ASS format and the methods to work with it.
+	"""Contains all the informations about a file in the ASS format and the methods to work with it for both input and output.
 	
 	| Usually you will create an Ass object and use it for input and output (see example_ section).
 	| PyonFX set automatically an absolute path for all the info in the output, so that wherever you will 
@@ -288,8 +287,9 @@ class Ass:
     """
 	def __init__(self, path_input="", path_output="Output.ass", keep_original=True, extended=True, vertical_kanji=True):
 		# Starting to take process time
+		self.__saved  = False
 		self.__plines = 0
-		self.__ptime = time.time()
+		self.__ptime  = time.time()
 
 		self.meta, self.styles, self.lines = Meta(), {}, []
 		# Getting absolute sub file path
@@ -858,7 +858,7 @@ class Ass:
 		return self.meta, self.styles, self.lines
 
 	def write_line(self, line):
-		"""Appends a line to the output list (which is private).
+		"""Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
 		
 		Use it whenever you've prepared a line, it will not impact performance since you 
 		will not actually write anything until :func:`save` will be called.
@@ -885,11 +885,7 @@ class Ass:
 			raise TypeError("Expected Line object, got %s." % type(line)) 
 
 	def save(self, quiet=False):
-		"""Write everything inside the output list to a file.
-
-		This should be the last function called inside your fx.py file.
-		Additionally, if pyonfx.Settings.aegisub is True, then the file will automatically
-		be opened with Aegisub at the end of the generation.
+		"""Write everything inside the private output list to a file.
 
 		Parameters:
 			quiet (bool): If True, you will not get printed any message.
@@ -898,37 +894,70 @@ class Ass:
 		# Writing to file
 		with open(self.path_output, 'w', encoding="utf-8-sig") as f:
 			f.writelines(self.__output)
+		self.__saved = True
+
 		if not quiet:
 			print("Produced lines: %d\nProcess duration (in seconds): %.3f" % (self.__plines, time.time() - self.__ptime))
-		
+
+	def open_aegisub(self):
+		"""Open the output (specified in self.path_output) with Aegisub.
+
+		This can be usefull if you don't have MPV installed or you want to look at your output in detailed.
+
+		Returns:
+			0 if success, -1 if the output couldn't be opened.
+		"""
+
+		# Check if it was saved
+		if not self.__saved:
+			print("[WARNING] You've tried to open the output with Aegisub before having saved. Check your code.")
+			return -1
+
+		os.startfile(self.path_output)
+		return 0
+
+	def open_mpv(self, video_path="", video_start="", full_screen=False):
+		"""Open the output (specified in self.path_output) in softsub with the MPV player.
+		To utilize this function, MPV player is required. Additionally if you're on Windows, MPV must be in the PATH (check https://pyonfx.readthedocs.io/en/latest/quick%20start.html#installation-extra-step).
+
+		This is one of the fastest way to reproduce your output in a comfortable way.
+
+		Parameters:
+			video_path (string): The video file path (absolute) to reproduce. If not specified, **meta.video** is automatically taken.
+			video_start (string): The start time for the video (more info: https://mpv.io/manual/master/#options-start). If not specified, 0 is automatically taken.
+			full_screen (bool): If True, it will reproduce the output in full screen. If not specified, False is automatically taken.
+		"""
+
+		# Check if it was saved
+		if not self.__saved:
+			print("[ERROR] You've tried to open the output with MPV before having saved. Check your code.")
+			return -1
+
 		# Check if mpv is usable
-		if self.meta.video.startswith("?dummy") and not Settings.mpv_options["video_file"] and Settings.mpv:
-			print("[WARNING] Cannot use MPV (if you've it in your PATH) for file preview, since your .ass contains a dummy video.\n"\
-				  "You can specify a new video source using Settings.mpv_options[\"video_file\"], check the documentation for this.")
-			Settings.mpv = False
+		if self.meta.video.startswith("?dummy") and not video_path:
+			print("[WARNING] Cannot use MPV (if you have it in your PATH) for file preview, since your .ass contains a dummy video.\n"\
+				  "You can specify a new video source using video_path parameter, check the documentation of the function.")
+			return -1
 
-		# Open with mpv?
-		if Settings.mpv:
-			cmd = ["mpv"]
-			
-			if not Settings.mpv_options["video_file"]:
-				cmd.append(self.meta.video)
-			else:
-				cmd.append(Settings.mpv_options["video_file"])
-			if Settings.mpv_options["video_start"]:
-				cmd.append("--start="+Settings.mpv_options["video_start"])
-			if Settings.mpv_options["full_screen"]:
-				cmd.append("--fs")
+		# Setting up the command to execute
+		cmd = ["mpv"]
+		
+		if not video_path:
+			cmd.append(self.meta.video)
+		else:
+			cmd.append(video_path)
+		if video_start:
+			cmd.append("--start=" + video_start)
+		if full_screen:
+			cmd.append("--fs")
 
-			cmd.append("--sub-file="+self.path_output)
+		cmd.append("--sub-file=" + self.path_output)
 
-			try:
-				subprocess.call(cmd)
-			except FileNotFoundError:
-				print("[WARNING] MPV not found in your environment variables.\n"\
-					  "Please refer to the documentation's \"Quick Start\" section if you don't know how to solve or "\
-					  "simply set as False \"Settings.mpv\".")
+		try:
+			subprocess.call(cmd)
+		except FileNotFoundError:
+			print("[WARNING] MPV not found in your environment variables.\n"\
+				  "Please refer to the documentation's \"Quick Start\" section if you don't know how to solve it.")
+			return -1
 
-		# Open with Aegisub?
-		if Settings.aegisub:
-			os.startfile(self.path_output)
+		return 0

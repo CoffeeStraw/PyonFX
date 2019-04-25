@@ -119,7 +119,7 @@ class Convert:
 			fscy (float, optional): The scale_y value for the shape.
 		
 		Returns:
-			A shape as a string, representing the text with the style format values of the object.
+			A Shape object, representing the text with the style format values of the object.
 
 		Examples:
 			..  code-block:: python3
@@ -128,6 +128,8 @@ class Convert:
 				line.text = "{\\\\an7\\\\pos(%.3f,%.3f)\\\\p1}%s" % (line.left, line.top, convert.text_to_shape(line))
 				io.write_line(line)
 		"""
+		# Improvable, create a temp object (need tests)
+
 		# Obtaining information and editing values of style if requested
 		original_scale_x = obj.styleref.scale_x
 		original_scale_y = obj.styleref.scale_y
@@ -165,7 +167,7 @@ class Convert:
 			fscy (float, optional): The scale_y value for the shape.
 		
 		Returns:
-			A shape as a string, representing the text with the style format values of the object.
+			A Shape object, representing the text with the style format values of the object.
 
 		Examples:
 			..  code-block:: python3
@@ -207,7 +209,7 @@ class Convert:
 		cx = obj.left - obj.width*mult_x * (fscx-obj.styleref.scale_x) / obj.styleref.scale_x
 		cy = obj.top - obj.height*mult_y * (fscy-obj.styleref.scale_y) / obj.styleref.scale_y
 
-		return Shape.move(shape, cx, cy)
+		return shape.move(cx, cy)
 
 	@staticmethod
 	def text_to_pixels(text, style, off_x=0, off_y=0):

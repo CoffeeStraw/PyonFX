@@ -20,49 +20,68 @@ import math
 from pyquaternion import Quaternion
 from inspect import signature
 
-def shape_value_format(x, prec=3):
-	# Utility function to properly format values for shapes
-	return f"{x:.{prec}f}".rstrip('0').rstrip('.')
-
 
 class Shape:
 	"""
-	This class is a collection of static methods that will help
-	the user to work in a comfy way with ASS paths.
+	This class can be used to define a Shape object (by passing its drawing commands)
+	and then apply functions to it in order to accomplish some tasks, like analyzing its bounding box, apply transformations, splitting curves into segments...
+
+	Args:
+		drawing_cmds (str): The shape's drawing commands in ASS format as a string.
 	"""
+	def __init__(self, drawing_cmds):
+		# Assure that drawing_cmds is a string
+		if not isinstance(drawing_cmds, str):
+			raise TypeError("A string containing the shape's drawing commands is expected, but you put a " + type(drawing_cmds))
+		self.drawing_cmds = drawing_cmds
+
+	def __repr__(self):
+		# We return drawing commands as a string rapresentation of the object
+		return self.drawing_cmds
+
+	def __eq__(self, other):
+		# Method used to compare two shapes
+		if type(other) is type(self):
+			return self.drawing_cmds == other.drawing_cmds
+		else:
+			return False
+
 	@staticmethod
-	def filter(shape, filt):
-		"""Sends every point of a shape through given filter function to change them.
+	def format_value(x, prec=3):
+		# Utility function to properly format values for shapes also returning them as a string
+		return f"{x:.{prec}f}".rstrip('0').rstrip('.')
+
+	def transform(self, transformation):
+		"""Sends every point of a shape through given transformation function to change them.
 
 		Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.
 
 		Parameters:
-			shape (str): The shape in ASS format as a string.
-			filter (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
+			transformation (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
 
 		Returns:
-			The filtered shape as a string.
+			The transformed shape as a string.
 
 		Examples:
 			..  code-block:: python3
 				
-				original = "m 0 0 l 20 0 20 10 0 10"
-				dest = Shape.filter(original, lambda x, y: (x+10, y+5) )  # Move each point of the shape
+				original = Shape("m 0 0 l 20 0 20 10 0 10")
+				dest = original.transform(lambda x, y: (x+10, y+5) )  # Move each point of the shape
 		"""
-		if type(shape) is not str or not callable(filt):
-			raise TypeError("String and/or lambda function expected")
+		if not callable(transformation):
+			raise TypeError("(Lambda) function expected")
 
 		# Getting all points and commands in a list
-		cmds_and_points = shape.split()
+		cmds_and_points = self.drawing_cmds.split()
 		i = 0
 		n = len(cmds_and_points)
 
 		# Checking whether the function take the typ parameter or not
-		if len(signature(filt).parameters) == 2:
+		if len(signature(transformation).parameters) == 2:
 			while i < n:
 				try:
-					# Applying filter
-					x, y = filt(float(cmds_and_points[i]), float(cmds_and_points[i+1]))
+					# Applying transformation
+					x, y = transformation(float(cmds_and_points[i]), float(cmds_and_points[i+1]))
 				except ValueError:
 					# We have found a string, let's skip this
 					i += 1
@@ -71,14 +90,14 @@ class Shape:
 					raise ValueError("Shape provided is not valid. Please check if a value is missing or if you have added an extra one at the end")
 
 				# Convert back to string the results for later
-				cmds_and_points[i:i+2] = shape_value_format(x), shape_value_format(y)
+				cmds_and_points[i:i+2] = Shape.format_value(x), Shape.format_value(y)
 				i += 2
 		else:
 			typ = ""
 			while i < n:
 				try:
-					# Applying filter
-					x, y = filt(float(cmds_and_points[i]), float(cmds_and_points[i+1]), typ)
+					# Applying transformation
+					x, y = transformation(float(cmds_and_points[i]), float(cmds_and_points[i+1]), typ)
 				except ValueError:
 					# We have found a string, let's skip this
 					typ = cmds_and_points[i]
@@ -88,20 +107,17 @@ class Shape:
 					raise ValueError("Shape provided is not valid. Please check if a value is missing or if you have added an extra one at the end")
 
 				# Convert back to string the results for later
-				cmds_and_points[i:i+2] = shape_value_format(x), shape_value_format(y)
+				cmds_and_points[i:i+2] = Shape.format_value(x), Shape.format_value(y)
 				i += 2
 
-		# Sew up everything back
-		return ' '.join(cmds_and_points)
+		# Sew up everything back and update shape
+		self.drawing_cmds = ' '.join(cmds_and_points)
+		return self
 
-	@staticmethod
-	def bounding(shape):
+	def bounding(self):
 		"""Calculates shape bounding box.
 
 		You can use this to get more precise information about a shape (width, height, position).
-
-		Parameters:
-			shape (str): The shape in ASS format as a string.
 
 		Returns:
 			A tuple (x0, y0, x1, y1) containing coordinates of the bounding box.
@@ -109,7 +125,7 @@ class Shape:
 		Examples:
 			..  code-block:: python3
 				
-				print("Left-top: %d %d\\nRight-bottom: %d %d" % (Shape.bounding("m 10 5 l 25 5 25 42 10 42")) )
+				print("Left-top: %d %d\\nRight-bottom: %d %d" % ( Shape("m 10 5 l 25 5 25 42 10 42").bounding() ) )
 	
 			>>> Left-top: 10 5
 			>>> Right-bottom: 25 42
@@ -119,7 +135,7 @@ class Shape:
 		x0, y0, x1, y1 = None, None, None, None
 
 		# Calculate minimal and maximal coordinates
-		def filt(x, y):
+		def compute_edges(x, y):
 			nonlocal x0, y0, x1, y1
 			if x0:
 				x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
@@ -127,57 +143,51 @@ class Shape:
 				x0, y0, x1, y1 = x, y, x, y
 			return x, y
 		
-		Shape.filter(shape, filt)
+		self.transform(compute_edges)
 		return x0, y0, x1, y1
 
-	@staticmethod
-	def move(shape, x=None, y=None):
+	def move(self, x=None, y=None):
 		"""Moves shape coordinates in given direction.
 
-		| If neither x and y are passed, it will automatically center the shape to the origin.
-		| This function is an high level function, it just uses Shape.filter, which is more advanced. Additionally, it is an easy way to center a shape.
+		| If neither x and y are passed, it will automatically center the shape to the origin (0,0).
+		| This function is an high level function, it just uses Shape.transform, which is more advanced. Additionally, it is an easy way to center a shape.
 
 		Parameters:
-			shape (str): The shape in ASS format as a string.
 			x (int or float): Displacement along the x-axis.
 			y (int or float): Displacement along the y-axis.
-
-		Returns:
-			The shape moved to the new position.
 		
 		Examples:
 			..  code-block:: python3
 				
-				print( Shape.move("m 0 0 l 30 0 30 20 0 20", -5, 10) )
+				print( Shape("m 0 0 l 30 0 30 20 0 20").move(-5, 10) )
 			
 			>>> m -5 10 l 25 10 25 30 -5 30
 		"""
 		if not x and not y:
-			x, y = [-el for el in Shape.bounding(shape)[0:2]]
+			x, y = [-el for el in self.bounding()[0:2]]
 		elif not x:
 			x = 0
 		elif not y:
 			y = 0
 
-		return Shape.filter(shape, lambda cx, cy: (cx+x, cy+y) )
+		# Update shape
+		self.transform(lambda cx, cy: (cx+x, cy+y) )
+		return self
 
-	@staticmethod
-	def flatten(shape, tolerance=1.0):
+	def flatten(self, tolerance=1.0):
 		"""Splits shape's bezier curves into lines.
 
-		| This is a low level function. Instead, you should use Shape.split() which already calls this function.
+		| This is a low level function. Instead, you should use :func:`split` which already calls this function.
 
 		Parameters:
-			shape (str): The shape in ASS format as a string.
 			tolerance (float): Angle in degree to define a curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
 
 		Returns:
 			The shape as a string, with bezier curves converted to lines.
 		"""
 		# TO DO: Make this function iterative, recursion is bad.
-
-		if type(shape) is not str:
-			raise TypeError("String expected")
+		if tolerance < 0:
+			raise ValueError("Tolerance must be a positive number")
 
 		# Inner functions definitions
 		# 4th degree curve subdivider (De Casteljau)
@@ -224,7 +234,7 @@ class Shape:
 			def convert_recursive(x0, y0, x1, y1, x2, y2, x3, y3):
 				if curve4_is_flat(x0, y0, x1, y1, x2, y2, x3, y3):
 					nonlocal pts
-					x3, y3 = shape_value_format(x3), shape_value_format(y3)
+					x3, y3 = Shape.format_value(x3), Shape.format_value(y3)
 					pts += f"{x3} {y3} "
 					return
 
@@ -238,8 +248,7 @@ class Shape:
 			return pts[:-1]
 
 		# Getting all points and commands in a list
-		cmds_and_points = shape.split()
-		shape = ""
+		cmds_and_points = self.drawing_cmds.split()
 		i = 0
 		n = len(cmds_and_points)
 
@@ -278,31 +287,26 @@ class Shape:
 			else:
 				i += 1
 		
-		return ' '.join(cmds_and_points)
+		# Update shape
+		self.drawing_cmds = ' '.join(cmds_and_points)
+		return self
 
-	@staticmethod
-	def split(shape, max_len=16):
+	def split(self, max_len=16, tolerance=1.0):
 		"""Splits shape bezier curves into lines. Additional, it splits lines into shorter segments with maximum given length.
 
-		You can call this before using Shape.filter
-		to work with more outline points for smoother deforming.
+		You can call this before using :func:`transform` to work with more outline points for smoother deforming.
 
 		Parameters:
-			shape (str): The shape in ASS format as a string.
-			max_len (int or float): The max length that you want all the line to be
-
-		Returns:
-			A new shape as string with lines splitted.
+			tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
+			max_len (int or float): The max length that you want all the lines to be
 
 		Examples:
 			..  code-block:: python3
 				
-				print( Shape.split("m -100.5 0 l 100 0 b 100 100 -100 100 -100.5 0 c") )
+				print( Shape("m -100.5 0 l 100 0 b 100 100 -100 100 -100.5 0 c").split() )
 	
 			>>> m -100.5 0 l -100 0 -90 0 -80 0 -70 0 -60 0 -50 0 -40 0 -30 0 -20 0 -10 0 0 0 10 0 20 0 30 0 40 0 50 0 60 0 70 0 80 0 90 0 100 0 l 99.964 2.325 99.855 4.614 99.676 6.866 99.426 9.082 99.108 11.261 98.723 13.403 98.271 15.509 97.754 17.578 97.173 19.611 96.528 21.606 95.822 23.566 95.056 25.488 94.23 27.374 93.345 29.224 92.403 31.036 91.405 32.812 90.352 34.552 89.246 36.255 88.086 37.921 86.876 39.551 85.614 41.144 84.304 42.7 82.945 44.22 81.54 45.703 80.088 47.15 78.592 48.56 77.053 49.933 75.471 51.27 73.848 52.57 72.184 53.833 70.482 55.06 68.742 56.25 66.965 57.404 65.153 58.521 63.307 59.601 61.427 60.645 59.515 61.652 57.572 62.622 55.599 63.556 53.598 64.453 51.569 65.314 49.514 66.138 47.433 66.925 45.329 67.676 43.201 68.39 41.052 69.067 38.882 69.708 36.692 70.312 34.484 70.88 32.259 71.411 27.762 72.363 23.209 73.169 18.61 73.828 13.975 74.341 9.311 74.707 4.629 74.927 -0.062 75 -4.755 74.927 -9.438 74.707 -14.103 74.341 -18.741 73.828 -23.343 73.169 -27.9 72.363 -32.402 71.411 -34.63 70.88 -36.841 70.312 -39.033 69.708 -41.207 69.067 -43.359 68.39 -45.49 67.676 -47.599 66.925 -49.683 66.138 -51.743 65.314 -53.776 64.453 -55.782 63.556 -57.759 62.622 -59.707 61.652 -61.624 60.645 -63.509 59.601 -65.361 58.521 -67.178 57.404 -68.961 56.25 -70.707 55.06 -72.415 53.833 -74.085 52.57 -75.714 51.27 -77.303 49.933 -78.85 48.56 -80.353 47.15 -81.811 45.703 -83.224 44.22 -84.59 42.7 -85.909 41.144 -87.178 39.551 -88.397 37.921 -89.564 36.255 -90.68 34.552 -91.741 32.812 -92.748 31.036 -93.699 29.224 -94.593 27.374 -95.428 25.488 -96.205 23.566 -96.92 21.606 -97.575 19.611 -98.166 17.578 -98.693 15.509 -99.156 13.403 -99.552 11.261 -99.881 9.082 -100.141 6.866 -100.332 4.614 -100.452 2.325 -100.5 0
 		"""
-		if type(shape) is not str or type(max_len) is not int:
-			raise TypeError("String and/or integer expected")
 		if max_len <= 0:
 			raise ValueError("The length of segments must be a positive and non-zero value")
 
@@ -319,18 +323,18 @@ class Shape:
 				
 				while cur_distance <= distance:
 					pct = cur_distance / distance
-					x, y = shape_value_format(x0 + rel_x * pct), shape_value_format(y0 + rel_y * pct)
+					x, y = Shape.format_value(x0 + rel_x * pct), Shape.format_value(y0 + rel_y * pct)
 					
 					lines.append(f"{x} {y}")
 					cur_distance += max_len
 				
 				return " ".join(lines), lines[-1].split()
 			else: # No line split
-				x1, y1 = shape_value_format(x1), shape_value_format(y1)
+				x1, y1 = Shape.format_value(x1), Shape.format_value(y1)
 				return f"{x1} {y1}", [x1, y1]
 
 		# Getting all points and commands in a list
-		cmds_and_points = Shape.flatten(shape).split()
+		cmds_and_points = self.flatten().drawing_cmds.split()
 		i = 0
 		n = len(cmds_and_points)
 		
@@ -389,11 +393,11 @@ class Shape:
 		if not(previous_two[0] == last_move[0] and previous_two[1] == last_move[1]): # Split!
 			cmds_and_points.append("l " + line_split(previous_two[0], previous_two[1], last_move[0], last_move[1])[0])
 
-		# Sew up everything back
-		return ' '.join(cmds_and_points)
+		# Sew up everything back and update shape
+		self.drawing_cmds = ' '.join(cmds_and_points)
+		return self
 
-	@staticmethod
-	def __to_outline(shape, bord_xy, bord_y=None, mode="round"):
+	def __to_outline(self, bord_xy, bord_y=None, mode="round"):
 		"""Converts shape command for filling to a shape command for stroking.
 
 		You could use this for border textures.
@@ -408,7 +412,7 @@ class Shape:
 
 	@staticmethod
 	def ring(out_r, in_r):
-		"""Returns a shape command of a ring with given inner and outer radius.
+		"""Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
 
 		A ring with increasing inner radius, starting from 0, can look like an outfading point.
 
@@ -417,7 +421,7 @@ class Shape:
 			in_r (int or float): The inner radius for the ring.
 		
 		Returns:
-			A shape command representing a ring.
+			A shape object representing a ring.
 		"""
 		try:
 			out_r2, in_r2 = out_r*2, in_r*2
@@ -430,8 +434,8 @@ class Shape:
 		if in_r >= out_r:
 			raise ValueError("Valid number expected. Inner radius must be less than outer radius")
 
-		r = shape_value_format
-		return "m 0 %s "\
+		f = Shape.format_value
+		return Shape("m 0 %s "\
 		"b 0 %s 0 0 %s 0 "\
 		"%s 0 %s 0 %s %s "\
 		"%s %s %s %s %s %s "\
@@ -441,21 +445,21 @@ class Shape:
 		"%s %s %s %s %s %s "\
 		"%s %s %s %s %s %s "\
 		"%s %s %s %s %s %s" % (
-			r(out_r),																			# outer move
-			r(out_r), r(out_r),																	# outer curve 1
-			r(out_r), r(out_r2), r(out_r2), r(out_r),											# outer curve 2
-			r(out_r2), r(out_r), r(out_r2), r(out_r2), r(out_r), r(out_r2),						# outer curve 3
-			r(out_r), r(out_r2), r(out_r2), r(out_r),											# outer curve 4
-			r(off), r(off_in_r),																# inner move
-			r(off), r(off_in_r), r(off), r(off_in_r2), r(off_in_r), r(off_in_r2),				# inner curve 1
-			r(off_in_r), r(off_in_r2), r(off_in_r2), r(off_in_r2), r(off_in_r2), r(off_in_r),	# inner curve 2
-			r(off_in_r2), r(off_in_r), r(off_in_r2), r(off), r(off_in_r), r(off),				# inner curve 3
-			r(off_in_r), r(off), r(off), r(off), r(off), r(off_in_r)							# inner curve 4
-		)
+			f(out_r),                                                                           # outer move
+			f(out_r),     f(out_r),                                                             # outer curve 1
+			f(out_r),     f(out_r2),    f(out_r2),    f(out_r),                                 # outer curve 2
+			f(out_r2),    f(out_r),     f(out_r2),    f(out_r2),    f(out_r),     f(out_r2),    # outer curve 3
+			f(out_r),     f(out_r2),    f(out_r2),    f(out_r),                                 # outer curve 4
+			f(off),       f(off_in_r),                                                          # inner move
+			f(off),       f(off_in_r),  f(off),       f(off_in_r2), f(off_in_r),  f(off_in_r2), # inner curve 1
+			f(off_in_r),  f(off_in_r2), f(off_in_r2), f(off_in_r2), f(off_in_r2), f(off_in_r),	# inner curve 2
+			f(off_in_r2), f(off_in_r),  f(off_in_r2), f(off),       f(off_in_r),  f(off),       # inner curve 3
+			f(off_in_r),  f(off),       f(off),       f(off),       f(off),       f(off_in_r)   # inner curve 4
+		) )
 
 	@staticmethod
 	def ellipse(w, h):
-		"""Returns a shape command of an ellipse with given width and height.
+		"""Returns a shape object of an ellipse with given width and height, centered around (0,0).
 
 		You could use that to create rounded stribes or arcs in combination with blurring for light effects.
 
@@ -464,29 +468,30 @@ class Shape:
 			h (int or float): The height for the ellipse.
 		
 		Returns:
-			A shape command representing an ellipse.
+			A shape object representing an ellipse.
 		"""
 		try:
 			w2, h2 = w/2, h/2
 		except TypeError:
 			raise TypeError("Number(s) expected")
 
-		r = shape_value_format
-		return "m 0 %s "\
+		f = Shape.format_value
+		
+		return Shape("m 0 %s "\
 		"b 0 %s 0 0 %s 0 "\
 		"%s 0 %s 0 %s %s "\
 		"%s %s %s %s %s %s "\
 		"%s %s 0 %s 0 %s" % (
-			r(h2),									# move
-			r(h2), r(w2),							# curve 1
-			r(w2), r(w), r(w), r(h2),				# curve 2
-			r(w), r(h2), r(w), r(h), r(w2), r(h),	# curve 3
-			r(w2), r(h), r(h), r(h2)				# curve 4
-		)
+			f(h2),									# move
+			f(h2), f(w2),							# curve 1
+			f(w2), f(w),  f(w), f(h2),				# curve 2
+			f(w),  f(h2), f(w), f(h), f(w2), f(h),	# curve 3
+			f(w2), f(h),  f(h), f(h2)				# curve 4
+		) )
 
 	@staticmethod
 	def heart(size, offset=0):
-		"""Returns a shape command of a heart object with given size (width&height) and vertical offset of center point.
+		"""Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
 
 		An offset=size*(2/3) results in a splitted heart.
 
@@ -495,14 +500,14 @@ class Shape:
 			offset (int or float): The vertical offset of center point.
 		
 		Returns:
-			A shape command representing an heart.
+			A shape object representing an heart.
 		"""
 		try:
 			mult = size / 30
 		except TypeError:
 			raise TypeError("Size parameter must be a number")
 		# Build shape from template
-		shape = Shape.filter("m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30", lambda x, y: (x * mult, y * mult) )
+		shape = Shape("m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30").transform(lambda x, y: (x * mult, y * mult) )
 
 		# Shift mid point of heart vertically
 		count = 0
@@ -518,15 +523,15 @@ class Shape:
 			return x, y
 
 		# Return result
-		return Shape.filter(shape, shift_mid_point)
+		return shape.transform(shift_mid_point)
 
 	@staticmethod
 	def __glance_or_star(edges, inner_size, outer_size, g_or_s):
 		"""
-		General function to create a shape command representing star or glance.
+		General function to create a shape object representing star or glance.
 		"""
-		# Defining utility functions
-		r = shape_value_format
+		# Alias for utility functions
+		f = Shape.format_value
 		def rotate_on_axis_z(point, theta):
 			# Internal function to rotate a point around z axis by a given angle.
 			theta = math.radians(theta)
@@ -543,18 +548,18 @@ class Shape:
 			outer_p = rotate_on_axis_z([0, -outer_size, 0], (i / edges) * 360)
 			# Add curve / line
 			if g_or_s == "l":
-				shape.append("%s %s %s %s" % (r(inner_p[0]), r(inner_p[1]), r(outer_p[0]), r(outer_p[1])) )
+				shape.append("%s %s %s %s" % (f(inner_p[0]), f(inner_p[1]), f(outer_p[0]), f(outer_p[1])) )
 			else:
-				shape.append("%s %s %s %s %s %s" % (r(inner_p[0]), r(inner_p[1]), r(inner_p[0]), r(inner_p[1]), r(outer_p[0]), r(outer_p[1])) )
+				shape.append("%s %s %s %s %s %s" % (f(inner_p[0]), f(inner_p[1]), f(inner_p[0]), f(inner_p[1]), f(outer_p[0]), f(outer_p[1])) )
 
-		shape = " ".join(shape)
+		shape = Shape( " ".join(shape) )
 
 		# Return result centered
-		return Shape.move(shape)
+		return shape.move()
 
 	@staticmethod
 	def star(edges, inner_size, outer_size):
-		"""Returns a shape command of a star object with given number of outer edges and sizes.
+		"""Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
 
 		Different numbers of edges and edge distances allow individual n-angles.
 
@@ -564,13 +569,13 @@ class Shape:
 			outer_size (int or float): The outer edges distance from center.
 		
 		Returns:
-			A shape command as a string representing a star.
+			A shape object as a string representing a star.
 		"""
 		return Shape.__glance_or_star(edges, inner_size, outer_size, "l")
 
 	@staticmethod
 	def glance(edges, inner_size, outer_size):
-		"""Returns a shape command of a glance object with given number of outer edges and sizes.
+		"""Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
 
 		Glance is similar to Star, but with curves instead of inner edges between the outer edges.
 
@@ -580,13 +585,13 @@ class Shape:
 			outer_size (int or float): The control points for bezier curves between edges distance from center.
 		
 		Returns:
-			A shape command as a string representing a glance.
+			A shape object as a string representing a glance.
 		"""
 		return Shape.__glance_or_star(edges, inner_size, outer_size, "b")
 
 	@staticmethod
 	def rectangle(w=1, h=1):
-		"""Returns a shape command of a rectangle with given width and height.
+		"""Returns a shape object of a rectangle with given width and height, centered around (0,0).
 
 		Remember that a rectangle with width=1 and height=1 is a pixel.
 
@@ -595,23 +600,23 @@ class Shape:
 			h (int or float): The height for the rectangle.
 		
 		Returns:
-			A shape command representing an rectangle.
+			A shape object representing an rectangle.
 		"""
 		try:
-			r = shape_value_format
-			return "m 0 0 l %s 0 %s %s 0 %s 0 0" % (r(w), r(w), r(h), r(h))
+			f = Shape.format_value
+			return Shape("m 0 0 l %s 0 %s %s 0 %s 0 0" % (f(w), f(w), f(h), f(h)) )
 		except TypeError:
 			raise TypeError("Number(s) expected")
 
 	@staticmethod
 	def triangle(size):
-		"""Returns a shape command of an equilateral triangle with given side length.
+		"""Returns a shape object of an equilateral triangle with given side length, centered around (0,0).
 
 		Parameters:
 			size (int or float): The side length for the triangle.
 		
 		Returns:
-			A shape command representing an triangle.
+			A shape object representing an triangle.
 		"""
 		try:
 			h = math.sqrt(3) * size / 2
@@ -619,5 +624,5 @@ class Shape:
 		except TypeError:
 			raise TypeError("Number expected")
 
-		r = shape_value_format
-		return "m %s %s l %s %s 0 %s %s %s" % (r(size/2), r(base), r(size), r(base+h), r(base+h), r(size/2), r(base))
+		f = Shape.format_value
+		return Shape("m %s %s l %s %s 0 %s %s %s" % (f(size/2), f(base), f(size), f(base+h), f(base+h), f(size/2), f(base)) )
