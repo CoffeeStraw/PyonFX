@@ -6,12 +6,9 @@ create a copy for each of them (see the reason for that in the previous example)
 and finally write them back on our output with time shifted by 2000ms.
 
 For more info about the copy method:
-https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.html#pyonfx.ass_utility.Line.copy
+https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Line.copy
 """
 from pyonfx import *
-
-Settings.mpv = False
-Settings.aegisub = True
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
@@ -25,3 +22,4 @@ for line in lines:
 	io.write_line(l)
 
 io.save()
+io.open_aegisub()

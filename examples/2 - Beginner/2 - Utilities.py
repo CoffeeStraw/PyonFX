@@ -16,9 +16,6 @@ As exercise, you can try to transform it into an horizontal one :)
 from pyonfx import *
 import random
 
-Settings.mpv = False
-Settings.aegisub = True
-
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
@@ -113,3 +110,4 @@ for line in lines:
 		sub(line, line.copy())
 
 io.save()
+io.open_aegisub()

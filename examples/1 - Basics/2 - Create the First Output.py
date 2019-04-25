@@ -18,13 +18,14 @@ Instead, you should always create a copy of line to save the original, we will s
 At the end, you have to call save() class method to actually write your output.
 PyonFX will also automatically print how many lines you've written and the process duration.
 For more info: https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.html#pyonfx.ass_utility.Ass.save
+
+Finally, we call the open_aegisub method to open the output with Aegisub. Generally you would prefer to open it
+with MPV by using the open_mpv method, but the examples'ass file do not have videos.
+For more info:
+- open_aegisub: https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Ass.open_aegisub
+- open_mpv: https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Ass.open_mpv
 """
 from pyonfx import *
-
-# From now on, we will set to automatically open the output with Aegisub using these lines,
-# disabling mpv autoplay since we're using dummy videos in our input.ass
-Settings.mpv = False
-Settings.aegisub = True
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
@@ -33,3 +34,4 @@ lines[0].text = "I am a new line!"
 io.write_line(lines[0])
 
 io.save()
+io.open_aegisub()

@@ -1,9 +1,6 @@
 from pyonfx import *
 import random
 
-Settings.mpv = False
-Settings.aegisub = True
-
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
@@ -77,3 +74,4 @@ for line in lines:
 		romaji(line, line.copy())
 
 io.save()
+io.open_aegisub()

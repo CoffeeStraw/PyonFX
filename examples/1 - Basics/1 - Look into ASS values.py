@@ -6,7 +6,7 @@ input/output. Once created, it will automatically extract all the informations
 from the input .ass file.
 
 For more info about the use of Ass class: 
-https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.html#pyonfx.ass_utility.Ass
+https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Ass
 
 By executing this script, you'll discover how ASS contents,
 like video resolution, styles, lines etc. are stored into objects and lists.
@@ -17,7 +17,7 @@ Don't worry about the huge output, there are a lot of information
 even in a small input file like the one in this folder.
 
 You can find more info about each object used to represent the input .ass file here:
-https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.html
+https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html
 """
 from pyonfx import *
 

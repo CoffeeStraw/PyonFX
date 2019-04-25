@@ -4,7 +4,7 @@ As you can see, we have now filled our romaji, kanji and sub functions.
 
 Starting from the simple one, the sub function make use of leadin and leadout times for fitting line-to-line changes.
 We then construct the text of each line, giving an alignment, a position and a fad to make a soft entrance and exit.
-	(Docs: https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.html#pyonfx.ass_utility.Line.leadin)
+	(Docs: https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Line.leadin)
 
 In the romaji function instead, we want to create an effect that works with syllables.
 In order to do do that, every syllable has to be one dialog line,
@@ -24,9 +24,6 @@ but using chars instead of syls. Try yourself what happens if you use syllables 
 """
 
 from pyonfx import *
-
-Settings.mpv = False
-Settings.aegisub = True
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
@@ -134,3 +131,4 @@ for line in lines:
 		sub(line, line.copy())
 
 io.save()
+io.open_aegisub()
