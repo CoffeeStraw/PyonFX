@@ -32,7 +32,7 @@ This step is not needed to start working with the library, but personally Aegisu
 
 That's why PyonFX integrates an additional way to reproduce your works in softsub faster after each generation, using the `MPV player <https://mpv.io/>`_. Installing it should be enough to make everything work if your're NOT on Windows.
 
-If you're on Windows, all you need to do once you have installed it (check the website for that), is to add it to the PATH, so that the library will be able to utilize it. There are several guide for that, `here <https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/>`_ you can find one.
+If you're on Windows, all you need to do once you have installed it (check the website for that), is to add it to the PATH, so that the library will be able to utilize it. There are several guide for that, `here you can find one <https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/>`_.
 
 You need to add the folder that contains the .exe of mpv, generally C:\\Program Files\\mpv.
 
