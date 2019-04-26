@@ -48,3 +48,4 @@ This project is licensed under the LGPL v3.0 License - see the [LICENSE](LICENSE
 * **Youka** for the original main functions ideas for **NyuFX**;
 * **McWhite** for the original functions ideas of his library for **NyuFX**;
 * **Siplas** for helping me out in the realization of the current logo for **PyonFX**.
+* **Preacer** for the name suggestion.
