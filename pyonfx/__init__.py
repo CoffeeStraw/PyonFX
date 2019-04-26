@@ -6,4 +6,4 @@ from .convert import Convert
 from .shape import Shape
 from .utils import Utils, FrameUtility, ColorUtility
 
-__version__ = '0.7.0'
+__version__ = '0.7.1'

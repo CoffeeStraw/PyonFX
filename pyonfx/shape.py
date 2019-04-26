@@ -51,24 +51,24 @@ class Shape:
 		# Utility function to properly format values for shapes also returning them as a string
 		return f"{x:.{prec}f}".rstrip('0').rstrip('.')
 
-	def transform(self, transformation):
+	def map(self, fun):
 		"""Sends every point of a shape through given transformation function to change them.
 
 		Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.
 
 		Parameters:
-			transformation (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
+			fun (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
 
 		Returns:
-			The transformed shape as a string.
+			A pointer to the current object.
 
 		Examples:
 			..  code-block:: python3
 				
 				original = Shape("m 0 0 l 20 0 20 10 0 10")
-				dest = original.transform(lambda x, y: (x+10, y+5) )  # Move each point of the shape
+				dest = original.map(lambda x, y: (x+10, y+5) )  # Move each point of the shape
 		"""
-		if not callable(transformation):
+		if not callable(fun):
 			raise TypeError("(Lambda) function expected")
 
 		# Getting all points and commands in a list
@@ -77,11 +77,11 @@ class Shape:
 		n = len(cmds_and_points)
 
 		# Checking whether the function take the typ parameter or not
-		if len(signature(transformation).parameters) == 2:
+		if len(signature(fun).parameters) == 2:
 			while i < n:
 				try:
 					# Applying transformation
-					x, y = transformation(float(cmds_and_points[i]), float(cmds_and_points[i+1]))
+					x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i+1]))
 				except ValueError:
 					# We have found a string, let's skip this
 					i += 1
@@ -97,7 +97,7 @@ class Shape:
 			while i < n:
 				try:
 					# Applying transformation
-					x, y = transformation(float(cmds_and_points[i]), float(cmds_and_points[i+1]), typ)
+					x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i+1]), typ)
 				except ValueError:
 					# We have found a string, let's skip this
 					typ = cmds_and_points[i]
@@ -143,18 +143,21 @@ class Shape:
 				x0, y0, x1, y1 = x, y, x, y
 			return x, y
 		
-		self.transform(compute_edges)
+		self.map(compute_edges)
 		return x0, y0, x1, y1
 
 	def move(self, x=None, y=None):
 		"""Moves shape coordinates in given direction.
 
 		| If neither x and y are passed, it will automatically center the shape to the origin (0,0).
-		| This function is an high level function, it just uses Shape.transform, which is more advanced. Additionally, it is an easy way to center a shape.
+		| This function is an high level function, it just uses Shape.map, which is more advanced. Additionally, it is an easy way to center a shape.
 
 		Parameters:
 			x (int or float): Displacement along the x-axis.
 			y (int or float): Displacement along the y-axis.
+
+		Returns:
+			A pointer to the current object.
 		
 		Examples:
 			..  code-block:: python3
@@ -171,7 +174,7 @@ class Shape:
 			y = 0
 
 		# Update shape
-		self.transform(lambda cx, cy: (cx+x, cy+y) )
+		self.map(lambda cx, cy: (cx+x, cy+y) )
 		return self
 
 	def flatten(self, tolerance=1.0):
@@ -181,6 +184,9 @@ class Shape:
 
 		Parameters:
 			tolerance (float): Angle in degree to define a curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
+
+		Returns:
+			A pointer to the current object.
 
 		Returns:
 			The shape as a string, with bezier curves converted to lines.
@@ -294,11 +300,14 @@ class Shape:
 	def split(self, max_len=16, tolerance=1.0):
 		"""Splits shape bezier curves into lines. Additional, it splits lines into shorter segments with maximum given length.
 
-		You can call this before using :func:`transform` to work with more outline points for smoother deforming.
+		You can call this before using :func:`map` to work with more outline points for smoother deforming.
 
 		Parameters:
 			tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
 			max_len (int or float): The max length that you want all the lines to be
+
+		Returns:
+			A pointer to the current object.
 
 		Examples:
 			..  code-block:: python3
@@ -406,6 +415,9 @@ class Shape:
 			shape (str): The shape in ASS format as a string.
 
 		Returns:
+			A pointer to the current object.
+
+		Returns:
 			A new shape as string, representing the border of the input.
 		"""
 		raise NotImplementedError
@@ -507,7 +519,7 @@ class Shape:
 		except TypeError:
 			raise TypeError("Size parameter must be a number")
 		# Build shape from template
-		shape = Shape("m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30").transform(lambda x, y: (x * mult, y * mult) )
+		shape = Shape("m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30").map(lambda x, y: (x * mult, y * mult) )
 
 		# Shift mid point of heart vertically
 		count = 0
@@ -523,7 +535,7 @@ class Shape:
 			return x, y
 
 		# Return result
-		return shape.transform(shift_mid_point)
+		return shape.map(shift_mid_point)
 
 	@staticmethod
 	def __glance_or_star(edges, inner_size, outer_size, g_or_s):
