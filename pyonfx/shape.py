@@ -66,7 +66,9 @@ class Shape:
 			..  code-block:: python3
 				
 				original = Shape("m 0 0 l 20 0 20 10 0 10")
-				dest = original.map(lambda x, y: (x+10, y+5) )  # Move each point of the shape
+				print ( original.map(lambda x, y: (x+10, y+5) ) )
+
+			>>> m 10 5 l 30 5 30 15 10 15
 		"""
 		if not callable(fun):
 			raise TypeError("(Lambda) function expected")
