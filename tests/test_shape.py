@@ -15,19 +15,19 @@ def test_transform():
 	# Without type checking
 	original = Shape("m 0 0 l 20 0 20 10 0 10")
 	dest     = Shape("m 10 5 l 30 5 30 15 10 15")
-	assert original.transform(lambda x, y: (x+10, y+5)) == dest
+	assert original.map(lambda x, y: (x+10, y+5)) == dest
 
 	original = Shape("m -100.5 0 l 100 0 b 100 100 -100 100 -100.5 0 c")
 	dest     = Shape("m -10.05 0 l 10 0 b 10 200 -10 200 -10.05 0 c")
-	assert original.transform(lambda x, y: (x/10, y*2)) == dest
+	assert original.map(lambda x, y: (x/10, y*2)) == dest
 
 	original = Shape("m 0.5 0.4 l 20.5 0.6 20.7 10.1 0.6 10.4")
 	dest     = Shape("m 0 0 l 20 1 21 10 1 10")
-	assert original.transform(lambda x, y: (round(x), round(y))) == dest
+	assert original.map(lambda x, y: (round(x), round(y))) == dest
 
 	original = Shape("m 0 0 l 20 0 20 10 0 10 22")
 	with pytest.raises(ValueError) as e_info:
-		original.transform(lambda x, y: (x, y)) == dest
+		original.map(lambda x, y: (x, y)) == dest
 
 	# With type checking
 	original = Shape("m 0 0 l 20 0 20 10 0 10")
@@ -38,7 +38,7 @@ def test_transform():
 		else:
 			return x, y
 
-	assert original.transform(filt) == dest
+	assert original.map(filt) == dest
 
 	original = Shape("m -100.5 0 l 100 0 b 100 100 -100 100 -100.5 0 c")
 	dest     = Shape("m -100.5 0 l 100 0 b 110 105 -90 105 -90.5 5 c")
@@ -48,7 +48,7 @@ def test_transform():
 		else:
 			return x, y
 
-	assert original.transform(tr) == dest
+	assert original.map(tr) == dest
 
 def test_bounding():
 	original = Shape("m -100.5 0 l 100 0 b 100 100 -100 100 -100.5 0 c")

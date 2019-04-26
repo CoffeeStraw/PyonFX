@@ -128,8 +128,6 @@ class Convert:
 				line.text = "{\\\\an7\\\\pos(%.3f,%.3f)\\\\p1}%s" % (line.left, line.top, convert.text_to_shape(line))
 				io.write_line(line)
 		"""
-		# Improvable, create a temp object (need tests)
-
 		# Obtaining information and editing values of style if requested
 		original_scale_x = obj.styleref.scale_x
 		original_scale_y = obj.styleref.scale_y
