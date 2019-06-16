@@ -32,7 +32,7 @@ class Shape:
 	def __init__(self, drawing_cmds):
 		# Assure that drawing_cmds is a string
 		if not isinstance(drawing_cmds, str):
-			raise TypeError("A string containing the shape's drawing commands is expected, but you put a " + type(drawing_cmds))
+			raise TypeError("A string containing the shape's drawing commands is expected, but you put a " + str(type(drawing_cmds)))
 		self.drawing_cmds = drawing_cmds
 
 	def __repr__(self):
@@ -84,6 +84,10 @@ class Shape:
 				try:
 					# Applying transformation
 					x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i+1]))
+				except TypeError:
+					# Values weren't returned, so we don't need to modify them
+					i += 2
+					continue
 				except ValueError:
 					# We have found a string, let's skip this
 					i += 1
@@ -100,6 +104,10 @@ class Shape:
 				try:
 					# Applying transformation
 					x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i+1]), typ)
+				except TypeError:
+					# Values weren't returned, so we don't need to modify them
+					i += 2
+					continue
 				except ValueError:
 					# We have found a string, let's skip this
 					typ = cmds_and_points[i]
@@ -169,7 +177,7 @@ class Shape:
 			>>> m -5 10 l 25 10 25 30 -5 30
 		"""
 		if not x and not y:
-			x, y = [-el for el in self.bounding()[0:2]]
+			x, y = [-1*el for el in self.bounding()[0:2]]
 		elif not x:
 			x = 0
 		elif not y:
