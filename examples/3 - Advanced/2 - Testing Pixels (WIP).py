@@ -30,7 +30,6 @@ def romaji(line, l):
 		io.write_line(l)
 
 	l.style = 'p'
-	"""
 	for syl in Utils.all_non_empty(line.syls):
 		# Main Effect
 		l.layer = 1
@@ -46,21 +45,18 @@ def romaji(line, l):
 
 			l.text = "{\\p1\\move(%d,%d,%d,%d)%s\\fad(0,%d)}%s" % (x, y, x2, y2, alpha, l.dur/4, p_sh)
 			io.write_line(l)
-	"""
 
 	l.start_time = line.start_time
 	l.end_time = line.end_time
 	l.dur = l.end_time - l.start_time
 
-	l.text = "{\\p1\\pos(%.3f,%.3f)\\1c&H000000&}%s" % (line.left, line.top, Shape.heart(100))
-	io.write_line(l)
-	
-	for pixel in Convert.shape_to_pixels(Shape.heart(100)):
-		# Random circle to pixel effect just to show
-		x, y = math.floor(line.left) + pixel['x'], math.floor(line.top) + pixel['y']
+	for pi, pixel in enumerate(Convert.shape_to_pixels(Shape.heart(50))):
+		# Random shape heart to pixel effect just to show this function too
+		x, y = math.floor(line.left) - 60 + pixel['x'], math.floor(line.top) + pixel['y']
+		x2, y2 = x + 10*(-1)**pi, y + 10*(-1)**pi
 		alpha = "\\alpha" + Convert.coloralpha(pixel['alpha']) if pixel['alpha'] != 255 else ""
 
-		l.text = "{\\p1\\pos(%d,%d)%s\\fad(0,%d)}%s" % (x, y, alpha, l.dur/4, p_sh)
+		l.text = "{\\p1\\move(%d,%d,%d,%d)%s\\fad(0,%d)}%s" % (x, y, x2, y2, alpha, l.dur/4, p_sh)
 		io.write_line(l)
 
 for line in lines:
