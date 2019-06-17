@@ -54,7 +54,7 @@ class Shape:
 	def map(self, fun):
 		"""Sends every point of a shape through given transformation function to change them.
 
-		Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.
+		**Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
 
 		Parameters:
 			fun (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
@@ -127,7 +127,7 @@ class Shape:
 	def bounding(self):
 		"""Calculates shape bounding box.
 
-		You can use this to get more precise information about a shape (width, height, position).
+		**Tips:** *Using this you can get more precise information about a shape (width, height, position).*
 
 		Returns:
 			A tuple (x0, y0, x1, y1) containing coordinates of the bounding box.
@@ -147,7 +147,7 @@ class Shape:
 		# Calculate minimal and maximal coordinates
 		def compute_edges(x, y):
 			nonlocal x0, y0, x1, y1
-			if x0:
+			if x0 is not None:
 				x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
 			else:
 				x0, y0, x1, y1 = x, y, x, y
@@ -176,11 +176,11 @@ class Shape:
 			
 			>>> m -5 10 l 25 10 25 30 -5 30
 		"""
-		if not x and not y:
+		if x is None and y is None:
 			x, y = [-1*el for el in self.bounding()[0:2]]
-		elif not x:
+		elif x is None:
 			x = 0
-		elif not y:
+		elif y is None:
 			y = 0
 
 		# Update shape
@@ -261,14 +261,14 @@ class Shape:
 			# Splitting curve recursively until we're not satisfied (angle <= tolerance)
 			convert_recursive(x0, y0, x1, y1, x2, y2, x3, y3)
 			# Return resulting points
-			return pts[:-1]
+			return pts[:-1].rsplit(' ', 1)[0].rsplit(' ', 1)[0]  # Delete last space and last two float values
 
 		# Getting all points and commands in a list
 		cmds_and_points = self.drawing_cmds.split()
 		i = 0
 		n = len(cmds_and_points)
 
-		# Scanning all commands and points
+		# Scanning all commands and points (improvable)
 		while i < n:
 			if cmds_and_points[i] == "b":  # We've found a curve, let's split it into short lines
 				try:
@@ -291,12 +291,18 @@ class Shape:
 				for unused_ in range(3):
 					del cmds_and_points[i]
 
-				# Deleting last two points only if needed
-				if i+2 >= n or cmds_and_points[i+2] != "b":
-					# I hate redundant code :)
-					for unused_ in range(2):
-						del cmds_and_points[i]
-					n -= 2
+				# Going to the next point
+				i += 2
+
+				# Check if we're at the end of the shape
+				if i < n:
+					# Check for implicit bezier curve
+					try:
+						float(cmds_and_points[i])  # Next number is a float?
+						cmds_and_points.insert(i, "b")
+						n += 1
+					except ValueError:
+						pass
 			elif cmds_and_points[i] == "c": # Deleting c tag?
 				del cmds_and_points[i]
 				n -= 1
@@ -310,7 +316,7 @@ class Shape:
 	def split(self, max_len=16, tolerance=1.0):
 		"""Splits shape bezier curves into lines. Additional, it splits lines into shorter segments with maximum given length.
 
-		You can call this before using :func:`map` to work with more outline points for smoother deforming.
+		**Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
 
 		Parameters:
 			tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
@@ -419,7 +425,7 @@ class Shape:
 	def __to_outline(self, bord_xy, bord_y=None, mode="round"):
 		"""Converts shape command for filling to a shape command for stroking.
 
-		You could use this for border textures.
+		**Tips:** *You could use this for border textures.*
 
 		Parameters:
 			shape (str): The shape in ASS format as a string.
@@ -436,7 +442,7 @@ class Shape:
 	def ring(out_r, in_r):
 		"""Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
 
-		A ring with increasing inner radius, starting from 0, can look like an outfading point.
+		**Tips:** *A ring with increasing inner radius, starting from 0, can look like an outfading point.*
 
 		Parameters:
 			out_r (int or float): The outer radius for the ring.
@@ -483,7 +489,7 @@ class Shape:
 	def ellipse(w, h):
 		"""Returns a shape object of an ellipse with given width and height, centered around (0,0).
 
-		You could use that to create rounded stribes or arcs in combination with blurring for light effects.
+		**Tips:** *You could use that to create rounded stribes or arcs in combination with blurring for light effects.*
 
 		Parameters:
 			w (int or float): The width for the ellipse.
@@ -515,7 +521,7 @@ class Shape:
 	def heart(size, offset=0):
 		"""Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
 
-		An offset=size*(2/3) results in a splitted heart.
+		**Tips:** *An offset=size*(2/3) results in a splitted heart.*
 
 		Parameters:
 			size (int or float): The width&height for the heart.
@@ -583,7 +589,7 @@ class Shape:
 	def star(edges, inner_size, outer_size):
 		"""Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
 
-		Different numbers of edges and edge distances allow individual n-angles.
+		**Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
 
 		Parameters:
 			edges (int): The number of edges of the star.
@@ -599,7 +605,7 @@ class Shape:
 	def glance(edges, inner_size, outer_size):
 		"""Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
 
-		Glance is similar to Star, but with curves instead of inner edges between the outer edges.
+		**Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
 
 		Parameters:
 			edges (int): The number of edges of the star.
@@ -615,7 +621,7 @@ class Shape:
 	def rectangle(w=1, h=1):
 		"""Returns a shape object of a rectangle with given width and height, centered around (0,0).
 
-		Remember that a rectangle with width=1 and height=1 is a pixel.
+		**Tips:** *A rectangle with width=1 and height=1 is a pixel.*
 
 		Parameters:
 			w (int or float): The width for the rectangle.

@@ -111,7 +111,7 @@ class Convert:
 	def text_to_shape(obj, fscx=None, fscy=None):
 		"""Converts text with given style information to an ASS shape.
 
-		Using this, you can easily create impressive text masks or deforming effects.
+		**Tips:** *You can easily create impressive deforming effects.*
 		
 		Parameters:
 			obj (Line, Word, Syllable or Char): An object of class Line, Word, Syllable or Char.
@@ -133,9 +133,9 @@ class Convert:
 		original_scale_y = obj.styleref.scale_y
 		
 		# Editing temporary the style to properly get the shape
-		if fscx:
+		if fscx is not None:
 			obj.styleref.scale_x = fscx
-		if fscy:
+		if fscy is not None:
 			obj.styleref.scale_y = fscy
 
 		# Obtaining font information from style and obtaining shape
@@ -145,9 +145,9 @@ class Convert:
 		del font
 
 		# Restoring values of style and returning the shape converted
-		if fscx:
+		if fscx is not None:
 			obj.styleref.scale_x = original_scale_x
-		if fscy:
+		if fscy is not None:
 			obj.styleref.scale_y = original_scale_y
 		return shape
 
@@ -157,6 +157,8 @@ class Convert:
 		it is not possible to position a shape with \\pos() once it is in a clip.
 
 		This is an high level function since it does some additional operations, check text_to_shape for further infromations.
+
+		**Tips:** *You can easily create text masks even for growing/shrinking text without too much effort.*
 		
 		Parameters:
 			obj (Line, Word, Syllable or Char): An object of class Line, Word, Syllable or Char.
@@ -179,9 +181,9 @@ class Convert:
 			raise ValueError("Alignment value must be an integer between 1 and 9")
 
 		# Setting default values
-		if not fscx:
+		if fscx is None:
 			fscx = obj.styleref.scale_x
-		if not fscy:
+		if fscy is None:
 			fscy = obj.styleref.scale_y
 
 		# Obtaining text converted to shape
@@ -210,12 +212,173 @@ class Convert:
 		return shape.move(cx, cy)
 
 	@staticmethod
-	def text_to_pixels(text, style, off_x=0, off_y=0):
-		pass
+	def text_to_pixels(obj, supersampling=8):
+		"""| Converts text with given style information to a list of pixel data.
+		| A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
+		
+		It is highly suggested to create a dedicated style for pixels,
+		because you will write less tags for line in your pixels, which means less size for your .ass file.
+
+		| The style suggested is:
+		| - **an=7 (very important!);**
+		| - bord=0;
+		| - shad=0;
+		| - For Font informations leave whatever the default is;
+
+		**Tips:** *It allows easy creation of text decaying or light effects.*
+		
+		Parameters:
+			obj (Line, Word, Syllable or Char): An object of class Line, Word, Syllable or Char.
+			supersampling (int): Value used for supersampling. Higher value means smoother and more precise anti-aliasing (and more computational time for generation).
+
+		Returns:
+			A list of dictionaries representing each individual pixel of the input text styled.
+
+		Examples:
+			..  code-block:: python3
+				
+				line = lines[2].copy()
+				line.style = "p"
+				p_sh = Shape.rectangle()
+				for pixel in Convert.text_to_pixels(line):
+					x, y = math.floor(line.left) + pixel['x'], math.floor(line.top) + pixel['y']
+					alpha = "\\alpha" + Convert.coloralpha(pixel['alpha']) if pixel['alpha'] != 255 else ""
+
+					line.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, p_sh)
+					io.write_line(line)
+		"""
+		shape = Convert.text_to_shape(obj).move(obj.left % 1, obj.top % 1)
+		return Convert.shape_to_pixels(shape, supersampling)
 
 	@staticmethod
-	def shape_to_pixels(shape):
-		pass
+	def shape_to_pixels(shape, supersampling=8):
+		"""| Converts a Shape object to a list of pixel data.
+		| A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
+		
+		It is highly suggested to create a dedicated style for pixels,
+		because you will write less tags for line in your pixels, which means less size for your .ass file.
+
+		| The style suggested is:
+		| - **an=7 (very important!);**
+		| - bord=0;
+		| - shad=0;
+		| - For Font informations leave whatever the default is;
+
+		**Tips:** *As for text, even shapes can decay!*
+		
+		Parameters:
+			shape (Shape): An object of class Shape.
+			supersampling (int): Value used for supersampling. Higher value means smoother and more precise anti-aliasing (and more computational time for generation).
+
+		Returns:
+			A list of dictionaries representing each individual pixel of the input shape.
+
+		Examples:
+			..  code-block:: python3
+				
+				line = lines[2].copy()
+				line.style = "p"
+				p_sh = Shape.rectangle()
+				for pixel in Convert.shape_to_pixels(Shape.heart(100)):
+					# Random circle to pixel effect just to show
+					x, y = math.floor(line.left) + pixel['x'], math.floor(line.top) + pixel['y']
+					alpha = "\\alpha" + Convert.coloralpha(pixel['alpha']) if pixel['alpha'] != 255 else ""
+
+					line.text = "{\\p1\\pos(%d,%d)%s\\fad(0,%d)}%s" % (x, y, alpha, l.dur/4, p_sh)
+					io.write_line(line)
+		"""
+		# Scale values for supersampled rendering
+		upscale = supersampling
+		downscale = 1 / upscale
+		
+		# Upscale shape for later downsampling
+		shape.map(lambda x, y: ( x*upscale, y*upscale ))
+
+		# Bring shape near origin in positive room
+		x1, y1, x2, y2 = shape.bounding()
+		shift_x, shift_y = -1*(x1 - x1 % upscale), -1*(y1 - y1 % upscale)
+		shape.move(shift_x, shift_y)
+
+		# Create image
+		width, height = math.ceil((x2 + shift_x) * downscale) * upscale, math.ceil((y2 + shift_y) * downscale) * upscale
+		image = [False for i in range(width*height)]
+
+		# Renderer (on binary image with aliasing)
+		lines, last_point, last_move = [], {}, {}
+
+		def collect_lines(x, y, typ):
+			# Collect lines (points + vectors)
+			nonlocal lines, last_point, last_move
+			x, y = int(round(x)), int(round(y))  # Use integers to avoid rounding errors
+
+			# Move
+			if typ == "m":
+				# Close figure with non-horizontal line in image
+				if last_move and last_move['y'] != last_point['y'] and not (last_point['y'] < 0 and last_move['y'] < 0) and not (last_point['y'] > height and last_move['y'] > height):
+					lines.append([last_point['x'], last_point['y'], last_move['x'] - last_point['x'], last_move['y'] - last_point['y']])
+
+				last_move = {'x': x, 'y': y}
+			# Non-horizontal line in image
+			elif last_point and last_point['y'] != y and not (last_point['y'] < 0 and y < 0) and not (last_point['y'] > height and y > height):
+				lines.append([last_point['x'], last_point['y'], x - last_point['x'], y - last_point['y']])
+
+			# Remember last point
+			last_point = {'x': x, 'y': y}
+
+		shape.flatten().map(collect_lines)
+		
+		# Close last figure with non-horizontal line in image
+		if last_move and last_move['y'] != last_point['y'] and not (last_point['y'] < 0 and last_move['y'] < 0) and not (last_point['y'] > height and last_move['y'] > height):
+			lines.append([last_point['x'], last_point['y'], last_move['x'] - last_point['x'], last_move['y'] - last_point['y']])
+
+		# Calculates line x horizontal line intersection
+		def line_x_hline(x, y, vx, vy, y2):
+			if vy != 0:
+				s = (y2 - y) / vy
+				if s >= 0 and s <= 1:
+					return x + s * vx
+			return None
+
+		# Scan image rows in shape
+		unused_, y1, unused_, y2 = shape.bounding()
+		for y in range( max(math.floor(y1), 0), min(math.ceil(y2), height) ):
+			# Collect row intersections with lines
+			row_stops = []
+			for line in lines:
+				cx = line_x_hline(line[0], line[1], line[2], line[3], y + 0.5)
+				if cx is not None:
+					row_stops.append([max(0, min(cx, width)), 1 if line[3] > 0 else -1])  # image trimmed stop position & line vertical direction
+
+			# Enough intersections / something to render?
+			if len(row_stops) > 1:
+				# Sort row stops by horizontal position
+				row_stops.sort(key=lambda x: x[0])
+				# Render!
+				status, row_index = 0, y * width
+				for i in range(0, len(row_stops)-1):
+					status = status + row_stops[i][1]
+					if status != 0:
+						for x in range(math.ceil(row_stops[i][0]-0.5), math.floor(row_stops[i+1][0]+0.5)):
+							image[row_index + x] = True
+
+		# Extract pixels from image
+		pixels = []
+		for y in range(0, height, upscale):
+			for x in range(0, width, upscale):
+				opacity = 0
+				for yy in range(0, upscale):
+					for xx in range(0, upscale):
+						if image[(y+yy) * width + (x+xx)]:
+							opacity = opacity + 255
+
+				if opacity > 0:
+					pixels.append({
+						'alpha': opacity * (downscale * downscale),
+						'x': (x - shift_x) * downscale,
+						'y': (y - shift_y) * downscale
+					})
+
+		return pixels
 
 	@staticmethod
 	def image_to_ass(image):
