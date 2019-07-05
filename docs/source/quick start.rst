@@ -19,9 +19,19 @@ If you still have trouble in the installation of Python, you can check some guid
 Installation
 ++++++++++++
 
-Run this command below, which will use pip to install and eventually update the library::
+Run this command below, which will use pip to install and eventually update the library:
 
-    $ pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+.. code-block:: sh
+   :emphasize-lines: 1
+
+   pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+
+Or if this is not working for some reason (like you're not on Windows and both Python2 and Python3 are installed):
+
+.. code-block:: sh
+   :emphasize-lines: 1
+
+   pip3 install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
 
 That's all. Nothing else is needed, every time you will have to update, just run again this command.
 
@@ -42,13 +52,19 @@ Starting
 
 You may want to check if everything is working nicely now. For that, I suggest you to try running some of the examples in the `github official repository of the project <https://github.com/CoffeeStraw/PyonFX/tree/master/examples>`_.
 
-To run a script in python, all you need to do is run the following command::
+To run a script in python, all you need to do is run the following command:
 
-    $ python namefile.py
+.. code-block:: sh
+   :emphasize-lines: 1
 
-Or if this is not working for some reason (like you're not on Windows and both Python2 and Python3 are installed)::
+   python namefile.py
 
-    $ python3 namefile.py
+Or if this is not working for some reason (like you're not on Windows and both Python2 and Python3 are installed):
+
+.. code-block:: sh
+   :emphasize-lines: 1
+
+   python3 namefile.py
 
 I highly suggest you to generate and study every single example in this examples folder (download always up-to-date `here <https://minhaskamal.github.io/DownGit/#/home?url=https://github.com/CoffeeStraw/PyonFX/tree/master/examples>`_). These are meant for absolute beginners until advanced users and explain in detail the usage of all the relevant functions of the library.
 
