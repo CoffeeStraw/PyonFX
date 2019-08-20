@@ -78,7 +78,7 @@ class Style:
 
 	Attributes:
 		fontname (str): Font name
-		fontsize (int): Font size in points
+		fontsize (float): Font size in points
 		color1 (str): Primary color (fill)
 		alpha1 (str): Trasparency of color1
 		color2 (str): Secondary color (secondary fill, for karaoke effect)
@@ -407,9 +407,9 @@ class Ass:
 					tmp.shadow = float(style[17])
 					
 					tmp.alignment = int(style[18])
-					tmp.margin_l = float(style[19])
-					tmp.margin_r = float(style[20])
-					tmp.margin_v = float(style[21])
+					tmp.margin_l = int(style[19])
+					tmp.margin_r = int(style[20])
+					tmp.margin_v = int(style[21])
 					
 					tmp.encoding = int(style[22])
 
