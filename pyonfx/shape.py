@@ -32,7 +32,7 @@ class Shape:
 	def __init__(self, drawing_cmds):
 		# Assure that drawing_cmds is a string
 		if not isinstance(drawing_cmds, str):
-			raise TypeError("A string containing the shape's drawing commands is expected, but you put a " + str(type(drawing_cmds)))
+			raise TypeError("A string containing the shape's drawing commands is expected, but you passed a " + str(type(drawing_cmds)))
 		self.drawing_cmds = drawing_cmds
 
 	def __repr__(self):
@@ -50,6 +50,92 @@ class Shape:
 	def format_value(x, prec=3):
 		# Utility function to properly format values for shapes also returning them as a string
 		return f"{x:.{prec}f}".rstrip('0').rstrip('.')
+
+	def has_error(self):
+		"""Utility function that checks if the shape is valid.
+
+		Returns:
+			False if no error has been found, else a string with the first error encountered.
+		"""
+		# Obtain commands and points
+		cad = self.drawing_cmds.split()
+		n = len(cad)
+		mode = ""
+
+		# Prepare usefull lists
+		two_args_cmds = ['m', 'n', 'l', 'p']
+		six_args_cmds = ['b', 's']
+
+		# Iterate over commands and points
+		i = 0
+		while i < n:
+			if cad[i] in two_args_cmds:
+				# Check if we have an unexpected and of the shape
+				if n-i < 3:
+					return f"Unexpected end of shape ('{cad[i]}' expect at least two args)"
+				
+				# Check if we have two numeric values after command
+				try:
+					float(cad[i+1])
+					float(cad[i+2])
+				except ValueError:
+					return f"Expected numeric value at: '{cad[i]} {cad[i+1]} {cad[i+2]}'"
+				
+				# Valid, go on
+				mode = cad[i]
+				i += 3
+			elif cad[i] in six_args_cmds:
+				# Check if we have an unexpected and of the shape
+				if n-i < 7:
+					return f"Unexpected end of shape ('{cad[i]}' expect at least six args)"
+				
+				# Check if we have six numeric values after command
+				try:
+					for x in range(1,7):
+						float(cad[i+x])
+				except ValueError:
+					return f"Expected numeric value at: '{cad[i]} {' '.join(cad[i+1:i+7])}'"
+
+				# Valid, go on
+				mode = cad[i]
+				i += 7
+			elif cad[i] == 'c':
+				# 'c' expect no arguments, skip
+				mode = ""
+				i += 1
+			elif mode in two_args_cmds:
+				# Check if we have an unexpected and of the shape
+				if n-i < 2:
+					return f"Unexpected end of shape ('{cad[i]}' expect at least two args)"
+				
+				# Check if we have two numeric values
+				try:
+					float(cad[i])
+					float(cad[i+1])
+				except ValueError:
+					return f"Expected numeric value at: '{mode} ... {cad[i]} {cad[i+1]}'"
+				
+				# Valid, go on
+				i += 2
+			elif mode in six_args_cmds:
+				# Check if we have an unexpected and of the shape
+				if n-i < 6:
+					return f"Unexpected end of shape ('{cad[i]}' expect at least six args)"
+				
+				# Check if we have six numeric values
+				try:
+					for x in range(6):
+						float(cad[i+x])
+				except ValueError:
+					return f"Expected numeric value at: '{mode} ... {' '.join(cad[i:i+6])}'"
+
+				# Valid, go on
+				i += 6
+			else:
+				# Wtf is this?
+				return f"Unexpected command '{cad[i]}'"
+
+		return False
 
 	def map(self, fun):
 		"""Sends every point of a shape through given transformation function to change them.
@@ -93,7 +179,7 @@ class Shape:
 					i += 1
 					continue
 				except IndexError:
-					raise ValueError("Shape provided is not valid. Please check if a value is missing or if you have added an extra one at the end")
+					raise ValueError("Unexpected end of the shape")
 
 				# Convert back to string the results for later
 				cmds_and_points[i:i+2] = Shape.format_value(x), Shape.format_value(y)
@@ -114,7 +200,7 @@ class Shape:
 					i += 1
 					continue
 				except IndexError:
-					raise ValueError("Shape provided is not valid. Please check if a value is missing or if you have added an extra one at the end")
+					raise ValueError("Unexpected end of the shape")
 
 				# Convert back to string the results for later
 				cmds_and_points[i:i+2] = Shape.format_value(x), Shape.format_value(y)
@@ -261,7 +347,7 @@ class Shape:
 			# Splitting curve recursively until we're not satisfied (angle <= tolerance)
 			convert_recursive(x0, y0, x1, y1, x2, y2, x3, y3)
 			# Return resulting points
-			return pts[:-1].rsplit(' ', 1)[0].rsplit(' ', 1)[0]  # Delete last space and last two float values
+			return ' '.join(pts[:-1].split(' ')[:-2])  # Delete last space and last two float values
 
 		# Getting all points and commands in a list
 		cmds_and_points = self.drawing_cmds.split()
@@ -270,9 +356,9 @@ class Shape:
 
 		# Scanning all commands and points (improvable)
 		while i < n:
-			if cmds_and_points[i] == "b":  # We've found a curve, let's split it into short lines
+			if cmds_and_points[i] == "b":  # We've found a curve, let's split it into lines
 				try:
-					# Getting all the points, if we don't have exactly 8 points, shape is not valid
+					# Getting all the points: if we don't have exactly 8 points, shape is not valid
 					x0, y0 = float(cmds_and_points[i-2]), float(cmds_and_points[i-1])
 					x1, y1 = float(cmds_and_points[i+1]), float(cmds_and_points[i+2])
 					x2, y2 = float(cmds_and_points[i+3]), float(cmds_and_points[i+4])
@@ -288,7 +374,7 @@ class Shape:
 				n -= 3
 
 				# Deleting the remaining points
-				for unused_ in range(3):
+				for _ in range(3):
 					del cmds_and_points[i]
 
 				# Going to the next point
@@ -314,7 +400,7 @@ class Shape:
 		return self
 
 	def split(self, max_len=16, tolerance=1.0):
-		"""Splits shape bezier curves into lines. Additional, it splits lines into shorter segments with maximum given length.
+		"""Splits shape bezier curves into lines and splits lines into shorter segments with maximum given length.
 
 		**Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
 
