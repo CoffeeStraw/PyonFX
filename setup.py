@@ -24,7 +24,7 @@ setuptools.setup(
     version=find_version("pyonfx", "__init__.py"),
     license='GNU LGPL 3.0 or later',
     description="An easy way to do KFX and complex typesetting based on subtitle format ASS (Advanced Substation Alpha).",
-    long_description=open('README.md').read(),
+    long_description=open('README.md', encoding='utf-8').read(),
     packages=['pyonfx'],
     install_requires=["pywin32; sys_platform == \"win32\"", "pyquaternion", "sphinx_rtd_theme", "sphinxcontrib-napoleon"],
     classifiers=[
