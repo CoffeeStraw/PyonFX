@@ -908,6 +908,10 @@ class Ass:
 			0 if success, -1 if the output couldn't be opened.
 		"""
 
+		if sys.platform != "win32":
+			print("[WARNING] Aegisub couldn't be opened.")
+			return -1
+
 		# Check if it was saved
 		if not self.__saved:
 			print("[WARNING] You've tried to open the output with Aegisub before having saved. Check your code.")
