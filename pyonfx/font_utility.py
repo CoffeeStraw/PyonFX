@@ -84,24 +84,17 @@ class Font:
         elif sys.platform == "linux":
             surface = cairo.ImageSurface(cairo.Format.A8, 1, 1)
             context = cairo.Context(surface)
+
             self.layout = PangoCairo.create_layout(context)
 
-            font_description = self.family
+            font_description = Pango.FontDescription()
+            font_description.set_family(self.family)
+            font_description.set_absolute_size(self.size * self.upscale * PANGO_SCALE)
+            font_description.set_weight(Pango.Weight.BOLD if self.bold else Pango.Weight.NORMAL)
+            font_description.set_style(Pango.Style.ITALIC if self.italic else Pango.Style.NORMAL)
 
-            if self.italic:
-                font_description += " Italic"
-            else:
-                font_description += " Normal"
-
-            if self.bold:
-                font_description += " Bold"
-            else:
-                font_description += " Regular"
-
-            font_description += " " + str(int(self.size * self.upscale * PANGO_SCALE))
-
-            self.layout.set_font_description(Pango.font_description_from_string(font_description))
-            self.metrics = self.layout.get_context().get_metrics()
+            self.layout.set_font_description(font_description)
+            self.metrics = Pango.Context.get_metrics(self.layout.get_context(), self.layout.get_font_description())
 
             if LIBASS_FONTHACK:
                 self.fonthack_scale = self.size / ((self.metrics.get_ascent() + self.metrics.get_descent()) / PANGO_SCALE * self.downscale)
@@ -123,7 +116,7 @@ class Font:
             metrics = win32gui.GetTextMetrics(self.dc)
 
             return (
-                #'height': metrics['Height'] * self.downscale * self.yscale,
+                # 'height': metrics['Height'] * self.downscale * self.yscale,
                 metrics['Ascent'] * self.downscale * self.yscale,
                 metrics['Descent'] * self.downscale * self.yscale,
                 metrics['InternalLeading'] * self.downscale * self.yscale,
@@ -134,7 +127,7 @@ class Font:
                 # 'height': (metrics.get_ascent() + metrics.get_descent()) / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
                 self.metrics.get_ascent() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
                 self.metrics.get_descent() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
-                0,
+                0.0,
                 self.layout.get_spacing() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale
             )
         else:
@@ -157,8 +150,8 @@ class Font:
                                    f'{html.escape(text)}'
                                    f'</span>',
                                    -1)
-
-            rect = self.layout.get_pixel_extents()[0]
+            
+            rect = self.layout.get_pixel_extents()[1]
 
             return (
                 rect.width * self.downscale * self.xscale * self.fonthack_scale,
