@@ -142,20 +142,25 @@ class Font:
                 cy * self.downscale * self.yscale
             )
         elif sys.platform == "linux":
-            self.layout.set_markup(f'<span '
-                                   f'letter_spacing="{int(self.hspace * PANGO_SCALE * self.upscale)}" '
-                                   f'strikethrough="{str(self.strikeout).lower()}" '
-                                   f'underline="{"single" if self.underline else "none"}"'
-                                   f'>'
-                                   f'{html.escape(text)}'
-                                   f'</span>',
-                                   -1)
-            
-            rect = self.layout.get_pixel_extents()[1]
+            def get_rect(new_text):
+                self.layout.set_markup(f'<span '
+                                       f'letter_spacing="{int(self.hspace * PANGO_SCALE * self.upscale)}" '
+                                       f'strikethrough="{str(self.strikeout).lower()}" '
+                                       f'underline="{"single" if self.underline else "none"}"'
+                                       f'>'
+                                       f'{html.escape(new_text)}'
+                                       f'</span>',
+                                       -1)
+                return self.layout.get_pixel_extents()[1]
+
+            width = 0
+
+            for char in text:
+                width += get_rect(char).width
 
             return (
-                rect.width * self.downscale * self.xscale * self.fonthack_scale,
-                rect.height * self.downscale * self.yscale * self.fonthack_scale
+                width * self.downscale * self.xscale * self.fonthack_scale,
+                get_rect(text).height * self.downscale * self.yscale * self.fonthack_scale
             )
         else:
             raise NotImplementedError
