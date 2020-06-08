@@ -67,6 +67,12 @@ class Meta:
         audio (str): Loaded audio path (absolute)
         video (str): Loaded video path (absolute)
     """
+    wrap_style: int
+    scaled_border_and_shadow: bool
+    play_res_x: int
+    play_res_y: int
+    audio: str
+    video: str
     def __repr__(self):
         return pretty_print(self)
 
@@ -104,6 +110,32 @@ class Style:
         margin_v (int): Distance from the bottom (or top if alignment >= 7) of the video frame
         encoding (int): Codepage used to map codepoints to glyphs
     """
+    fontname: str
+    fontsize: float
+    color1: str
+    alpha1: str
+    color2: str
+    alpha2: str
+    color3: str
+    alpha3: str
+    color4: str
+    alpha4: str
+    bold: bool
+    italic: bool
+    underline: bool
+    strikeout: bool
+    scale_x: float
+    scale_y: float
+    spacing: float
+    angle: float
+    border_style: bool
+    outline: float
+    shadow: float
+    alignment: int
+    margin_l: int
+    margin_r: int
+    margin_v: int
+    encoding: int
     def __repr__(self):
         return pretty_print(self)
 
@@ -150,6 +182,40 @@ class Line:
         syls (list): List containing objects :class:`Syllable` in this line (if available) (*).
         chars (list): List containing objects :class:`Char` in this line (*).
     """
+    i: int
+    comment: bool
+    layer: int
+    start_time: int
+    end_time: int
+    duration: int
+    leadin: float
+    leadout: float
+    style: str
+    styleref: Style
+    actor: str
+    margin_l: int
+    margin_r: int
+    margin_v: int
+    effect: str
+    raw_text: str
+    text: str
+    width: float
+    height: float
+    ascent: float
+    descent: float
+    internal_leading: float
+    external_leading: float
+    x: float
+    y: float
+    left: float
+    center: float
+    right: float
+    top: float
+    middle: float
+    bottom: float
+    words: list
+    syls: list
+    chars: list
     def __repr__(self):
         return pretty_print(self)
 
@@ -187,6 +253,24 @@ class Word:
         middle (float): Word text position middle.
         bottom (float): Word text position bottom.
     """
+    i: int
+    start_time: int
+    end_time: int
+    duration: int
+    styleref: Style
+    text: str
+    prespace: int
+    postspace: int
+    width: float
+    height: float
+    x: float
+    y: float
+    left: float
+    center: float
+    right: float
+    top: float
+    middle: float
+    bottom: float
     def __repr__(self):
         return pretty_print(self)
 
@@ -220,6 +304,27 @@ class Syllable:
         middle (float): Syllable text position middle.
         bottom (float): Syllable text position bottom.
     """
+    i: int
+    word_i: int
+    start_time: int
+    end_time: int
+    duration: int
+    styleref: Style
+    text: str
+    tags: str
+    inline_fx: str
+    prespace: int
+    postspace: int
+    width: float
+    height: float
+    x: float
+    y: float
+    left: float
+    center: float
+    right: float
+    top: float
+    middle: float
+    bottom: float
     def __repr__(self):
         return pretty_print(self)
 
@@ -253,6 +358,28 @@ class Char:
         middle (float): Char text position middle.
         bottom (float): Char text position bottom.
     """
+    i: int
+    word_i: int
+    syl_i: int
+    syl_char_i: int
+    start_time: int
+    end_time: int
+    duration: int
+    styleref: Style
+    text: str
+    inline_fx: str
+    prespace: int
+    postspace: int
+    width: float
+    height: float
+    x: float
+    y: float
+    left: float
+    center: float
+    right: float
+    top: float
+    middle: float
+    bottom: float
     def __repr__(self):
         return pretty_print(self)
 
