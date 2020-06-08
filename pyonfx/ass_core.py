@@ -21,6 +21,7 @@ import time
 import re
 import copy
 import subprocess
+from typing import List
 from .font_utility import Font
 from .convert import Convert
 
@@ -370,9 +371,9 @@ class Line:
     top: float
     middle: float
     bottom: float
-    words: list
-    syls: list
-    chars: list
+    words: List[Word]
+    syls: List[Syllable]
+    chars: List[Char]
     def __repr__(self):
         return pretty_print(self)
 
