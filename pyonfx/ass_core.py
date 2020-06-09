@@ -21,6 +21,7 @@ import time
 import re
 import copy
 import subprocess
+from typing import List
 from .font_utility import Font
 from .convert import Convert
 
@@ -140,6 +141,163 @@ class Style:
         return pretty_print(self)
 
 
+class Char:
+    """Char object contains informations about a single char of a line in the Ass.
+
+    A char is defined by some text between two karaoke tags (k, ko, kf).
+
+    Attributes:
+        i (int): Char index number
+        word_i (int): Char word index (e.g.: In line text "Hello PyonFX users!", letter "u" will have word_i=2).
+        syl_i (int): Char syl index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", letter "F" will have syl_i=3).
+        syl_char_i (int): Char invidual syl index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", letter "e" of "users" will have syl_char_i=2).
+        start_time (int): Char start time (in milliseconds).
+        end_time (int): Char end time (in milliseconds).
+        duration (int): Char duration (in milliseconds).
+        styleref (obj): Reference to the Style object of this object original line.
+        text (str): Char text.
+        inline_fx (str): Char inline effect (marked as \\-EFFECT in karaoke-time).
+        prespace (int): Char free space before text.
+        postspace (int): Char free space after text.
+        width (float): Char text width.
+        height (float): Char text height.
+        x (float): Char text position horizontal (depends on alignment).
+        y (float): Char text position vertical (depends on alignment).
+        left (float): Char text position left.
+        center (float): Char text position center.
+        right (float): Char text position right.
+        top (float): Char text position top.
+        middle (float): Char text position middle.
+        bottom (float): Char text position bottom.
+    """
+    i: int
+    word_i: int
+    syl_i: int
+    syl_char_i: int
+    start_time: int
+    end_time: int
+    duration: int
+    styleref: Style
+    text: str
+    inline_fx: str
+    prespace: int
+    postspace: int
+    width: float
+    height: float
+    x: float
+    y: float
+    left: float
+    center: float
+    right: float
+    top: float
+    middle: float
+    bottom: float
+    def __repr__(self):
+        return pretty_print(self)
+
+
+class Syllable:
+    """Syllable object contains informations about a single syl of a line in the Ass.
+
+    A syl can be defined as some text after a karaoke tag (k, ko, kf)
+    (e.g.: In "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", "Pyon" and "FX" are distinct syllables),
+
+    Attributes:
+        i (int): Syllable index number
+        word_i (int): Syllable word index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", syl "Pyon" will have word_i=1).
+        start_time (int): Syllable start time (in milliseconds).
+        end_time (int): Syllable end time (in milliseconds).
+        duration (int): Syllable duration (in milliseconds).
+        styleref (obj): Reference to the Style object of this object original line.
+        text (str): Syllable text.
+        tags (str): All the remaining tags before syl text apart \\k ones.
+        inline_fx (str): Syllable inline effect (marked as \\-EFFECT in karaoke-time).
+        prespace (int): Syllable free space before text.
+        postspace (int): Syllable free space after text.
+        width (float): Syllable text width.
+        height (float): Syllable text height.
+        x (float): Syllable text position horizontal (depends on alignment).
+        y (float): Syllable text position vertical (depends on alignment).
+        left (float): Syllable text position left.
+        center (float): Syllable text position center.
+        right (float): Syllable text position right.
+        top (float): Syllable text position top.
+        middle (float): Syllable text position middle.
+        bottom (float): Syllable text position bottom.
+    """
+    i: int
+    word_i: int
+    start_time: int
+    end_time: int
+    duration: int
+    styleref: Style
+    text: str
+    tags: str
+    inline_fx: str
+    prespace: int
+    postspace: int
+    width: float
+    height: float
+    x: float
+    y: float
+    left: float
+    center: float
+    right: float
+    top: float
+    middle: float
+    bottom: float
+    def __repr__(self):
+        return pretty_print(self)
+
+
+class Word:
+    """Word object contains informations about a single word of a line in the Ass.
+
+    A word can be defined as some text with some optional space before or after
+    (e.g.: In the string "What a beautiful world!", "beautiful" and "world" are both distinct words).
+
+    Attributes:
+        i (int): Word index number
+        start_time (int): Word start time (same as line start time) (in milliseconds).
+        end_time (int): Word end time (same as line end time) (in milliseconds).
+        duration (int): Word duration (same as line duration) (in milliseconds).
+        styleref (obj): Reference to the Style object of this object original line.
+        text (str): Word text.
+        prespace (int): Word free space before text.
+        postspace (int): Word free space after text.
+        width (float): Word text width.
+        height (float): Word text height.
+        x (float): Word text position horizontal (depends on alignment).
+        y (float): Word text position vertical (depends on alignment).
+        left (float): Word text position left.
+        center (float): Word text position center.
+        right (float): Word text position right.
+        top (float): Word text position top.
+        middle (float): Word text position middle.
+        bottom (float): Word text position bottom.
+    """
+    i: int
+    start_time: int
+    end_time: int
+    duration: int
+    styleref: Style
+    text: str
+    prespace: int
+    postspace: int
+    width: float
+    height: float
+    x: float
+    y: float
+    left: float
+    center: float
+    right: float
+    top: float
+    middle: float
+    bottom: float
+    def __repr__(self):
+        return pretty_print(self)
+
+
 class Line:
     """Line object contains informations about a single line in the Ass.
 
@@ -213,9 +371,9 @@ class Line:
     top: float
     middle: float
     bottom: float
-    words: list
-    syls: list
-    chars: list
+    words: List[Word]
+    syls: List[Syllable]
+    chars: List[Char]
     def __repr__(self):
         return pretty_print(self)
 
@@ -225,163 +383,6 @@ class Line:
             A deep copy of this object (line)
         """
         return copy.deepcopy(self)
-
-
-class Word:
-    """Word object contains informations about a single word of a line in the Ass.
-
-    A word can be defined as some text with some optional space before or after
-    (e.g.: In the string "What a beautiful world!", "beautiful" and "world" are both distinct words).
-
-    Attributes:
-        i (int): Word index number
-        start_time (int): Word start time (same as line start time) (in milliseconds).
-        end_time (int): Word end time (same as line end time) (in milliseconds).
-        duration (int): Word duration (same as line duration) (in milliseconds).
-        styleref (obj): Reference to the Style object of this object original line.
-        text (str): Word text.
-        prespace (int): Word free space before text.
-        postspace (int): Word free space after text.
-        width (float): Word text width.
-        height (float): Word text height.
-        x (float): Word text position horizontal (depends on alignment).
-        y (float): Word text position vertical (depends on alignment).
-        left (float): Word text position left.
-        center (float): Word text position center.
-        right (float): Word text position right.
-        top (float): Word text position top.
-        middle (float): Word text position middle.
-        bottom (float): Word text position bottom.
-    """
-    i: int
-    start_time: int
-    end_time: int
-    duration: int
-    styleref: Style
-    text: str
-    prespace: int
-    postspace: int
-    width: float
-    height: float
-    x: float
-    y: float
-    left: float
-    center: float
-    right: float
-    top: float
-    middle: float
-    bottom: float
-    def __repr__(self):
-        return pretty_print(self)
-
-
-class Syllable:
-    """Syllable object contains informations about a single syl of a line in the Ass.
-
-    A syl can be defined as some text after a karaoke tag (k, ko, kf)
-    (e.g.: In "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", "Pyon" and "FX" are distinct syllables),
-
-    Attributes:
-        i (int): Syllable index number
-        word_i (int): Syllable word index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", syl "Pyon" will have word_i=1).
-        start_time (int): Syllable start time (in milliseconds).
-        end_time (int): Syllable end time (in milliseconds).
-        duration (int): Syllable duration (in milliseconds).
-        styleref (obj): Reference to the Style object of this object original line.
-        text (str): Syllable text.
-        tags (str): All the remaining tags before syl text apart \\k ones.
-        inline_fx (str): Syllable inline effect (marked as \\-EFFECT in karaoke-time).
-        prespace (int): Syllable free space before text.
-        postspace (int): Syllable free space after text.
-        width (float): Syllable text width.
-        height (float): Syllable text height.
-        x (float): Syllable text position horizontal (depends on alignment).
-        y (float): Syllable text position vertical (depends on alignment).
-        left (float): Syllable text position left.
-        center (float): Syllable text position center.
-        right (float): Syllable text position right.
-        top (float): Syllable text position top.
-        middle (float): Syllable text position middle.
-        bottom (float): Syllable text position bottom.
-    """
-    i: int
-    word_i: int
-    start_time: int
-    end_time: int
-    duration: int
-    styleref: Style
-    text: str
-    tags: str
-    inline_fx: str
-    prespace: int
-    postspace: int
-    width: float
-    height: float
-    x: float
-    y: float
-    left: float
-    center: float
-    right: float
-    top: float
-    middle: float
-    bottom: float
-    def __repr__(self):
-        return pretty_print(self)
-
-
-class Char:
-    """Char object contains informations about a single char of a line in the Ass.
-
-    A char is defined by some text between two karaoke tags (k, ko, kf).
-
-    Attributes:
-        i (int): Char index number
-        word_i (int): Char word index (e.g.: In line text "Hello PyonFX users!", letter "u" will have word_i=2).
-        syl_i (int): Char syl index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", letter "F" will have syl_i=3).
-        syl_char_i (int): Char invidual syl index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", letter "e" of "users" will have syl_char_i=2).
-        start_time (int): Char start time (in milliseconds).
-        end_time (int): Char end time (in milliseconds).
-        duration (int): Char duration (in milliseconds).
-        styleref (obj): Reference to the Style object of this object original line.
-        text (str): Char text.
-        inline_fx (str): Char inline effect (marked as \\-EFFECT in karaoke-time).
-        prespace (int): Char free space before text.
-        postspace (int): Char free space after text.
-        width (float): Char text width.
-        height (float): Char text height.
-        x (float): Char text position horizontal (depends on alignment).
-        y (float): Char text position vertical (depends on alignment).
-        left (float): Char text position left.
-        center (float): Char text position center.
-        right (float): Char text position right.
-        top (float): Char text position top.
-        middle (float): Char text position middle.
-        bottom (float): Char text position bottom.
-    """
-    i: int
-    word_i: int
-    syl_i: int
-    syl_char_i: int
-    start_time: int
-    end_time: int
-    duration: int
-    styleref: Style
-    text: str
-    inline_fx: str
-    prespace: int
-    postspace: int
-    width: float
-    height: float
-    x: float
-    y: float
-    left: float
-    center: float
-    right: float
-    top: float
-    middle: float
-    bottom: float
-    def __repr__(self):
-        return pretty_print(self)
 
 
 class Ass:
