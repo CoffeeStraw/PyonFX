@@ -610,18 +610,21 @@ class Ass:
                 line.ascent, line.descent, line.internal_leading, line.external_leading = font_metrics
                 if self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
                     # Horizontal position
+                    tmp_margin_l = line.margin_l if line.margin_l != 0 else line.styleref.margin_l
+                    tmp_margin_r = line.margin_r if line.margin_r != 0 else line.styleref.margin_r
+
                     if (line.styleref.alignment-1) % 3 == 0:
-                        line.left = line.margin_l if line.margin_l != 0 else line.styleref.margin_l
+                        line.left = tmp_margin_l
                         line.center = line.left + line.width / 2
                         line.right = line.left + line.width
                         line.x = line.left
                     elif (line.styleref.alignment-2) % 3 == 0:
-                        line.left = self.meta.play_res_x / 2 - line.width / 2
+                        line.left = self.meta.play_res_x / 2 - line.width / 2 + tmp_margin_l / 2 - tmp_margin_r / 2
                         line.center = line.left + line.width / 2
                         line.right = line.left + line.width
                         line.x = line.center
                     else:
-                        line.left = self.meta.play_res_x - (line.margin_r if line.margin_r != 0 else line.styleref.margin_r) - line.width
+                        line.left = self.meta.play_res_x - tmp_margin_r - line.width
                         line.center = line.left + line.width / 2
                         line.right = line.left + line.width
                         line.x = line.right
