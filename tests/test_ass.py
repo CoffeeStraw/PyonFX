@@ -1,10 +1,9 @@
-import os 
-import pytest
+import os
 from pyonfx import *
 
-# Get ass path
+# Get ass path used for tests
 dir_path = os.path.dirname(os.path.realpath(__file__))
-path_ass = os.path.join(dir_path, "Ass", "in.ass")
+path_ass = os.path.join(dir_path, "Ass", "ass_core.ass")
 
 # Extract infos from ass file
 io = Ass(path_ass)
@@ -20,35 +19,95 @@ def test_meta_values():
 	assert meta.video == "?dummy:23.976000:2250:1920:1080:11:135:226:c"
 
 def test_line_values():
-	# Tests if all the line values are taken correctly
-	line = lines[1]
-	assert line.comment == False
-	assert line.layer == 0
-	assert line.start_time == Convert.time("0:00:14.24")
-	assert line.end_time == Convert.time("0:00:24.23")
-	assert line.duration == Convert.time("0:00:24.23") - Convert.time("0:00:14.24")
-	assert line.leadin == 1000.1
-	assert line.leadout == lines[2].start_time - lines[1].end_time
-	assert line.style == "Romaji"
-	assert line.actor == ""
-	assert line.margin_l == 0
-	assert line.margin_r == 0
-	assert line.margin_v == 0
-	assert line.effect == ""
-	assert line.raw_text == "{\\k56}su{\\k13}re{\\k22}chi{\\k36}ga{\\k48}u{\\k25} {\\k34}ko{\\k33}to{\\k50}ba {\\k15}no {\\k17}u{\\k34}ra {\\k46}ni{\\k33} {\\k28}to{\\k36}za{\\k65}sa{\\k33}{\\k30}re{\\k51}ta{\\k16} {\\k33}ko{\\k33}ko{\\k78}ro {\\k15}no {\\k24}ka{\\k95}gi"
-	assert line.text == "surechigau kotoba no ura ni tozasareta kokoro no kagi"
-	# Values taken from YutilsCore to test
-	assert line.width == 941.703125
-	assert line.height == 48.0
-	assert line.ascent == 36.984375
-	assert line.descent == 11.015625
-	assert line.internal_leading == 13.59375
-	assert line.external_leading == 3.09375
-	assert line.x == line.center
-	assert line.y == line.top
-	assert line.left == 169.1484375
-	assert line.center == 640.0
-	assert line.right == 1110.8515625
-	assert line.top == 25.0
-	assert line.middle == 49.0
-	assert line.bottom == 73.0
+	# Comment recognition
+	assert lines[0].comment == True
+	assert lines[1].comment == False
+
+	# Line fields
+	assert lines[0].layer == 42
+	assert lines[1].layer == 0
+
+	assert lines[0].style == "Default"
+	assert lines[1].style == "Normal"
+
+	assert lines[0].actor == "Test"
+	assert lines[1].actor == ""
+
+	assert lines[0].effect == "Test; Wow"
+	assert lines[1].effect == ""
+
+	assert lines[0].margin_l == 1
+	assert lines[1].margin_l == 0
+
+	assert lines[0].margin_r == 2
+	assert lines[1].margin_r == 0
+
+	assert lines[0].margin_v == 3
+	assert lines[1].margin_v == 50
+
+	assert lines[1].start_time == Convert.time("0:00:00.00")
+	assert lines[1].end_time == Convert.time("0:00:09.99")
+	assert lines[1].duration == Convert.time("0:00:09.99") - Convert.time("0:00:00.00")
+	
+	assert lines[11].raw_text == "{\\k56}su{\\k13}re{\\k22}chi{\\k36}ga{\\k48}u{\\k25} {\\k34}ko{\\k33}to{\\k50}ba {\\k15}no {\\k17}u{\\k34}ra {\\k46}ni{\\k33} {\\k28}to{\\k36}za{\\k65}sa{\\k33}{\\k30}re{\\k51}ta{\\k16} {\\k33}ko{\\k33}ko{\\k78}ro {\\k15}no {\\k24}ka{\\k95}gi"
+	assert lines[11].text == "surechigau kotoba no ura ni tozasareta kokoro no kagi"
+
+	# Normal style (no bold, italic and with a normal fs)
+	assert round(lines[1].width) == round(437.75)
+	assert round(lines[1].height) == round(48.0)
+	assert round(lines[1].ascent) == round(36.984375)
+	assert round(lines[1].descent) == round(11.015625)
+	assert round(lines[1].internal_leading) == round(13.59375) or lines[1].internal_leading == 0.0
+	assert round(lines[1].external_leading) == round(3.09375) or lines[1].external_leading == 0.0
+	assert round(lines[1].x) == round(lines[1].center)
+	assert round(lines[1].y) == round(lines[1].top)
+	assert round(lines[1].left) == round(421.125)
+	assert round(lines[1].center) == round(640.0)
+	assert round(lines[1].right) == round(858.875)
+	assert round(lines[1].top) == round(50.0)
+	assert round(lines[1].middle) == round(74.0)
+	assert round(lines[1].bottom) == round(98.0)
+
+	# Bold style
+	assert round(lines[2].width) == round(461.609375)
+	assert round(lines[2].height) == round(48.0)
+
+	# Italic style
+	assert round(lines[3].width) == round(437.75)
+	assert round(lines[3].height) == round(48.0)
+
+	# Bold-italic style
+	assert round(lines[4].width) == round(461.609375)
+	assert round(lines[4].height) == round(48.0)
+
+	# Normal-spaced style
+	assert round(lines[5].width) == round(572.75)
+	assert round(lines[5].height) == round(48.0)
+
+	# Normal - fscx style
+	assert round(lines[6].width) == round(612.8499999999999)
+	assert round(lines[6].height) == round(48.0)
+
+	# Normal - fscy style
+	assert round(lines[7].width) == round(437.75)
+	assert round(lines[7].height) == round(67.19999999999999)
+
+	# Normal - Big FS
+	assert round(lines[8].width) == round(820.796875)
+	assert round(lines[8].height) == round(90.0)
+
+	# Normal - Big FS - Spaced
+	assert round(lines[9].width) == round(1090.796875)
+	assert round(lines[9].height) == round(90.0)
+
+	# Bold - Text with non latin characters (kanji)
+	assert round(lines[10].width) == round(309.65625)
+	assert round(lines[10].height) == round(48.0)
+
+	# Bold - Text with some tags
+	assert round(lines[11].width) == round(941.703125)
+	assert round(lines[11].height) == round(48.0)
+
+	# Bold - Vertical Text
+	assert round(lines[12].width) == round(31.546875)
+	assert round(lines[12].height) == round(396.0)
