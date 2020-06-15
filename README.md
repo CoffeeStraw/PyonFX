@@ -29,7 +29,7 @@ for everyone who want to create something more visually complex with the ASS for
 
 # Documentation
 
-A fully documentation of the project containing a quick-start quide and an explanation of all the functions and variables (with examples) can be found on [Read The Docs](http://pyonfx.rtfd.io/).
+A fully documentation of the project containing a quick-start guide and an explanation of all the functions and variables (with examples) can be found on [Read The Docs](http://pyonfx.rtfd.io/).
 
 ## Contributing
 
@@ -45,7 +45,7 @@ This project is licensed under the LGPL v3.0 License - see the [LICENSE](LICENSE
 
 ## Acknowledgments
 
-* **Youka** for the original main functions ideas for **NyuFX**;
-* **McWhite** for the original functions ideas of his library for **NyuFX**;
+* **[Youka](https://github.com/Youka)** for the original main functions ideas for **[NyuFX](https://github.com/Youka/NyuFX)**;
+* **[McWhite](https://github.com/BastianGanze)** for the original functions ideas of his library for **[NyuFX](https://github.com/Youka/NyuFX)**;
 * **Siplas** for helping me out in the realization of the current logo for **PyonFX**;
 * **Preacer** for the name suggestion.

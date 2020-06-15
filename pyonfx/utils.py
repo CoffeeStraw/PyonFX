@@ -204,16 +204,34 @@ class FrameUtility:
 
 class ColorUtility:
     """
-    This class helps to obtain all the color transformation from a list of lines passed
-    (ideally all the lines of your input .ass)
-    and then retrieve all the color changes that fit your line passed to the get_color_change() function,
-    without having to worry about interpolating times or all these stressfull tasks.
+    This class helps to obtain all the color transformations written in a list of lines
+    (usually all the lines of your input .ass)
+    to later retrieve all of those transformations that fit between the start_time and end_time of a line passed,
+    without having to worry about interpolating times or other stressfull tasks.
 
-    | Remember that each and every color-tag has to be in the format of
-    | **c&H924625& <- DO NOT FORGET THE LAST &.**
-    | It is highly suggested to create this object just one time in your script,
-      for performance reasons.
-    | Also, commented lines WILL be recognized.
+    It is highly suggested to create this object just one time in your script, for performance reasons.
+
+    Note:
+        A few notes about the color transformations in your lines:
+
+        * Every color-tag has to be in the format of ``c&Hxxxxxx&``, do not forget the last &;
+        * You can put color changes without using transformations, like ``{\\1c&HFFFFFF&\\3c&H000000&}Test``, but those will be interpreted as ``{\\t(0,0,\\1c&HFFFFFF&\\3c&H000000&)}Test``;
+        * For an example of how color changes should be put in your lines, check `this <https://github.com/CoffeeStraw/PyonFX/blob/master/examples/2%20-%20Beginner/in2.ass#L34-L36>`_.
+        
+        Also, it is important to remember that **color changes in your lines are treated as if they were continuous**.
+        
+        For example, let's assume we have two lines:
+        
+        #. ``{\\1c&HFFFFFF&\\t(100,150,\\1c&H000000&)}Line1``, starting at 0ms, ending at 100ms;
+        #. ``{}Line2``, starting at 100ms, ending at 200ms.
+
+        Even if the second line **doesn't have any color changes** and you would expect to have the style's colors,
+        **it will be treated as it has** ``\\1c&H000000&``. That could seem strange at first,
+        but thinking about your generated lines, **the majority** will have **start_time and end_time different** from the ones of your original file.
+        
+        Treating transformations as if they were continous, **ColorUtility will always know the right colors** to pick for you.
+        Also, remember that even if you can't always see them directly on Aegisub, you can use transformations
+        with negative times or with times that exceed line total duration.
 
     Parameters:
         lines (list of Line): List of lines to be parsed
@@ -326,6 +344,9 @@ class ColorUtility:
             c3 (bool, optional): If False, you will not get color values containing border color
             c4 (bool, optional): If False, you will not get color values containing shadow color
 
+        Returns:
+            A string containing color changes interpolated.
+
         Note:
             If c1, c3 or c4 is/are None, the script will automatically recognize what you used in the color changes in the lines and put only the ones considered essential.
 
@@ -390,12 +411,12 @@ class ColorUtility:
                 transform += ")"
 
         # Appending default color found, if requested
-        if c1:
-            transform = base_c1 + transform
-        if c3:
-            transform = base_c3 + transform
         if c4:
             transform = base_c4 + transform
+        if c3:
+            transform = base_c3 + transform
+        if c1:
+            transform = base_c1 + transform
 
         return transform
 
