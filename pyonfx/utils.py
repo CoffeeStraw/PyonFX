@@ -432,6 +432,9 @@ class ColorUtility:
             c3 (bool, optional): If False, you will not get color values containing border color.
             c4 (bool, optional): If False, you will not get color values containing shadow color.
 
+        Returns:
+            A string containing color changes interpolated.
+
         Examples:
             ..  code-block:: python3
                 :emphasize-lines: 5
