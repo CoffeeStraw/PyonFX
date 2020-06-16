@@ -138,13 +138,12 @@ class Font:
             cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
             return (
-                (cx * self.downscale + self.hspace*(len(text)-1)) * self.xscale,
+                (cx * self.downscale + self.hspace * (len(text) - 1)) * self.xscale,
                 cy * self.downscale * self.yscale
             )
         elif sys.platform == "linux":
             def get_rect(new_text):
                 self.layout.set_markup(f'<span '
-                                       f'letter_spacing="{int(self.hspace * PANGO_SCALE * self.upscale)}" '
                                        f'strikethrough="{str(self.strikeout).lower()}" '
                                        f'underline="{"single" if self.underline else "none"}"'
                                        f'>'
@@ -154,12 +153,12 @@ class Font:
                 return self.layout.get_pixel_extents()[1]
 
             width = 0
-
+            
             for char in text:
                 width += get_rect(char).width
 
             return (
-                width * self.downscale * self.xscale * self.fonthack_scale,
+                0.0 if len(text) == 0 else (width * self.downscale * self.fonthack_scale + self.hspace * (len(text) - 1)) * self.xscale,
                 get_rect(text).height * self.downscale * self.yscale * self.fonthack_scale
             )
         else:
