@@ -8,11 +8,11 @@ First of all, you need to know how you're creating what. You will need to learn 
 * **ASS format**. PyonFX is still an advanced tool for typesetter and karaokers, it is meant to be used by experienced typesetters that knows all the tags rendered by Libass. Check the footnote [#f1]_ for a complete list of all the tags.
 * **Python3 scripting language**. A programming language like Python offers you to define what you want in which case, how often, attended to this or that... Basically you're more free. You're not limited to buttons, sliders or text fields with just a few commands in a completely graphical interface. **The basics are enough**. Variables, functions, conditions, loops, comparisons, string formatting, list and dictionaries... You can find the link to some good tutorial in the footnote [#f2]_.
 
-To start generating, you will only have to write, as written before, a script in Python3, which will describes the process of your KFX or advanced typesetting creation.
+To start generating, you will only have to write a script in Python3, which will describes the process of your KFX or advanced typesetting creation.
 
 So, if you've not installed it before, you will have to **install Python3**.
 You can **download** it from the `official website <https://www.python.org/downloads/>`_.
-If you're on **Windows**, just be sure to check the box that says "Add Python 3.x to PATH". This is really important to avoid some extra steps to make Python callable from the command prompt.
+If you're on **Windows**, just be sure to check the box that says "Add Python 3.x to PATH". This is really important to avoid some extra steps that would make Python callable in every directory from the command prompt.
 
 If you still have trouble in the installation of Python, you can check some guide online, like https://realpython.com/installing-python/.
 
@@ -38,7 +38,7 @@ That's all. Nothing else is needed, every time you will have to update, just run
 Installation - Extra Step
 +++++++++++++++++++++++++
 
-This step is not needed to start working with the library, but personally Aegisub is quite old/heavy and I needed a more comfortable way to work.
+This step is not needed to start working with the library, but personally I consider Aegisub quite old and heavy, so I needed a more comfortable way to work.
 
 That's why PyonFX integrates an additional way to reproduce your works in softsub faster after each generation, using the `MPV player <https://mpv.io/>`_. Installing it should be enough to make everything work if your're NOT on Windows.
 

@@ -1,17 +1,17 @@
 # -*- coding: utf-8 -*-
 # PyonFX: An easy way to do KFX and complex typesetting based on subtitle format ASS (Advanced Substation Alpha).
 # Copyright (C) 2019 Antonio Strippoli (CoffeeStraw/YellowFlash)
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # PyonFX is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 """
@@ -124,7 +124,7 @@ class Font:
             )
         elif sys.platform == "linux":
             return (
-                # 'height': (metrics.get_ascent() + metrics.get_descent()) / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
+                # 'height': (self.metrics.get_ascent() + self.metrics.get_descent()) / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
                 self.metrics.get_ascent() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
                 self.metrics.get_descent() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
                 0.0,
@@ -169,7 +169,6 @@ class Font:
         if sys.platform == "win32":
             # Calcultating distance between origins of character cells (just in case of spacing)
             # TO BE DONE
-            pass
 
             # Add path to device context
             win32gui.BeginPath(self.dc)

@@ -1,5 +1,4 @@
-import os 
-import pytest
+import os
 from pyonfx import *
 
 # Get ass path
