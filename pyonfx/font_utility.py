@@ -158,8 +158,8 @@ class Font:
                 width += get_rect(char).width
 
             return (
-                0.0 if len(text) == 0 else (width * self.downscale * self.fonthack_scale + self.hspace * (len(text) - 1)) * self.xscale,
-                get_rect(text).height * self.downscale * self.yscale * self.fonthack_scale
+                0.0 if not text else (width * self.downscale * self.fonthack_scale + self.hspace * (len(text) - 1)) * self.xscale,
+                0.0 if not text else get_rect(text).height * self.downscale * self.yscale * self.fonthack_scale
             )
         else:
             raise NotImplementedError
