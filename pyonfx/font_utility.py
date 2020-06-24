@@ -83,9 +83,9 @@ class Font:
             win32gui.SelectObject(self.dc, self.pycfont.GetSafeHandle())
         elif sys.platform == "linux":
             surface = cairo.ImageSurface(cairo.Format.A8, 1, 1)
-            context = cairo.Context(surface)
 
-            self.layout = PangoCairo.create_layout(context)
+            self.context = cairo.Context(surface)
+            self.layout = PangoCairo.create_layout(self.context)
 
             font_description = Pango.FontDescription()
             font_description.set_family(self.family)
@@ -142,6 +142,9 @@ class Font:
                 cy * self.downscale * self.yscale
             )
         elif sys.platform == "linux":
+            if not text:
+                return 0.0, 0.0
+
             def get_rect(new_text):
                 self.layout.set_markup(f'<span '
                                        f'strikethrough="{str(self.strikeout).lower()}" '
@@ -158,8 +161,8 @@ class Font:
                 width += get_rect(char).width
 
             return (
-                0.0 if not text else (width * self.downscale * self.fonthack_scale + self.hspace * (len(text) - 1)) * self.xscale,
-                0.0 if not text else get_rect(text).height * self.downscale * self.yscale * self.fonthack_scale
+                (width * self.downscale * self.fonthack_scale + self.hspace * (len(text) - 1)) * self.xscale,
+                get_rect(text).height * self.downscale * self.yscale * self.fonthack_scale
             )
         else:
             raise NotImplementedError
@@ -225,6 +228,70 @@ class Font:
 
             # Clear device context path
             win32gui.AbortPath(self.dc)
+
+            return Shape(' '.join(shape))
+        elif sys.platform == "linux":
+            # Defining variables
+            shape, last_type = [], None
+
+            def shape_from_text(new_text, x_add):
+                nonlocal shape, last_type
+
+                self.layout.set_markup(f'<span '
+                                       f'strikethrough="{str(self.strikeout).lower()}" '
+                                       f'underline="{"single" if self.underline else "none"}"'
+                                       f'>'
+                                       f'{html.escape(new_text)}'
+                                       f'</span>',
+                                       -1)
+
+                self.context.save()
+                self.context.scale(self.downscale * self.xscale * self.fonthack_scale, self.downscale * self.yscale * self.fonthack_scale)
+                PangoCairo.layout_path(self.context, self.layout)
+                self.context.restore()
+                path = self.context.copy_path()
+
+                # Convert points to shape
+                for current_entry in path:
+                    current_type = current_entry[0]
+                    current_path = current_entry[1]
+
+                    if current_type == 0: # MOVE_TO
+                        if last_type != current_type: # Avoid repetition of command tags
+                            shape.append("m")
+                            last_type = current_type
+                        shape.extend([
+                            Shape.format_value(current_path[0] + x_add),
+                            Shape.format_value(current_path[1])
+                        ])
+                    elif current_type == 1: # LINE_TO
+                        if last_type != current_type: # Avoid repetition of command tags
+                            shape.append("l")
+                            last_type = current_type
+                        shape.extend([
+                            Shape.format_value(current_path[0] + x_add),
+                            Shape.format_value(current_path[1])
+                        ])
+                    elif current_type == 2: # CURVE_TO
+                        if last_type != current_type: # Avoid repetition of command tags
+                            shape.append("b")
+                            last_type = current_type
+                        shape.extend([
+                            Shape.format_value(current_path[0] + x_add),
+                            Shape.format_value(current_path[1]),
+                            Shape.format_value(current_path[2] + x_add),
+                            Shape.format_value(current_path[3]),
+                            Shape.format_value(current_path[4] + x_add),
+                            Shape.format_value(current_path[5])
+                        ])
+
+                self.context.new_path()
+
+            curr_width = 0
+
+            for i, char in enumerate(text):
+                shape_from_text(char, curr_width + self.hspace * i)
+                curr_width += self.get_text_extents(char)[0]
 
             return Shape(' '.join(shape))
         else:
