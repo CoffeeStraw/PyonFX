@@ -290,7 +290,7 @@ class Font:
             curr_width = 0
 
             for i, char in enumerate(text):
-                shape_from_text(char, curr_width + self.hspace * i)
+                shape_from_text(char, curr_width + self.hspace * self.xscale * i)
                 curr_width += self.get_text_extents(char)[0]
 
             return Shape(' '.join(shape))
