@@ -765,7 +765,7 @@ class Ass:
                         text_chunks.append(tmp)
 
                         # If there are some spaces after text, then we're at the end of the current word
-                        if re.match(r"(.*?)(\s*)$", tmp['text']):
+                        if re.match(r"(.*?)(\s+)$", tmp['text']):
                             word_i = word_i + 1
 
                         if not next_tag:
