@@ -93,11 +93,13 @@ class Convert:
                (type(b) == int or type(b) == float) and b >= 0 and b <= 255:
                 # Alpha numeric?
                 if (type(a) == int or type(a) == float) and a >= 0 and a <= 255:
-                    return f"&H{a:02X}{b:02X}{g:02X}{ass_r_a:02X}"
+                    return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(ass_r_a):02X}"
                 else:
-                    return f"&H{b:02X}{g:02X}{ass_r_a:02X}&"
+                    return f"&H{round(b):02X}{round(g):02X}{round(ass_r_a):02X}&"
+            elif not (g or b or a):
+                return f"&H{round(ass_r_a):02X}&"
             else:
-                return f"&H{ass_r_a:02X}&"
+                raise ValueError("Bad usage. Either pass 1 value, 3 values, or 4 values.")
         # ASS value?
         elif type(ass_r_a) == str:
             # ASS alpha?
