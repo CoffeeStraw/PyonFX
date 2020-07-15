@@ -31,13 +31,13 @@ setuptools.setup(
         "pycairo; sys_platform == \"linux\"",
         "PyGObject; sys_platform == \"linux\"",
         "pyquaternion",
-        "sphinx_rtd_theme",
-        "sphinxcontrib-napoleon",
     ],
     extras_require={
         'dev': [
             'pytest',
             'pytest-check',
+            'sphinx_rtd_theme',
+            'sphinxcontrib-napoleon',
         ]
     },
     classifiers=[
