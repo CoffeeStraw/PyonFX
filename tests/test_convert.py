@@ -11,14 +11,14 @@ io = Ass(path_ass)
 meta, styles, lines = io.get_data()
 
 def test_coloralpha():
-    assert Convert.coloralpha(0) == "&HFF&"
-    assert Convert.coloralpha("&HFF&") == 0
+    assert Convert.coloralpha(255) == "&HFF&"
+    assert Convert.coloralpha("&HFF&") == 255
 
     assert Convert.coloralpha("&H0000FF&") == (255, 0, 0)
     assert Convert.coloralpha(255, 0, 0) == "&H0000FF&"
 
-    assert Convert.coloralpha("&H0000FFFF") == (255, 255, 0, 255)
-    assert Convert.coloralpha(255, 255, 0, 255) == "&H0000FFFF"
+    assert Convert.coloralpha("&HFF00FF00") == (0, 255, 0, 255)
+    assert Convert.coloralpha(0, 255, 0, 255) == "&HFF00FF00"
 
 def test_text_to_shape():
     shape = Convert.text_to_shape(lines[1].syls[0])

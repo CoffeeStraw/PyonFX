@@ -54,29 +54,37 @@ class Convert:
     def coloralpha(ass_r_a, g="", b="", a=""):
         """Converts between rgb color &/+ alpha numeric and ASS color &/+ alpha.
 
+        - Passing a string to this function, you want a conversion from ASS color+alpha, ASS color or ASS alpha to integer values;
+        - Passing a single number, you want a conversion from ASS alpha value to ASS alpha string;
+        - Passing 3 or 4 numbers, you want a conversion from rgb (or rgba) values to ASS color (or ASS color+alpha) string.
+
         Parameters:
-            ass_r_a (int or str): If str, an ASS color + optionally alpha or only alpha is expected, else if it is a number this will be the red value or the alpha value in rgb.
-            g (int, optional): If given, an rgb + optional alpha is expected, so you will have to fill also the other parameters.
-            b (int, optional): If given, an rgb + optional alpha is expected, so you will have to fill also the other parameters.
-            a (int, optional): If given, an rgb + alpha is expected, so you will have to fill also the other parameters.
+            ass_r_a (int or str): If a str is given, either an ASS color+alpha, ASS color, an ASS alpha string is expected; if an int is given, a value between 0 and 255 (inclusive) is expected.
+            g (int, optional): If given, a value between 0 and 255 (inclusive) is expected.
+            b (int, optional): If given, a value between 0 and 255 (inclusive) is expected.
+            a (int, optional): If given, a value between 0 and 255 (inclusive) is expected.
 
         Returns:
-            According to the parameters, either an rgb + optionally alpha as multiple returns value or a str containing either an ASS color+alpha, an ASS color or an ASS alpha.
+            According to the parameters, either a tuple containing rgb (or rgba) integer values or a str containing an ASS color+alpha, an ASS color or an ASS alpha.
 
         Examples:
             ..  code-block:: python3
 
                 print( Convert.coloralpha(0) )
-                print( Convert.coloralpha("&HFF&") + "\\n" )
+                print( Convert.coloralpha("&HFF&") )
 
                 print( Convert.coloralpha("&H0000FF&") )
-                print( Convert.coloralpha(255, 0, 0) + "\\n" )
+                print( Convert.coloralpha(255, 0, 0) )
 
-            >>> &HFF&
-            >>> 0
-            >>>
+                print( Convert.coloralpha("&HFF00FF00") )
+                print( Convert.coloralpha(0, 255, 0, 255) )
+
+            >>> &H00&
+            >>> 255
             >>> (255, 0, 0)
             >>> &H0000FF&
+            >>> (0, 255, 0, 255)
+            >>> &HFF00FF00
         """
         # Alpha / red numeric?
         if (type(ass_r_a) == int or type(ass_r_a) == float) and ass_r_a >= 0 and ass_r_a <= 255:
@@ -85,22 +93,24 @@ class Convert:
                (type(b) == int or type(b) == float) and b >= 0 and b <= 255:
                 # Alpha numeric?
                 if (type(a) == int or type(a) == float) and a >= 0 and a <= 255:
-                    return "&H{:02X}{:02X}{:02X}{:02X}".format(255 - int(a), int(b), int(g), int(ass_r_a))
+                    return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(ass_r_a):02X}"
                 else:
-                    return "&H{:02X}{:02X}{:02X}&".format(int(b), int(g), int(ass_r_a))
+                    return f"&H{round(b):02X}{round(g):02X}{round(ass_r_a):02X}&"
+            elif not (g or b or a):
+                return f"&H{round(ass_r_a):02X}&"
             else:
-                return "&H{:02X}&".format(255 - int(ass_r_a))
+                raise ValueError("Bad usage. Either pass 1 value, 3 values, or 4 values.")
         # ASS value?
         elif type(ass_r_a) == str:
             # ASS alpha?
             if re.match(r"^&H[0-9a-fA-F]{2}&$", ass_r_a):
-                return 255 - int(ass_r_a[2:4], 16)
+                return int(ass_r_a[2:4], 16)
             # ASS color?
             elif re.match(r"^&H[0-9a-fA-F]{6}&$", ass_r_a):
                 return int(ass_r_a[6:8], 16), int(ass_r_a[4:6], 16), int(ass_r_a[2:4], 16)
             # ASS color+alpha (from style definition)?
             elif re.match(r"^&H[0-9a-fA-F]{8}$", ass_r_a):
-                return int(ass_r_a[8:10], 16), int(ass_r_a[6:8], 16), int(ass_r_a[4:6], 16), 255 - int(ass_r_a[2:4], 16)
+                return int(ass_r_a[8:10], 16), int(ass_r_a[6:8], 16), int(ass_r_a[4:6], 16), int(ass_r_a[2:4], 16)
             else:
                 raise ValueError("Invalid ASS string")
         else:

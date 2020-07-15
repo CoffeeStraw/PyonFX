@@ -447,7 +447,7 @@ class Ass:
             section_pattern = re.compile(r"^\[([^\]]*)")
             if section_pattern.match(line):
                 # Updating section
-                section = section_pattern.match(line).group(1)
+                section = section_pattern.match(line)[1]
                 # Appending line to output
                 self.__output.append(line)
 
@@ -471,18 +471,18 @@ class Ass:
                     return mediafile
 
                 # Switch
-                if re.match(r"^WrapStyle: *?(\d+)$", line):
+                if re.match(r"WrapStyle: *?(\d+)$", line):
                     self.meta.wrap_style = int(line[11:].strip())
-                elif re.match(r"^ScaledBorderAndShadow: *?(.+)$", line):
+                elif re.match(r"ScaledBorderAndShadow: *?(.+)$", line):
                     self.meta.scaled_border_and_shadow = line[23:].strip() == "yes"
-                elif re.match(r"^PlayResX: *?(\d+)$", line):
+                elif re.match(r"PlayResX: *?(\d+)$", line):
                     self.meta.play_res_x = int(line[10:].strip())
-                elif re.match(r"^PlayResY: *?(\d+)$", line):
+                elif re.match(r"PlayResY: *?(\d+)$", line):
                     self.meta.play_res_y = int(line[10:].strip())
-                elif re.match(r"^Audio File: *?(.*)$", line):
+                elif re.match(r"Audio File: *?(.*)$", line):
                     self.meta.audio = get_media_abs_path(line[11:].strip())
                     line = "Audio File: %s\n" % self.meta.audio
-                elif re.match(r"^Video File: *?(.*)$", line):
+                elif re.match(r"Video File: *?(.*)$", line):
                     self.meta.video = get_media_abs_path(line[11:].strip())
                     line = "Video File: %s\n" % self.meta.video
 
@@ -492,13 +492,13 @@ class Ass:
             elif section == "V4+ Styles":
                 # Appending line to output
                 self.__output.append(line)
-                style = re.match(r"^Style: (.+?)$", line)
+                style = re.match(r"Style: (.+?)$", line)
 
                 if style:
                     # Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour,
                     # Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle,
                     # BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-                    style = [el for el in style.group(1).split(',')]
+                    style = [el for el in style[1].split(',')]
                     tmp = Style()
 
                     tmp.fontname = style[1]
@@ -550,7 +550,7 @@ class Ass:
                     self.__output.append(re.sub(r"^(Dialogue|Comment):", "Comment:", line))
 
                 # Analyzing line
-                line = re.match(r"^(Dialogue|Comment): (.+?)$", line)
+                line = re.match(r"(Dialogue|Comment): (.+?)$", line)
 
                 if line:
                     # Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
@@ -559,8 +559,8 @@ class Ass:
                     tmp.i = li
                     li += 1
 
-                    tmp.comment = line.group(1) == "Comment"
-                    line = [el for el in line.group(2).split(',')]
+                    tmp.comment = line[1] == "Comment"
+                    line = [el for el in line[2].split(',')]
 
                     tmp.layer = int(line[0])
 
@@ -738,9 +738,11 @@ class Ass:
                             cur_y = cur_y + word.height
 
 
-                # Add dialog text chunks, to create syllables
+                # Search for dialog's text chunks, to later create syllables
+                # A text chunk is a text with one or more {tags} preceding it
+                # Tags can be some text or empty string
                 text_chunks = []
-                tag_pattern = re.compile(r"\{.*?\}")
+                tag_pattern = re.compile(r"(\{.*?\})+")
                 tag = tag_pattern.search(line.raw_text)
                 word_i = 0
 
@@ -748,17 +750,23 @@ class Ass:
                     # No tags found
                     text_chunks.append({'tags': "", 'text': line.raw_text})
                 else:
-                    # First chunk without tags
+                    # First chunk without tags?
                     if tag.start() != 0:
                         text_chunks.append({'tags': "", 'text': line.raw_text[0:tag.start()]})
 
                     # Searching for other tags
                     while True:
                         next_tag = tag_pattern.search(line.raw_text, tag.end())
-                        tmp = {'tags': line.raw_text[tag.start()+1:tag.end()-1], 'text': line.raw_text[tag.end():(next_tag.start() if next_tag else None)], 'word_i': word_i}
+                        tmp = {
+                            # Note that we're removing possibles '}{' caused by consecutive tags
+                            'tags': line.raw_text[tag.start()+1:tag.end()-1].replace('}{', ''),
+                            'text': line.raw_text[tag.end():(next_tag.start() if next_tag else None)],
+                            'word_i': word_i
+                        }
                         text_chunks.append(tmp)
 
-                        if len(re.findall(r"(.*?)(\s*)$", tmp['text'])[0][1]) > 0:
+                        # If there are some spaces after text, then we're at the end of the current word
+                        if re.match(r"(.*?)(\s+)$", tmp['text']):
                             word_i = word_i + 1
 
                         if not next_tag:
@@ -766,40 +774,81 @@ class Ass:
                         tag = next_tag
 
                 # Adding syls
+                si = 0
                 last_time = 0
-                line.syls = []
-                one_try = False
-                for si, text_chunk in enumerate(text_chunks):
-                    try:
-                        pretags, kdur, posttags = re.findall(r"(.*?)\\[kK][of]?(\d+)(.*)", text_chunk['tags'])[0][:]
-                        syl = Syllable()
+                inline_fx = ''
+                syl_tags_pattern = re.compile(r"(.*?)\\[kK][of]?(\d+)(.*)")
 
-                        syl.i = si
-                        syl.word_i = text_chunk['word_i']
+                line.syls = []
+                for tc in text_chunks:                    
+                    # If we don't have at least one \k tag, everything is invalid
+                    if not syl_tags_pattern.match(tc['tags']):
+                        line.syls.clear()
+                        break
+                    
+                    posttags = tc['tags']
+                    syls_in_text_chunk = []
+                    while True:
+                        # Are there \k in posttags?
+                        tags_syl = syl_tags_pattern.match(posttags)
+                        
+                        if not tags_syl:
+                            # Append all the temporary syls, except last one
+                            for syl in syls_in_text_chunk[:-1]:
+                                curr_inline_fx = re.search(r"\\\-([^\\]+)", syl.tags)
+                                if curr_inline_fx:
+                                    inline_fx = curr_inline_fx[1]
+                                syl.inline_fx = inline_fx
+                                
+                                # Hidden syls are treated like empty syls
+                                syl.prespace, syl.text, syl.postspace = 0, '', 0
+
+                                syl.width, syl.height = font.get_text_extents('')
+                                syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font_metrics
+
+                                line.syls.append(syl)
+                            
+                            # Append last syl
+                            syl = syls_in_text_chunk[-1]
+                            syl.tags += posttags
+                            
+                            curr_inline_fx = re.search(r"\\\-([^\\]+)", syl.tags)
+                            if curr_inline_fx:
+                                inline_fx = curr_inline_fx[1]
+                            syl.inline_fx = inline_fx
+                            
+                            if tc['text'].isspace():
+                                syl.prespace, syl.text, syl.postspace = 0, tc['text'], 0
+                            else:
+                                syl.prespace, syl.text, syl.postspace = re.match(r"(\s*)(.*?)(\s*)$", tc['text']).groups()
+                                syl.prespace, syl.postspace = len(syl.prespace), len(syl.postspace)
+
+                            syl.width, syl.height = font.get_text_extents(syl.text)
+                            syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font_metrics
+
+                            line.syls.append(syl)
+                            break
+
+                        pretags, kdur, posttags = tags_syl.groups()
+
+                        # Create a Syllable object
+                        syl = Syllable()
 
                         syl.start_time = last_time
                         syl.end_time = last_time + int(kdur) * 10
                         syl.duration = int(kdur) * 10
 
                         syl.styleref = line.styleref
-                        syl.tags = pretags + posttags
-                        syl.inline_fx = re.findall(r".*\\\-([^\\]+)", syl.tags)
-                        syl.inline_fx = syl.inline_fx[0] if syl.inline_fx else ""
-                        syl.prespace, syl.text, syl.postspace = re.findall(r"^(\s*)(.*?)(\s*)$", text_chunk['text'])[0][:]
-                        syl.prespace, syl.postspace = len(syl.prespace), len(syl.postspace)
+                        syl.tags = pretags
 
-                        syl.width, syl.height = font.get_text_extents(syl.text)
-                        syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font_metrics
+                        syl.i = si
+                        syl.word_i = tc['word_i']
 
-                        line.syls.append(syl)
+                        syls_in_text_chunk.append(syl)
+
+                        # Update working variable
+                        si += 1
                         last_time = syl.end_time
-                    except IndexError:
-                        # We give the user only one try (only one {tags} present at the beginning of the line, if more than line is invalid)
-                        if not one_try:
-                            one_try = True
-                            continue
-                        line.syls.clear()
-                        break
 
                 # Calculate syllables positions with all syllables data already available
                 if line.syls and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
