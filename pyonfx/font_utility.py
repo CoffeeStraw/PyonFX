@@ -107,9 +107,6 @@ class Font:
         if sys.platform == "win32":
             win32gui.DeleteObject(self.pycfont.GetSafeHandle())
             win32gui.DeleteDC(self.dc)
-        elif sys.platform == "linux":
-            # TODO: I have no idea what to do here...
-            pass
 
     def get_metrics(self):
         if sys.platform == "win32":
