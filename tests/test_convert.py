@@ -14,13 +14,6 @@ meta, styles, lines = io.get_data()
 # Config
 max_deviation = 3
 
-def isfloat(value):
-    try:
-        float(value)
-        return True
-    except ValueError:
-        return False
-
 def test_coloralpha():
     assert Convert.coloralpha(255) == "&HFF&"
     assert Convert.coloralpha("&HFF&") == 255
