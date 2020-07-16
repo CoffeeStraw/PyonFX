@@ -25,9 +25,18 @@ if sys.platform == "win32":
     import win32gui
     import win32ui
     import win32con
+elif sys.platform == "linux":
+    import cairo
+    import gi
+    gi.require_version('Pango', '1.0')
+    gi.require_version('PangoCairo', '1.0')
+    from gi.repository import Pango, PangoCairo
+    import html
 
 # CONFIGURATION
 FONT_PRECISION = 64 # Font scale for better precision output from native font system
+LIBASS_FONTHACK = True # Scale font data to fontsize? (no effect on windows)
+PANGO_SCALE = 1024 # The PANGO_SCALE macro represents the scale between dimensions used for Pango distances and device units.
 
 class Font:
     """
@@ -72,23 +81,51 @@ class Font:
             }
             self.pycfont = win32ui.CreateFont(font_spec)
             win32gui.SelectObject(self.dc, self.pycfont.GetSafeHandle())
+        elif sys.platform == "linux":
+            surface = cairo.ImageSurface(cairo.Format.A8, 1, 1)
+
+            self.context = cairo.Context(surface)
+            self.layout = PangoCairo.create_layout(self.context)
+
+            font_description = Pango.FontDescription()
+            font_description.set_family(self.family)
+            font_description.set_absolute_size(self.size * self.upscale * PANGO_SCALE)
+            font_description.set_weight(Pango.Weight.BOLD if self.bold else Pango.Weight.NORMAL)
+            font_description.set_style(Pango.Style.ITALIC if self.italic else Pango.Style.NORMAL)
+
+            self.layout.set_font_description(font_description)
+            self.metrics = Pango.Context.get_metrics(self.layout.get_context(), self.layout.get_font_description())
+
+            if LIBASS_FONTHACK:
+                self.fonthack_scale = self.size / ((self.metrics.get_ascent() + self.metrics.get_descent()) / PANGO_SCALE * self.downscale)
+            else:
+                self.fonthack_scale = 1
         else:
             raise NotImplementedError
 
     def __del__(self):
-        win32gui.DeleteObject(self.pycfont.GetSafeHandle())
-        win32gui.DeleteDC(self.dc)
+        if sys.platform == "win32":
+            win32gui.DeleteObject(self.pycfont.GetSafeHandle())
+            win32gui.DeleteDC(self.dc)
 
     def get_metrics(self):
         if sys.platform == "win32":
             metrics = win32gui.GetTextMetrics(self.dc)
 
             return (
-                #'height': metrics['Height'] * self.downscale * self.yscale,
+                # 'height': metrics['Height'] * self.downscale * self.yscale,
                 metrics['Ascent'] * self.downscale * self.yscale,
                 metrics['Descent'] * self.downscale * self.yscale,
                 metrics['InternalLeading'] * self.downscale * self.yscale,
                 metrics['ExternalLeading'] * self.downscale * self.yscale
+            )
+        elif sys.platform == "linux":
+            return (
+                # 'height': (self.metrics.get_ascent() + self.metrics.get_descent()) / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
+                self.metrics.get_ascent() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
+                self.metrics.get_descent() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
+                0.0,
+                self.layout.get_spacing() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale
             )
         else:
             raise NotImplementedError
@@ -98,8 +135,31 @@ class Font:
             cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
             return (
-                (cx * self.downscale + self.hspace*(len(text)-1)) * self.xscale,
+                (cx * self.downscale + self.hspace * (len(text) - 1)) * self.xscale,
                 cy * self.downscale * self.yscale
+            )
+        elif sys.platform == "linux":
+            if not text:
+                return 0.0, 0.0
+
+            def get_rect(new_text):
+                self.layout.set_markup(f'<span '
+                                       f'strikethrough="{str(self.strikeout).lower()}" '
+                                       f'underline="{"single" if self.underline else "none"}"'
+                                       f'>'
+                                       f'{html.escape(new_text)}'
+                                       f'</span>',
+                                       -1)
+                return self.layout.get_pixel_extents()[1]
+
+            width = 0
+            
+            for char in text:
+                width += get_rect(char).width
+
+            return (
+                (width * self.downscale * self.fonthack_scale + self.hspace * (len(text) - 1)) * self.xscale,
+                get_rect(text).height * self.downscale * self.yscale * self.fonthack_scale
             )
         else:
             raise NotImplementedError
@@ -165,6 +225,70 @@ class Font:
 
             # Clear device context path
             win32gui.AbortPath(self.dc)
+
+            return Shape(' '.join(shape))
+        elif sys.platform == "linux":
+            # Defining variables
+            shape, last_type = [], None
+
+            def shape_from_text(new_text, x_add):
+                nonlocal shape, last_type
+
+                self.layout.set_markup(f'<span '
+                                       f'strikethrough="{str(self.strikeout).lower()}" '
+                                       f'underline="{"single" if self.underline else "none"}"'
+                                       f'>'
+                                       f'{html.escape(new_text)}'
+                                       f'</span>',
+                                       -1)
+
+                self.context.save()
+                self.context.scale(self.downscale * self.xscale * self.fonthack_scale, self.downscale * self.yscale * self.fonthack_scale)
+                PangoCairo.layout_path(self.context, self.layout)
+                self.context.restore()
+                path = self.context.copy_path()
+
+                # Convert points to shape
+                for current_entry in path:
+                    current_type = current_entry[0]
+                    current_path = current_entry[1]
+
+                    if current_type == 0: # MOVE_TO
+                        if last_type != current_type: # Avoid repetition of command tags
+                            shape.append("m")
+                            last_type = current_type
+                        shape.extend([
+                            Shape.format_value(current_path[0] + x_add),
+                            Shape.format_value(current_path[1])
+                        ])
+                    elif current_type == 1: # LINE_TO
+                        if last_type != current_type: # Avoid repetition of command tags
+                            shape.append("l")
+                            last_type = current_type
+                        shape.extend([
+                            Shape.format_value(current_path[0] + x_add),
+                            Shape.format_value(current_path[1])
+                        ])
+                    elif current_type == 2: # CURVE_TO
+                        if last_type != current_type: # Avoid repetition of command tags
+                            shape.append("b")
+                            last_type = current_type
+                        shape.extend([
+                            Shape.format_value(current_path[0] + x_add),
+                            Shape.format_value(current_path[1]),
+                            Shape.format_value(current_path[2] + x_add),
+                            Shape.format_value(current_path[3]),
+                            Shape.format_value(current_path[4] + x_add),
+                            Shape.format_value(current_path[5])
+                        ])
+
+                self.context.new_path()
+
+            curr_width = 0
+
+            for i, char in enumerate(text):
+                shape_from_text(char, curr_width + self.hspace * self.xscale * i)
+                curr_width += self.get_text_extents(char)[0]
 
             return Shape(' '.join(shape))
         else:

@@ -413,6 +413,7 @@ class Ass:
             io = Ass("in.ass")
             meta, styles, lines = io.get_data()
     """
+
     def __init__(self, path_input="", path_output="Output.ass", keep_original=True, extended=True, vertical_kanji=True):
         # Starting to take process time
         self.__saved = False
@@ -1093,7 +1094,15 @@ class Ass:
             print("[WARNING] You've tried to open the output with Aegisub before having saved. Check your code.")
             return -1
 
-        os.startfile(self.path_output)
+        if sys.platform == "win32":
+            os.startfile(self.path_output)
+        else:
+            try:
+                subprocess.call(["aegisub", os.path.abspath(self.path_output)])
+            except FileNotFoundError:
+                print("[WARNING] Aegisub not found.")
+                return -1
+        
         return 0
 
     def open_mpv(self, video_path="", video_start="", full_screen=False):

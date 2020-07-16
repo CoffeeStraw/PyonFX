@@ -26,7 +26,20 @@ setuptools.setup(
     description="An easy way to do KFX and complex typesetting based on subtitle format ASS (Advanced Substation Alpha).",
     long_description=open('README.md', encoding='utf-8').read(),
     packages=['pyonfx'],
-    install_requires=["pywin32; sys_platform == \"win32\"", "pyquaternion", "sphinx_rtd_theme", "sphinxcontrib-napoleon"],
+    install_requires=[
+        "pywin32; sys_platform == \"win32\"",
+        "pycairo; sys_platform == \"linux\"",
+        "PyGObject; sys_platform == \"linux\"",
+        "pyquaternion",
+    ],
+    extras_require={
+        'dev': [
+            'pytest',
+            'pytest-check',
+            'sphinx_rtd_theme',
+            'sphinxcontrib-napoleon',
+        ]
+    },
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Programming Language :: Python',
