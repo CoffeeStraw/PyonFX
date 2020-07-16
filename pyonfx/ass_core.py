@@ -1088,17 +1088,21 @@ class Ass:
         Returns:
             0 if success, -1 if the output couldn't be opened.
         """
-        
-        if sys.platform != "win32":
-            print("[WARNING] Aegisub couldn't be opened.")
-            return -1
 
         # Check if it was saved
         if not self.__saved:
             print("[WARNING] You've tried to open the output with Aegisub before having saved. Check your code.")
             return -1
 
-        os.startfile(self.path_output)
+        if sys.platform == "win32":
+            os.startfile(self.path_output)
+        else:
+            try:
+                subprocess.call(["aegisub", os.path.abspath(self.path_output)])
+            except FileNotFoundError:
+                print("[WARNING] Aegisub not found.")
+                return -1
+        
         return 0
 
     def open_mpv(self, video_path="", video_start="", full_screen=False):
