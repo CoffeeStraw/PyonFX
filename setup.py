@@ -25,8 +25,8 @@ def get_requirements():
     if os.environ.get('READTHEDOCS') != 'True':
         requirements.extend([
             'pywin32; sys_platform == "win32"',
-            'pycairo; sys_platform == "linux"',
-            'PyGObject; sys_platform == "linux"',
+            'pycairo; sys_platform == "linux" or sys_platform == "darwin"',
+            'PyGObject; sys_platform == "linux" or sys_platform == "darwin"',
         ])
     
     return requirements
