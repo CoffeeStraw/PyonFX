@@ -19,6 +19,7 @@ import re
 import math
 from .font_utility import Font
 
+
 class Convert:
     """
     This class is a collection of static methods that will help
@@ -43,10 +44,16 @@ class Convert:
                 math.floor(ass_ms / 3600000) % 10,
                 math.floor(ass_ms % 3600000 / 60000),
                 math.floor(ass_ms % 60000 / 1000),
-                math.floor(ass_ms % 1000 / 10))
+                math.floor(ass_ms % 1000 / 10),
+            )
         # ASS timestamp?
         elif type(ass_ms) is str and re.match(r"^\d:\d+:\d+\.\d+$", ass_ms):
-            return int(ass_ms[0]) * 3600000 + int(ass_ms[2:4]) * 60000 + int(ass_ms[5:7]) * 1000 + int(ass_ms[8:10]) * 10
+            return (
+                int(ass_ms[0]) * 3600000
+                + int(ass_ms[2:4]) * 60000
+                + int(ass_ms[5:7]) * 1000
+                + int(ass_ms[8:10]) * 10
+            )
         else:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
@@ -87,10 +94,20 @@ class Convert:
             >>> &HFF00FF00
         """
         # Alpha / red numeric?
-        if (type(ass_r_a) == int or type(ass_r_a) == float) and ass_r_a >= 0 and ass_r_a <= 255:
+        if (
+            (type(ass_r_a) == int or type(ass_r_a) == float)
+            and ass_r_a >= 0
+            and ass_r_a <= 255
+        ):
             # Green + blue numeric?
-            if (type(g) == int or type(g) == float) and g >= 0 and g <= 255 and \
-               (type(b) == int or type(b) == float) and b >= 0 and b <= 255:
+            if (
+                (type(g) == int or type(g) == float)
+                and g >= 0
+                and g <= 255
+                and (type(b) == int or type(b) == float)
+                and b >= 0
+                and b <= 255
+            ):
                 # Alpha numeric?
                 if (type(a) == int or type(a) == float) and a >= 0 and a <= 255:
                     return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(ass_r_a):02X}"
@@ -99,7 +116,9 @@ class Convert:
             elif not (g or b or a):
                 return f"&H{round(ass_r_a):02X}&"
             else:
-                raise ValueError("Bad usage. Either pass 1 value, 3 values, or 4 values.")
+                raise ValueError(
+                    "Bad usage. Either pass 1 value, 3 values, or 4 values."
+                )
         # ASS value?
         elif type(ass_r_a) == str:
             # ASS alpha?
@@ -107,10 +126,19 @@ class Convert:
                 return int(ass_r_a[2:4], 16)
             # ASS color?
             elif re.match(r"^&H[0-9a-fA-F]{6}&$", ass_r_a):
-                return int(ass_r_a[6:8], 16), int(ass_r_a[4:6], 16), int(ass_r_a[2:4], 16)
+                return (
+                    int(ass_r_a[6:8], 16),
+                    int(ass_r_a[4:6], 16),
+                    int(ass_r_a[2:4], 16),
+                )
             # ASS color+alpha (from style definition)?
             elif re.match(r"^&H[0-9a-fA-F]{8}$", ass_r_a):
-                return int(ass_r_a[8:10], 16), int(ass_r_a[6:8], 16), int(ass_r_a[4:6], 16), int(ass_r_a[2:4], 16)
+                return (
+                    int(ass_r_a[8:10], 16),
+                    int(ass_r_a[6:8], 16),
+                    int(ass_r_a[4:6], 16),
+                    int(ass_r_a[2:4], 16),
+                )
             else:
                 raise ValueError("Invalid ASS string")
         else:
@@ -199,10 +227,10 @@ class Convert:
         shape = Convert.text_to_shape(obj, fscx, fscy)
 
         # Setting mult_x based on alignment
-        if an % 3 == 1: # an=1 or an=4 or an=7
+        if an % 3 == 1:  # an=1 or an=4 or an=7
             mult_x = 0
-        elif an % 3 == 2: # an=2 or an=5 or an=8
-            mult_x = 1/2
+        elif an % 3 == 2:  # an=2 or an=5 or an=8
+            mult_x = 1 / 2
         else:
             mult_x = 1
 
@@ -210,13 +238,19 @@ class Convert:
         if an < 4:
             mult_y = 1
         elif an < 7:
-            mult_y = 1/2
+            mult_y = 1 / 2
         else:
             mult_y = 0
 
         # Calculating offsets
-        cx = obj.left - obj.width*mult_x * (fscx-obj.styleref.scale_x) / obj.styleref.scale_x
-        cy = obj.top - obj.height*mult_y * (fscy-obj.styleref.scale_y) / obj.styleref.scale_y
+        cx = (
+            obj.left
+            - obj.width * mult_x * (fscx - obj.styleref.scale_x) / obj.styleref.scale_x
+        )
+        cy = (
+            obj.top
+            - obj.height * mult_y * (fscy - obj.styleref.scale_y) / obj.styleref.scale_y
+        )
 
         return shape.move(cx, cy)
 
@@ -301,16 +335,19 @@ class Convert:
         downscale = 1 / upscale
 
         # Upscale shape for later downsampling
-        shape.map(lambda x, y: (x*upscale, y*upscale))
+        shape.map(lambda x, y: (x * upscale, y * upscale))
 
         # Bring shape near origin in positive room
         x1, y1, x2, y2 = shape.bounding()
-        shift_x, shift_y = -1*(x1 - x1 % upscale), -1*(y1 - y1 % upscale)
+        shift_x, shift_y = -1 * (x1 - x1 % upscale), -1 * (y1 - y1 % upscale)
         shape.move(shift_x, shift_y)
 
         # Create image
-        width, height = math.ceil((x2 + shift_x) * downscale) * upscale, math.ceil((y2 + shift_y) * downscale) * upscale
-        image = [False for i in range(width*height)]
+        width, height = (
+            math.ceil((x2 + shift_x) * downscale) * upscale,
+            math.ceil((y2 + shift_y) * downscale) * upscale,
+        )
+        image = [False for i in range(width * height)]
 
         # Renderer (on binary image with aliasing)
         lines, last_point, last_move = [], {}, {}
@@ -323,22 +360,58 @@ class Convert:
             # Move
             if typ == "m":
                 # Close figure with non-horizontal line in image
-                if last_move and last_move['y'] != last_point['y'] and not (last_point['y'] < 0 and last_move['y'] < 0) and not (last_point['y'] > height and last_move['y'] > height):
-                    lines.append([last_point['x'], last_point['y'], last_move['x'] - last_point['x'], last_move['y'] - last_point['y']])
+                if (
+                    last_move
+                    and last_move["y"] != last_point["y"]
+                    and not (last_point["y"] < 0 and last_move["y"] < 0)
+                    and not (last_point["y"] > height and last_move["y"] > height)
+                ):
+                    lines.append(
+                        [
+                            last_point["x"],
+                            last_point["y"],
+                            last_move["x"] - last_point["x"],
+                            last_move["y"] - last_point["y"],
+                        ]
+                    )
 
-                last_move = {'x': x, 'y': y}
+                last_move = {"x": x, "y": y}
             # Non-horizontal line in image
-            elif last_point and last_point['y'] != y and not (last_point['y'] < 0 and y < 0) and not (last_point['y'] > height and y > height):
-                lines.append([last_point['x'], last_point['y'], x - last_point['x'], y - last_point['y']])
+            elif (
+                last_point
+                and last_point["y"] != y
+                and not (last_point["y"] < 0 and y < 0)
+                and not (last_point["y"] > height and y > height)
+            ):
+                lines.append(
+                    [
+                        last_point["x"],
+                        last_point["y"],
+                        x - last_point["x"],
+                        y - last_point["y"],
+                    ]
+                )
 
             # Remember last point
-            last_point = {'x': x, 'y': y}
+            last_point = {"x": x, "y": y}
 
         shape.flatten().map(collect_lines)
 
         # Close last figure with non-horizontal line in image
-        if last_move and last_move['y'] != last_point['y'] and not (last_point['y'] < 0 and last_move['y'] < 0) and not (last_point['y'] > height and last_move['y'] > height):
-            lines.append([last_point['x'], last_point['y'], last_move['x'] - last_point['x'], last_move['y'] - last_point['y']])
+        if (
+            last_move
+            and last_move["y"] != last_point["y"]
+            and not (last_point["y"] < 0 and last_move["y"] < 0)
+            and not (last_point["y"] > height and last_move["y"] > height)
+        ):
+            lines.append(
+                [
+                    last_point["x"],
+                    last_point["y"],
+                    last_move["x"] - last_point["x"],
+                    last_move["y"] - last_point["y"],
+                ]
+            )
 
         # Calculates line x horizontal line intersection
         def line_x_hline(x, y, vx, vy, y2):
@@ -356,7 +429,9 @@ class Convert:
             for line in lines:
                 cx = line_x_hline(line[0], line[1], line[2], line[3], y + 0.5)
                 if cx is not None:
-                    row_stops.append([max(0, min(cx, width)), 1 if line[3] > 0 else -1])  # image trimmed stop position & line vertical direction
+                    row_stops.append(
+                        [max(0, min(cx, width)), 1 if line[3] > 0 else -1]
+                    )  # image trimmed stop position & line vertical direction
 
             # Enough intersections / something to render?
             if len(row_stops) > 1:
@@ -364,10 +439,13 @@ class Convert:
                 row_stops.sort(key=lambda x: x[0])
                 # Render!
                 status, row_index = 0, y * width
-                for i in range(0, len(row_stops)-1):
+                for i in range(0, len(row_stops) - 1):
                     status = status + row_stops[i][1]
                     if status != 0:
-                        for x in range(math.ceil(row_stops[i][0]-0.5), math.floor(row_stops[i+1][0]+0.5)):
+                        for x in range(
+                            math.ceil(row_stops[i][0] - 0.5),
+                            math.floor(row_stops[i + 1][0] + 0.5),
+                        ):
                             image[row_index + x] = True
 
         # Extract pixels from image
@@ -377,15 +455,17 @@ class Convert:
                 opacity = 0
                 for yy in range(0, upscale):
                     for xx in range(0, upscale):
-                        if image[(y+yy) * width + (x+xx)]:
+                        if image[(y + yy) * width + (x + xx)]:
                             opacity = opacity + 255
 
                 if opacity > 0:
-                    pixels.append({
-                        'alpha': opacity * (downscale * downscale),
-                        'x': (x - shift_x) * downscale,
-                        'y': (y - shift_y) * downscale
-                    })
+                    pixels.append(
+                        {
+                            "alpha": opacity * (downscale * downscale),
+                            "x": (x - shift_x) * downscale,
+                            "y": (y - shift_y) * downscale,
+                        }
+                    )
 
         return pixels
 

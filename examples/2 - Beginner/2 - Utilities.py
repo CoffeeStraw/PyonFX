@@ -19,95 +19,125 @@ import random
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
+
 def romaji(line, l):
-	for syl in Utils.all_non_empty(line.syls):
-		# Setting up a delay, which will be my time for the leadin and leadout effect
-		delay = 200
+    for syl in Utils.all_non_empty(line.syls):
+        # Setting up a delay, which will be my time for the leadin and leadout effect
+        delay = 200
 
-		# Leadin Effect
-		l.layer = 0
+        # Leadin Effect
+        l.layer = 0
 
-		l.start_time = line.start_time  + 25*syl.i - delay
-		l.end_time = line.start_time + syl.start_time
-		l.dur = l.end_time - l.start_time
+        l.start_time = line.start_time + 25 * syl.i - delay
+        l.end_time = line.start_time + syl.start_time
+        l.dur = l.end_time - l.start_time
 
-		l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,0)}%s" % (
-			syl.center, syl.middle, delay, syl.text)
+        l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,0)}%s" % (
+            syl.center,
+            syl.middle,
+            delay,
+            syl.text,
+        )
 
-		io.write_line(l)
+        io.write_line(l)
 
-		# Main Effect
-		# Let's create a FrameUtility object and set up an interval for the random positions
-		FU = FrameUtility(line.start_time + syl.start_time, line.start_time + syl.end_time)
-		interval = 2
-		
-		# Starting to iterate over the frames
-		for s, e, i, n in FU:
-			l.layer = 1
+        # Main Effect
+        # Let's create a FrameUtility object and set up an interval for the random positions
+        FU = FrameUtility(
+            line.start_time + syl.start_time, line.start_time + syl.end_time
+        )
+        interval = 2
 
-			l.start_time = s
-			l.end_time = e
+        # Starting to iterate over the frames
+        for s, e, i, n in FU:
+            l.layer = 1
 
-			# This lines of codes will reproduce
-			# "\\t(0,%d,\\fscx140)\\t(%d,%d,\\fscx100)" % (syl.duration/3, syl.duration/3, syl.duration)
-			fsc = 100
-			fsc += FU.add(0, syl.duration/3, 40)
-			fsc += FU.add(syl.duration/3, syl.duration, -40)
+            l.start_time = s
+            l.end_time = e
 
-			l.text = "{\\an5\\pos(%.3f,%.3f)\\fscx%.3f\\fscy%.3f}%s" % (
-				syl.center + random.uniform(-interval, interval), syl.middle + random.uniform(-interval, interval),
-				fsc, fsc, syl.text)
+            # This lines of codes will reproduce
+            # "\\t(0,%d,\\fscx140)\\t(%d,%d,\\fscx100)" % (syl.duration/3, syl.duration/3, syl.duration)
+            fsc = 100
+            fsc += FU.add(0, syl.duration / 3, 40)
+            fsc += FU.add(syl.duration / 3, syl.duration, -40)
 
-			io.write_line(l)
+            l.text = "{\\an5\\pos(%.3f,%.3f)\\fscx%.3f\\fscy%.3f}%s" % (
+                syl.center + random.uniform(-interval, interval),
+                syl.middle + random.uniform(-interval, interval),
+                fsc,
+                fsc,
+                syl.text,
+            )
 
-		# Leadout Effect
-		l.layer = 0
+            io.write_line(l)
 
-		l.start_time = line.start_time + syl.end_time
-		l.end_time = line.end_time - 25*(len(line.syls) - syl.i) + delay
-		l.dur = l.end_time - l.start_time
+        # Leadout Effect
+        l.layer = 0
 
-		l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(0,%d)}%s" % (
-			syl.center, syl.middle, delay, syl.text)
+        l.start_time = line.start_time + syl.end_time
+        l.end_time = line.end_time - 25 * (len(line.syls) - syl.i) + delay
+        l.dur = l.end_time - l.start_time
 
-		io.write_line(l)
+        l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(0,%d)}%s" % (
+            syl.center,
+            syl.middle,
+            delay,
+            syl.text,
+        )
+
+        io.write_line(l)
+
 
 def sub(line, l):
-	# Translation Effect
-	l.start_time = line.start_time - line.leadin/2
-	l.end_time = line.end_time + line.leadout/2
-	l.dur = l.end_time - l.start_time
+    # Translation Effect
+    l.start_time = line.start_time - line.leadin / 2
+    l.end_time = line.end_time + line.leadout / 2
+    l.dur = l.end_time - l.start_time
 
-	# Writing border
-	l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,%d)}%s" % (
-		line.center, line.middle, line.leadin/2, line.leadout/2, line.text)
+    # Writing border
+    l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,%d)}%s" % (
+        line.center,
+        line.middle,
+        line.leadin / 2,
+        line.leadout / 2,
+        line.text,
+    )
 
-	io.write_line(l)
+    io.write_line(l)
 
-	# We define precision, increasing it will result in a gain on preformance and decrease of fidelity (due to less lines produced)
-	precision = 1
-	n = int(line.height/precision)
+    # We define precision, increasing it will result in a gain on preformance and decrease of fidelity (due to less lines produced)
+    precision = 1
+    n = int(line.height / precision)
 
-	for i in range(n):
-		clip = "%d, %d, %d, %d" % (
-			line.left,
-			line.top + (line.height)*(i/n),
-			line.right,
-			line.top + (line.height)*((i+1)/n))
+    for i in range(n):
+        clip = "%d, %d, %d, %d" % (
+            line.left,
+            line.top + (line.height) * (i / n),
+            line.right,
+            line.top + (line.height) * ((i + 1) / n),
+        )
 
-		color = Utils.interpolate(i/n, "&H00FFF7&", "&H0000FF&", 1.4)
+        color = Utils.interpolate(i / n, "&H00FFF7&", "&H0000FF&", 1.4)
 
-		l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,%d)\\clip(%s)\\bord0\\1c%s}%s" % (
-			line.center, line.middle, line.leadin/2, line.leadout/2, clip, color, line.text)
+        l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,%d)\\clip(%s)\\bord0\\1c%s}%s" % (
+            line.center,
+            line.middle,
+            line.leadin / 2,
+            line.leadout / 2,
+            clip,
+            color,
+            line.text,
+        )
 
-		io.write_line(l)
+        io.write_line(l)
+
 
 for line in lines:
-	# Generating lines
-	if line.styleref.alignment >= 7:
-		romaji(line, line.copy())
-	elif line.styleref.alignment <= 3:
-		sub(line, line.copy())
+    # Generating lines
+    if line.styleref.alignment >= 7:
+        romaji(line, line.copy())
+    elif line.styleref.alignment <= 3:
+        sub(line, line.copy())
 
 io.save()
 io.open_aegisub()

@@ -14,12 +14,12 @@ io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
 for line in lines:
-	l = line.copy()
+    l = line.copy()
 
-	l.start_time += 2000
-	l.end_time += 2000
-	
-	io.write_line(l)
+    l.start_time += 2000
+    l.end_time += 2000
+
+    io.write_line(l)
 
 io.save()
 io.open_aegisub()

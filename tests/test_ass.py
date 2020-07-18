@@ -14,6 +14,7 @@ meta, styles, lines = io.get_data()
 # Config
 max_deviation = 0.75
 
+
 def test_meta_values():
     # Tests if all the meta values are taken correctly
     # check.equal(meta.wrap_style, 0)                     # -> not in this .ass, so let's comment this
@@ -22,6 +23,7 @@ def test_meta_values():
     check.equal(meta.play_res_y, 720)
     # check.equal(meta.audio, "")                         # -> not in this .ass, so let's comment this
     check.equal(meta.video, "?dummy:23.976000:2250:1920:1080:11:135:226:c")
+
 
 def test_line_values():
     # Comment recognition
@@ -52,9 +54,14 @@ def test_line_values():
 
     check.equal(lines[1].start_time, Convert.time("0:00:00.00"))
     check.equal(lines[1].end_time, Convert.time("0:00:09.99"))
-    check.equal(lines[1].duration, Convert.time("0:00:09.99") - Convert.time("0:00:00.00"))
-    
-    check.equal(lines[11].raw_text, "{\\k56}{\\1c&HFFFFFF&}su{\\k13}re{\\k22}chi{\\k36}ga{\\k48}u {\\k25\\-Pyon}{\\k34}ko{\\k33}to{\\k50}ba {\\k15}no {\\k17}u{\\k34}ra {\\k46}ni{\\k33} {\\k28}to{\\k36}za{\\k65}sa{\\1c&HFFFFFF&\\k33\\1c&HFFFFFF&\\k30\\1c&HFFFFFF&}re{\\k51\\-FX}ta{\\k16} {\\k33}ko{\\k33}ko{\\k78}ro {\\k15}no {\\k24}ka{\\k95}gi")
+    check.equal(
+        lines[1].duration, Convert.time("0:00:09.99") - Convert.time("0:00:00.00")
+    )
+
+    check.equal(
+        lines[11].raw_text,
+        "{\\k56}{\\1c&HFFFFFF&}su{\\k13}re{\\k22}chi{\\k36}ga{\\k48}u {\\k25\\-Pyon}{\\k34}ko{\\k33}to{\\k50}ba {\\k15}no {\\k17}u{\\k34}ra {\\k46}ni{\\k33} {\\k28}to{\\k36}za{\\k65}sa{\\1c&HFFFFFF&\\k33\\1c&HFFFFFF&\\k30\\1c&HFFFFFF&}re{\\k51\\-FX}ta{\\k16} {\\k33}ko{\\k33}ko{\\k78}ro {\\k15}no {\\k24}ka{\\k95}gi",
+    )
     check.equal(lines[11].text, "surechigau kotoba no ura ni tozasareta kokoro no kagi")
 
     # Normal style (no bold, italic and with a normal fs)

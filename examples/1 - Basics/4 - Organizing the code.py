@@ -25,26 +25,30 @@ from pyonfx import *
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
+
 def romaji(line, l):
-	# You will write here :D
-	pass
+    # You will write here :D
+    pass
+
 
 def kanji(line, l):
-	# You will write here :)
-	pass
+    # You will write here :)
+    pass
+
 
 def sub(line, l):
-	# You will write here :P
-	pass
+    # You will write here :P
+    pass
+
 
 for line in lines:
-	# Generating lines
-	if line.styleref.alignment >= 7:
-		romaji(line, line.copy())
-	elif line.styleref.alignment >= 4:
-		kanji(line, line.copy())
-	else:
-		sub(line, line.copy())
+    # Generating lines
+    if line.styleref.alignment >= 7:
+        romaji(line, line.copy())
+    elif line.styleref.alignment >= 4:
+        kanji(line, line.copy())
+    else:
+        sub(line, line.copy())
 
 io.save()
 io.open_aegisub()

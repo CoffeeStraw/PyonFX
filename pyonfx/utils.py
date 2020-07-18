@@ -19,6 +19,7 @@ import math
 import re
 from .convert import Convert
 
+
 class Utils:
     """
     This class is a collection of static methods that will help the user in some tasks.
@@ -50,7 +51,7 @@ class Utils:
     def accelerate(pct, accelerator):
         # Modifies pct according to the acceleration provided.
         # TO DO: Implement acceleration based on bezier's curve
-        return pct**accelerator
+        return pct ** accelerator
 
     @staticmethod
     def interpolate(pct, val1, val2, acc=1.0):
@@ -79,7 +80,9 @@ class Utils:
             >>> &HE5E5E5&
         """
         if pct > 1.0 or pct < 0:
-            raise ValueError("Percent value must be a float between 0.0 and 1.0, but your was " + str(pct))
+            raise ValueError(
+                f"Percent value must be a float between 0.0 and 1.0, but your was {pct}"
+            )
 
         # Calculating acceleration (if requested)
         pct = Utils.accelerate(pct, acc) if acc != 1.0 else pct
@@ -94,28 +97,34 @@ class Utils:
                 len_v2 = len(val2)
 
                 if len_v1 != len_v2:
-                    raise TypeError("ASS values must have the same type (either two alphas, two colors or two colors+alpha)")
-                elif len_v1 == 3 and len_v2 == 3: # Color
+                    raise TypeError(
+                        "ASS values must have the same type (either two alphas, two colors or two colors+alpha)"
+                    )
+                elif len_v1 == 3 and len_v2 == 3:  # Color
                     r = int(val1[0] + (val2[0] - val1[0]) * pct)
                     g = int(val1[1] + (val2[1] - val1[1]) * pct)
                     b = int(val1[2] + (val2[2] - val1[2]) * pct)
                     return Convert.coloralpha(r, g, b)
-                else: # Color+alpha
+                else:  # Color+alpha
                     r = int(val1[0] + (val2[0] - val1[0]) * pct)
                     g = int(val1[1] + (val2[1] - val1[1]) * pct)
                     b = int(val1[2] + (val2[2] - val1[2]) * pct)
                     a = int(val1[3] + (val2[3] - val1[3]) * pct)
                     return Convert.coloralpha(r, g, b, a)
-            elif type(val1) == int and type(val2) == int: # Alpha
+            elif type(val1) == int and type(val2) == int:  # Alpha
                 a = int(val1 + (val2 - val1) * pct)
                 return Convert.coloralpha(a)
-        elif (type(val1) is float and type(val2) is float) or \
-             (type(val1) is int   and type(val2) is float) or \
-             (type(val1) is float and type(val2) is int)   or \
-             (type(val1) is int   and type(val2) is int):
+        elif (
+            (type(val1) is float and type(val2) is float)
+            or (type(val1) is int and type(val2) is float)
+            or (type(val1) is float and type(val2) is int)
+            or (type(val1) is int and type(val2) is int)
+        ):
             return val1 + (val2 - val1) * pct
         else:
-            raise TypeError("Invalid parameter(s) type, either pass two strings or two numbers")
+            raise TypeError(
+                "Invalid parameter(s) type, either pass two strings or two numbers"
+            )
 
 
 class FrameUtility:
@@ -143,13 +152,14 @@ class FrameUtility:
         >>> Frame 3/3: 83.42 - 100
 
     """
+
     def __init__(self, start_time, end_time, fr=41.71):
         # Checking for invalid values
         if start_time < 0 or end_time < 0 or fr <= 0 or end_time < start_time:
             raise ValueError("Positive values and/or end_time > start_time expected.")
 
         # Calculating number of frames
-        self.n = math.ceil((end_time - start_time)/fr)
+        self.n = math.ceil((end_time - start_time) / fr)
 
         # Defining fields
         self.start_time = start_time
@@ -160,7 +170,12 @@ class FrameUtility:
     def __iter__(self):
         # For loop for the first n-1 frames
         for i in range(1, self.n):
-            yield (round(self.start_time, 2), round(self.start_time + self.fr, 2), i, self.n)
+            yield (
+                round(self.start_time, 2),
+                round(self.start_time + self.fr, 2),
+                i,
+                self.n,
+            )
             self.start_time += self.fr
             self.current_time += self.fr
 
@@ -168,7 +183,7 @@ class FrameUtility:
         yield (round(self.start_time, 2), round(self.end_time, 2), self.n, self.n)
 
         # Resetting to make this object usable again
-        self.start_time = self.start_time - self.fr*max(self.n-1, 0)
+        self.start_time = self.start_time - self.fr * max(self.n - 1, 0)
         self.current_time = self.fr
 
     def add(self, start_time, end_time, end_value, accelerator=1.0):
@@ -200,7 +215,8 @@ class FrameUtility:
 
         pstart = self.current_time - start_time
         pend = end_time - start_time
-        return Utils.interpolate(pstart/pend, 0, end_value, accelerator)
+        return Utils.interpolate(pstart / pend, 0, end_value, accelerator)
+
 
 class ColorUtility:
     """
@@ -249,6 +265,7 @@ class ColorUtility:
             # Parsing just a single line (the first in this case) in the file
             CU = ColorUtility([ line[0] ])
     """
+
     def __init__(self, lines, offset=0):
         self.color_changes = []
         self.c1_req = False
@@ -257,10 +274,10 @@ class ColorUtility:
 
         # Compiling regex
         tag_all = re.compile(r"{.*?}")
-        tag_t   = re.compile(r"\\t\( *?(-?\d+?) *?, *?(-?\d+?) *?, *(.+?) *?\)")
-        tag_c1  = re.compile(r"\\1c(&H.{6}&)")
-        tag_c3  = re.compile(r"\\3c(&H.{6}&)")
-        tag_c4  = re.compile(r"\\4c(&H.{6}&)")
+        tag_t = re.compile(r"\\t\( *?(-?\d+?) *?, *?(-?\d+?) *?, *(.+?) *?\)")
+        tag_c1 = re.compile(r"\\1c(&H.{6}&)")
+        tag_c3 = re.compile(r"\\3c(&H.{6}&)")
+        tag_c4 = re.compile(r"\\4c(&H.{6}&)")
 
         for line in lines:
             # Obtaining all tags enclosured in curly brackets
@@ -272,7 +289,11 @@ class ColorUtility:
                 other_tags = tag_t.sub("", tag)
 
                 # Searching for colors in the other tags
-                c1, c3, c4 = tag_c1.search(other_tags), tag_c3.search(other_tags), tag_c4.search(other_tags)
+                c1, c3, c4 = (
+                    tag_c1.search(other_tags),
+                    tag_c3.search(other_tags),
+                    tag_c4.search(other_tags),
+                )
 
                 # If we found something, add to the list as a color change
                 if c1 or c3 or c4:
@@ -286,14 +307,16 @@ class ColorUtility:
                         c4 = c4.group(0)
                         self.c4_req = True
 
-                    self.color_changes.append({
-                        'start': line.start_time + offset,
-                        'end':   line.start_time + offset,
-                        'acc':   1,
-                        'c1':    c1,
-                        'c3':    c3,
-                        'c4':    c4
-                    })
+                    self.color_changes.append(
+                        {
+                            "start": line.start_time + offset,
+                            "end": line.start_time + offset,
+                            "acc": 1,
+                            "c1": c1,
+                            "c3": c3,
+                            "c4": c4,
+                        }
+                    )
 
                 # Find all transformation in tag
                 ts = tag_t.findall(tag)
@@ -301,15 +324,23 @@ class ColorUtility:
                 # Working with each transformation
                 for t in ts:
                     # Parsing start, end, optional acceleration and colors
-                    start, end, acc_colors = int(t[0]), int(t[1]), t[2].split(',')
+                    start, end, acc_colors = int(t[0]), int(t[1]), t[2].split(",")
                     acc, c1, c3, c4 = 1, None, None, None
 
                     # Do we have also acceleration?
                     if len(acc_colors) == 1:
-                        c1, c3, c4 = tag_c1.search(acc_colors[0]), tag_c3.search(acc_colors[0]), tag_c4.search(acc_colors[0])
+                        c1, c3, c4 = (
+                            tag_c1.search(acc_colors[0]),
+                            tag_c3.search(acc_colors[0]),
+                            tag_c4.search(acc_colors[0]),
+                        )
                     elif len(acc_colors) == 2:
                         acc = float(acc_colors[0])
-                        c1, c3, c4 = tag_c1.search(acc_colors[1]), tag_c3.search(acc_colors[1]), tag_c4.search(acc_colors[1])
+                        c1, c3, c4 = (
+                            tag_c1.search(acc_colors[1]),
+                            tag_c3.search(acc_colors[1]),
+                            tag_c4.search(acc_colors[1]),
+                        )
                     else:
                         # This transformation is malformed (too many ','), let's skip this
                         continue
@@ -326,14 +357,16 @@ class ColorUtility:
                         self.c4_req = True
 
                     # Saving in the list
-                    self.color_changes.append({
-                        'start': line.start_time + start + offset,
-                        'end':   line.start_time + end   + offset,
-                        'acc':   acc,
-                        'c1':    c1,
-                        'c3':    c3,
-                        'c4':    c4
-                    })
+                    self.color_changes.append(
+                        {
+                            "start": line.start_time + start + offset,
+                            "end": line.start_time + end + offset,
+                            "acc": acc,
+                            "c1": c1,
+                            "c3": c3,
+                            "c4": c4,
+                        }
+                    )
 
     def get_color_change(self, line, c1=None, c3=None, c4=None):
         """Returns all the color_changes in the object that fit (in terms of time) between line.start_time and line.end_time.
@@ -378,35 +411,35 @@ class ColorUtility:
         base_c4 = "\\4c" + line.styleref.color4
 
         for color_change in self.color_changes:
-            if color_change['end'] <= line.start_time:
+            if color_change["end"] <= line.start_time:
                 # Get base colors from this color change, since it is before my current line
                 # Last color change written in .ass wins
-                if color_change['c1']:
-                    base_c1 = color_change['c1']
-                if color_change['c3']:
-                    base_c3 = color_change['c3']
-                if color_change['c4']:
-                    base_c4 = color_change['c4']
-            elif color_change['start'] <= line.end_time:
+                if color_change["c1"]:
+                    base_c1 = color_change["c1"]
+                if color_change["c3"]:
+                    base_c3 = color_change["c3"]
+                if color_change["c4"]:
+                    base_c4 = color_change["c4"]
+            elif color_change["start"] <= line.end_time:
                 # We have found a valid color change, append it to the transform
-                start_time = color_change['start'] - line.start_time
-                end_time   = color_change['end']   - line.start_time
+                start_time = color_change["start"] - line.start_time
+                end_time = color_change["end"] - line.start_time
 
                 # We don't want to have times = 0
                 start_time = 1 if start_time == 0 else start_time
-                end_time   = 1 if end_time   == 0 else end_time
+                end_time = 1 if end_time == 0 else end_time
 
                 transform += "\\t(%d,%d," % (start_time, end_time)
 
-                if color_change['acc'] != 1:
-                    transform += str(color_change['acc'])
+                if color_change["acc"] != 1:
+                    transform += str(color_change["acc"])
 
-                if c1 and color_change['c1']:
-                    transform += color_change['c1']
-                if c3 and color_change['c3']:
-                    transform += color_change['c3']
-                if c4 and color_change['c4']:
-                    transform += color_change['c4']
+                if c1 and color_change["c1"]:
+                    transform += color_change["c1"]
+                if c3 and color_change["c3"]:
+                    transform += color_change["c3"]
+                if c4 and color_change["c4"]:
+                    transform += color_change["c4"]
 
                 transform += ")"
 
@@ -464,7 +497,7 @@ class ColorUtility:
         latest_index = -1
 
         for i, color_change in enumerate(self.color_changes):
-            if current_time >= color_change['start']:
+            if current_time >= color_change["start"]:
                 latest_index = i
 
         # If no color change is found, take default from style
@@ -479,38 +512,71 @@ class ColorUtility:
             return colors
 
         # If we have passed the end of the lastest color change available, then take the final values of it
-        if current_time >= self.color_changes[latest_index]['end']:
+        if current_time >= self.color_changes[latest_index]["end"]:
             colors = ""
-            if c1 and self.color_changes[latest_index]['c1']:
-                colors += self.color_changes[latest_index]['c1']
-            if c3 and self.color_changes[latest_index]['c3']:
-                colors += self.color_changes[latest_index]['c3']
-            if c4 and self.color_changes[latest_index]['c4']:
-                colors += self.color_changes[latest_index]['c4']
+            if c1 and self.color_changes[latest_index]["c1"]:
+                colors += self.color_changes[latest_index]["c1"]
+            if c3 and self.color_changes[latest_index]["c3"]:
+                colors += self.color_changes[latest_index]["c3"]
+            if c4 and self.color_changes[latest_index]["c4"]:
+                colors += self.color_changes[latest_index]["c4"]
             return colors
 
         # Else, interpolate the latest color change
-        start = current_time - self.color_changes[latest_index]['start']
-        end = self.color_changes[latest_index]['end'] - self.color_changes[latest_index]['start']
-        pct = start/end
+        start = current_time - self.color_changes[latest_index]["start"]
+        end = (
+            self.color_changes[latest_index]["end"]
+            - self.color_changes[latest_index]["start"]
+        )
+        pct = start / end
 
         # If we're in the first color_change, interpolate with base colors
         if latest_index == 0:
             colors = ""
-            if c1 and self.color_changes[latest_index]['c1']:
-                colors += "\\1c" + Utils.interpolate(pct, base_c1[3:], self.color_changes[latest_index]['c1'][3:], self.color_changes[latest_index]['acc'])
-            if c3 and self.color_changes[latest_index]['c3']:
-                colors += "\\3c" + Utils.interpolate(pct, base_c3[3:], self.color_changes[latest_index]['c3'][3:], self.color_changes[latest_index]['acc'])
-            if c4 and self.color_changes[latest_index]['c4']:
-                colors += "\\4c" + Utils.interpolate(pct, base_c4[3:], self.color_changes[latest_index]['c4'][3:], self.color_changes[latest_index]['acc'])
+            if c1 and self.color_changes[latest_index]["c1"]:
+                colors += "\\1c" + Utils.interpolate(
+                    pct,
+                    base_c1[3:],
+                    self.color_changes[latest_index]["c1"][3:],
+                    self.color_changes[latest_index]["acc"],
+                )
+            if c3 and self.color_changes[latest_index]["c3"]:
+                colors += "\\3c" + Utils.interpolate(
+                    pct,
+                    base_c3[3:],
+                    self.color_changes[latest_index]["c3"][3:],
+                    self.color_changes[latest_index]["acc"],
+                )
+            if c4 and self.color_changes[latest_index]["c4"]:
+                colors += "\\4c" + Utils.interpolate(
+                    pct,
+                    base_c4[3:],
+                    self.color_changes[latest_index]["c4"][3:],
+                    self.color_changes[latest_index]["acc"],
+                )
             return colors
 
         # Else, we interpolate between current color change and previous
         colors = ""
         if c1:
-            colors += "\\1c" + Utils.interpolate(pct, self.color_changes[latest_index-1]['c1'][3:], self.color_changes[latest_index]['c1'][3:], self.color_changes[latest_index]['acc'])
+            colors += "\\1c" + Utils.interpolate(
+                pct,
+                self.color_changes[latest_index - 1]["c1"][3:],
+                self.color_changes[latest_index]["c1"][3:],
+                self.color_changes[latest_index]["acc"],
+            )
         if c3:
-            colors += "\\3c" + Utils.interpolate(pct, self.color_changes[latest_index-1]['c3'][3:], self.color_changes[latest_index]['c3'][3:], self.color_changes[latest_index]['acc'])
+            colors += "\\3c" + Utils.interpolate(
+                pct,
+                self.color_changes[latest_index - 1]["c3"][3:],
+                self.color_changes[latest_index]["c3"][3:],
+                self.color_changes[latest_index]["acc"],
+            )
         if c4:
-            colors += "\\4c" + Utils.interpolate(pct, self.color_changes[latest_index-1]['c4'][3:], self.color_changes[latest_index]['c4'][3:], self.color_changes[latest_index]['acc'])
+            colors += "\\4c" + Utils.interpolate(
+                pct,
+                self.color_changes[latest_index - 1]["c4"][3:],
+                self.color_changes[latest_index]["c4"][3:],
+                self.color_changes[latest_index]["acc"],
+            )
         return colors

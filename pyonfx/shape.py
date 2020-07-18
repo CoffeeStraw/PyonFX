@@ -29,10 +29,13 @@ class Shape:
     Args:
         drawing_cmds (str): The shape's drawing commands in ASS format as a string.
     """
+
     def __init__(self, drawing_cmds):
         # Assure that drawing_cmds is a string
         if not isinstance(drawing_cmds, str):
-            raise TypeError("A string containing the shape's drawing commands is expected, but you passed a " + str(type(drawing_cmds)))
+            raise TypeError(
+                f"A string containing the shape's drawing commands is expected, but you passed a {type(drawing_cmds)}"
+            )
         self.drawing_cmds = drawing_cmds
 
     def __repr__(self):
@@ -49,7 +52,7 @@ class Shape:
     @staticmethod
     def format_value(x, prec=3):
         # Utility function to properly format values for shapes also returning them as a string
-        return f"{x:.{prec}f}".rstrip('0').rstrip('.')
+        return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
     def has_error(self):
         """Utility function that checks if the shape is valid.
@@ -63,69 +66,81 @@ class Shape:
         mode = ""
 
         # Prepare usefull lists
-        two_args_cmds = ['m', 'n', 'l', 'p']
-        six_args_cmds = ['b', 's']
+        two_args_cmds = ["m", "n", "l", "p"]
+        six_args_cmds = ["b", "s"]
 
         # Iterate over commands and points
         i = 0
         while i < n:
             if cad[i] in two_args_cmds:
                 # Check if we have an unexpected and of the shape
-                if n-i < 3:
-                    return f"Unexpected end of shape ('{cad[i]}' expect at least two args)"
+                if n - i < 3:
+                    return (
+                        f"Unexpected end of shape ('{cad[i]}' expect at least two args)"
+                    )
 
                 # Check if we have two numeric values after command
                 try:
-                    float(cad[i+1])
-                    float(cad[i+2])
+                    float(cad[i + 1])
+                    float(cad[i + 2])
                 except ValueError:
-                    return f"Expected numeric value at: '{cad[i]} {cad[i+1]} {cad[i+2]}'"
+                    return (
+                        f"Expected numeric value at: '{cad[i]} {cad[i+1]} {cad[i+2]}'"
+                    )
 
                 # Valid, go on
                 mode = cad[i]
                 i += 3
             elif cad[i] in six_args_cmds:
                 # Check if we have an unexpected and of the shape
-                if n-i < 7:
-                    return f"Unexpected end of shape ('{cad[i]}' expect at least six args)"
+                if n - i < 7:
+                    return (
+                        f"Unexpected end of shape ('{cad[i]}' expect at least six args)"
+                    )
 
                 # Check if we have six numeric values after command
                 try:
                     for x in range(1, 7):
-                        float(cad[i+x])
+                        float(cad[i + x])
                 except ValueError:
                     return f"Expected numeric value at: '{cad[i]} {' '.join(cad[i+1:i+7])}'"
 
                 # Valid, go on
                 mode = cad[i]
                 i += 7
-            elif cad[i] == 'c':
+            elif cad[i] == "c":
                 # 'c' expect no arguments, skip
                 mode = ""
                 i += 1
             elif mode in two_args_cmds:
                 # Check if we have an unexpected and of the shape
-                if n-i < 2:
-                    return f"Unexpected end of shape ('{cad[i]}' expect at least two args)"
+                if n - i < 2:
+                    return (
+                        f"Unexpected end of shape ('{cad[i]}' expect at least two args)"
+                    )
 
                 # Check if we have two numeric values
                 try:
                     float(cad[i])
-                    float(cad[i+1])
+                    float(cad[i + 1])
                 except ValueError:
-                    return f"Expected numeric value at: '{mode} ... {cad[i]} {cad[i+1]}'"
+                    return (
+                        f"Expected numeric value at: '{mode} ... {cad[i]} {cad[i+1]}'"
+                    )
 
                 # Valid, go on
                 i += 2
             elif mode in six_args_cmds:
                 # Check if we have an unexpected and of the shape
-                if n-i < 6:
-                    return f"Unexpected end of shape ('{cad[i]}' expect at least six args)"
+                if n - i < 6:
+                    return (
+                        f"Unexpected end of shape ('{cad[i]}' expect at least six args)"
+                    )
 
                 # Check if we have six numeric values
                 try:
                     for x in range(6):
-                        float(cad[i+x])
+                        float(cad[i + x])
                 except ValueError:
                     return f"Expected numeric value at: '{mode} ... {' '.join(cad[i:i+6])}'"
 
@@ -169,7 +184,7 @@ class Shape:
             while i < n:
                 try:
                     # Applying transformation
-                    x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i+1]))
+                    x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i + 1]))
                 except TypeError:
                     # Values weren't returned, so we don't need to modify them
                     i += 2
@@ -182,14 +197,19 @@ class Shape:
                     raise ValueError("Unexpected end of the shape")
 
                 # Convert back to string the results for later
-                cmds_and_points[i:i+2] = Shape.format_value(x), Shape.format_value(y)
+                cmds_and_points[i : i + 2] = (
+                    Shape.format_value(x),
+                    Shape.format_value(y),
+                )
                 i += 2
         else:
             typ = ""
             while i < n:
                 try:
                     # Applying transformation
-                    x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i+1]), typ)
+                    x, y = fun(
+                        float(cmds_and_points[i]), float(cmds_and_points[i + 1]), typ
+                    )
                 except TypeError:
                     # Values weren't returned, so we don't need to modify them
                     i += 2
@@ -203,11 +223,14 @@ class Shape:
                     raise ValueError("Unexpected end of the shape")
 
                 # Convert back to string the results for later
-                cmds_and_points[i:i+2] = Shape.format_value(x), Shape.format_value(y)
+                cmds_and_points[i : i + 2] = (
+                    Shape.format_value(x),
+                    Shape.format_value(y),
+                )
                 i += 2
 
         # Sew up everything back and update shape
-        self.drawing_cmds = ' '.join(cmds_and_points)
+        self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
     def bounding(self):
@@ -263,14 +286,14 @@ class Shape:
             >>> m -5 10 l 25 10 25 30 -5 30
         """
         if x is None and y is None:
-            x, y = [-1*el for el in self.bounding()[0:2]]
+            x, y = [-1 * el for el in self.bounding()[0:2]]
         elif x is None:
             x = 0
         elif y is None:
             y = 0
 
         # Update shape
-        self.map(lambda cx, cy: (cx+x, cy+y))
+        self.map(lambda cx, cy: (cx + x, cy + y))
         return self
 
     def flatten(self, tolerance=1.0):
@@ -295,35 +318,66 @@ class Shape:
         # 4th degree curve subdivider (De Casteljau)
         def curve4_subdivide(x0, y0, x1, y1, x2, y2, x3, y3, pct):
             # Calculate points on curve vectors
-            x01, y01, x12, y12, x23, y23 = (x0+x1)*pct, (y0+y1)*pct, (x1+x2)*pct, (y1+y2)*pct, (x2+x3)*pct, (y2+y3)*pct
-            x012, y012, x123, y123 = (x01+x12)*pct, (y01+y12)*pct, (x12+x23)*pct, (y12+y23)*pct
-            x0123, y0123 = (x012+x123)*pct, (y012+y123)*pct
+            x01, y01, x12, y12, x23, y23 = (
+                (x0 + x1) * pct,
+                (y0 + y1) * pct,
+                (x1 + x2) * pct,
+                (y1 + y2) * pct,
+                (x2 + x3) * pct,
+                (y2 + y3) * pct,
+            )
+            x012, y012, x123, y123 = (
+                (x01 + x12) * pct,
+                (y01 + y12) * pct,
+                (x12 + x23) * pct,
+                (y12 + y23) * pct,
+            )
+            x0123, y0123 = (x012 + x123) * pct, (y012 + y123) * pct
             # Return new 2 curves
-            return x0, y0, x01, y01, x012, y012, x0123, y0123, x0123, y0123, x123, y123, x23, y23, x3, y3
+            return (
+                x0,
+                y0,
+                x01,
+                y01,
+                x012,
+                y012,
+                x0123,
+                y0123,
+                x0123,
+                y0123,
+                x123,
+                y123,
+                x23,
+                y23,
+                x3,
+                y3,
+            )
 
         # Check flatness of 4th degree curve with angles
         def curve4_is_flat(x0, y0, x1, y1, x2, y2, x3, y3):
             # Pack curve vectors (only ones non zero)
             vecs = [[x1 - x0, y1 - y0], [x2 - x1, y2 - y1], [x3 - x2, y3 - y2]]
-            vecs = [el for el in vecs if not(el[0] == 0 and el[1] == 0)]
+            vecs = [el for el in vecs if not (el[0] == 0 and el[1] == 0)]
 
             # Inner functions to calculate degrees between two 2d vectors
             def dotproduct(v1, v2):
-                return sum((a*b) for a, b in zip(v1, v2))
+                return sum((a * b) for a, b in zip(v1, v2))
 
             def length(v):
                 return math.sqrt(dotproduct(v, v))
 
             def get_angle(v1, v2):
-                calc = max(min(dotproduct(v1, v2) / (length(v1) * length(v2)), 1), -1) # Clamping value to prevent errors
+                calc = max(
+                    min(dotproduct(v1, v2) / (length(v1) * length(v2)), 1), -1
+                )  # Clamping value to prevent errors
                 angle = math.degrees(math.acos(calc))
-                if (v1[0]*v2[1] - v1[1]*v2[0]) < 0:
+                if (v1[0] * v2[1] - v1[1] * v2[0]) < 0:
                     return -angle
                 return angle
 
             # Check flatness on vectors
             for i in range(1, len(vecs)):
-                if abs(get_angle(vecs[i-1], vecs[i])) > tolerance:
+                if abs(get_angle(vecs[i - 1], vecs[i])) > tolerance:
                     return False
             return True
 
@@ -340,14 +394,33 @@ class Shape:
                     pts += f"{x3} {y3} "
                     return
 
-                x10, y10, x11, y11, x12, y12, x13, y13, x20, y20, x21, y21, x22, y22, x23, y23 = curve4_subdivide(x0, y0, x1, y1, x2, y2, x3, y3, 0.5)
+                (
+                    x10,
+                    y10,
+                    x11,
+                    y11,
+                    x12,
+                    y12,
+                    x13,
+                    y13,
+                    x20,
+                    y20,
+                    x21,
+                    y21,
+                    x22,
+                    y22,
+                    x23,
+                    y23,
+                ) = curve4_subdivide(x0, y0, x1, y1, x2, y2, x3, y3, 0.5)
                 convert_recursive(x10, y10, x11, y11, x12, y12, x13, y13)
                 convert_recursive(x20, y20, x21, y21, x22, y22, x23, y23)
 
             # Splitting curve recursively until we're not satisfied (angle <= tolerance)
             convert_recursive(x0, y0, x1, y1, x2, y2, x3, y3)
             # Return resulting points
-            return ' '.join(pts[:-1].split(' ')[:-2])  # Delete last space and last two float values
+            return " ".join(
+                pts[:-1].split(" ")[:-2]
+            )  # Delete last space and last two float values
 
         # Getting all points and commands in a list
         cmds_and_points = self.drawing_cmds.split()
@@ -356,19 +429,35 @@ class Shape:
 
         # Scanning all commands and points (improvable)
         while i < n:
-            if cmds_and_points[i] == "b":  # We've found a curve, let's split it into lines
+            if (
+                cmds_and_points[i] == "b"
+            ):  # We've found a curve, let's split it into lines
                 try:
                     # Getting all the points: if we don't have exactly 8 points, shape is not valid
-                    x0, y0 = float(cmds_and_points[i-2]), float(cmds_and_points[i-1])
-                    x1, y1 = float(cmds_and_points[i+1]), float(cmds_and_points[i+2])
-                    x2, y2 = float(cmds_and_points[i+3]), float(cmds_and_points[i+4])
-                    x3, y3 = float(cmds_and_points[i+5]), float(cmds_and_points[i+6])
+                    x0, y0 = (
+                        float(cmds_and_points[i - 2]),
+                        float(cmds_and_points[i - 1]),
+                    )
+                    x1, y1 = (
+                        float(cmds_and_points[i + 1]),
+                        float(cmds_and_points[i + 2]),
+                    )
+                    x2, y2 = (
+                        float(cmds_and_points[i + 3]),
+                        float(cmds_and_points[i + 4]),
+                    )
+                    x3, y3 = (
+                        float(cmds_and_points[i + 5]),
+                        float(cmds_and_points[i + 6]),
+                    )
                 except IndexError:
-                    raise ValueError("Shape providen is not valid (not enough points for a curve)")
+                    raise ValueError(
+                        "Shape providen is not valid (not enough points for a curve)"
+                    )
 
                 # Obtaining the converted curve and saving it for later
                 cmds_and_points[i] = "l"
-                cmds_and_points[i+1] = curve4_to_lines(x0, y0, x1, y1, x2, y2, x3, y3)
+                cmds_and_points[i + 1] = curve4_to_lines(x0, y0, x1, y1, x2, y2, x3, y3)
 
                 i += 2
                 n -= 3
@@ -389,14 +478,14 @@ class Shape:
                         n += 1
                     except ValueError:
                         pass
-            elif cmds_and_points[i] == "c": # Deleting c tag?
+            elif cmds_and_points[i] == "c":  # Deleting c tag?
                 del cmds_and_points[i]
                 n -= 1
             else:
                 i += 1
 
         # Update shape
-        self.drawing_cmds = ' '.join(cmds_and_points)
+        self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
     def split(self, max_len=16, tolerance=1.0):
@@ -419,14 +508,16 @@ class Shape:
             >>> m -100.5 0 l -100 0 -90 0 -80 0 -70 0 -60 0 -50 0 -40 0 -30 0 -20 0 -10 0 0 0 10 0 20 0 30 0 40 0 50 0 60 0 70 0 80 0 90 0 100 0 l 99.964 2.325 99.855 4.614 99.676 6.866 99.426 9.082 99.108 11.261 98.723 13.403 98.271 15.509 97.754 17.578 97.173 19.611 96.528 21.606 95.822 23.566 95.056 25.488 94.23 27.374 93.345 29.224 92.403 31.036 91.405 32.812 90.352 34.552 89.246 36.255 88.086 37.921 86.876 39.551 85.614 41.144 84.304 42.7 82.945 44.22 81.54 45.703 80.088 47.15 78.592 48.56 77.053 49.933 75.471 51.27 73.848 52.57 72.184 53.833 70.482 55.06 68.742 56.25 66.965 57.404 65.153 58.521 63.307 59.601 61.427 60.645 59.515 61.652 57.572 62.622 55.599 63.556 53.598 64.453 51.569 65.314 49.514 66.138 47.433 66.925 45.329 67.676 43.201 68.39 41.052 69.067 38.882 69.708 36.692 70.312 34.484 70.88 32.259 71.411 27.762 72.363 23.209 73.169 18.61 73.828 13.975 74.341 9.311 74.707 4.629 74.927 -0.062 75 -4.755 74.927 -9.438 74.707 -14.103 74.341 -18.741 73.828 -23.343 73.169 -27.9 72.363 -32.402 71.411 -34.63 70.88 -36.841 70.312 -39.033 69.708 -41.207 69.067 -43.359 68.39 -45.49 67.676 -47.599 66.925 -49.683 66.138 -51.743 65.314 -53.776 64.453 -55.782 63.556 -57.759 62.622 -59.707 61.652 -61.624 60.645 -63.509 59.601 -65.361 58.521 -67.178 57.404 -68.961 56.25 -70.707 55.06 -72.415 53.833 -74.085 52.57 -75.714 51.27 -77.303 49.933 -78.85 48.56 -80.353 47.15 -81.811 45.703 -83.224 44.22 -84.59 42.7 -85.909 41.144 -87.178 39.551 -88.397 37.921 -89.564 36.255 -90.68 34.552 -91.741 32.812 -92.748 31.036 -93.699 29.224 -94.593 27.374 -95.428 25.488 -96.205 23.566 -96.92 21.606 -97.575 19.611 -98.166 17.578 -98.693 15.509 -99.156 13.403 -99.552 11.261 -99.881 9.082 -100.141 6.866 -100.332 4.614 -100.452 2.325 -100.5 0
         """
         if max_len <= 0:
-            raise ValueError("The length of segments must be a positive and non-zero value")
+            raise ValueError(
+                "The length of segments must be a positive and non-zero value"
+            )
 
         # Internal function to help splitting a line
         def line_split(x0, y0, x1, y1):
             x0, y0, x1, y1 = float(x0), float(y0), float(x1), float(y1)
             # Line direction & length
             rel_x, rel_y = x1 - x0, y1 - y0
-            distance = math.sqrt(rel_x*rel_x + rel_y*rel_y)
+            distance = math.sqrt(rel_x * rel_x + rel_y * rel_y)
             # If the line is too long -> split
             if distance > max_len:
                 lines, distance_rest = [], distance % max_len
@@ -434,13 +525,16 @@ class Shape:
 
                 while cur_distance <= distance:
                     pct = cur_distance / distance
-                    x, y = Shape.format_value(x0 + rel_x * pct), Shape.format_value(y0 + rel_y * pct)
+                    x, y = (
+                        Shape.format_value(x0 + rel_x * pct),
+                        Shape.format_value(y0 + rel_y * pct),
+                    )
 
                     lines.append(f"{x} {y}")
                     cur_distance += max_len
 
                 return " ".join(lines), lines[-1].split()
-            else: # No line split
+            else:  # No line split
                 x1, y1 = Shape.format_value(x1), Shape.format_value(y1)
                 return f"{x1} {y1}", [x1, y1]
 
@@ -457,24 +551,41 @@ class Shape:
         # Splitting everything splittable, probably improvable
         while i < n:
             current = cmds_and_points[i]
-            if current == 'l':
+            if current == "l":
                 # Activate line mode, save previous two points
                 is_line = True
-                if not previous_two: # If we're not running into contiguous line, we need to save the previous two
-                    previous_two = [cmds_and_points[i-2], cmds_and_points[i-1]]
+                if (
+                    not previous_two
+                ):  # If we're not running into contiguous line, we need to save the previous two
+                    previous_two = [cmds_and_points[i - 2], cmds_and_points[i - 1]]
                 i += 1
-            elif current == 'm' or current == 'n' or current == 'b' or current == 's' or current == 'p' or current == 'c':
-                if current == 'm':
-                    if last_move: # If we had a previous move, we need to close the previous figure before proceding
+            elif (
+                current == "m"
+                or current == "n"
+                or current == "b"
+                or current == "s"
+                or current == "p"
+                or current == "c"
+            ):
+                if current == "m":
+                    if (
+                        last_move
+                    ):  # If we had a previous move, we need to close the previous figure before proceding
                         x0, y0 = None, None
-                        if previous_two: # If I don't have previous point, I can read them on cmds_and_points, else I wil take 'em
+                        if (
+                            previous_two
+                        ):  # If I don't have previous point, I can read them on cmds_and_points, else I wil take 'em
                             x0, y0 = previous_two[0], previous_two[1]
                         else:
-                            x0, y0 = cmds_and_points[i-2], cmds_and_points[i-1]
+                            x0, y0 = cmds_and_points[i - 2], cmds_and_points[i - 1]
 
-                        if not(x0 == last_move[0] and y0 == last_move[1]): # Closing last figure
-                            cmds_and_points[i] = line_split(x0, y0, last_move[0], last_move[1])[0] + " m"
-                    last_move = [cmds_and_points[i+1], cmds_and_points[i+2]]
+                        if not (
+                            x0 == last_move[0] and y0 == last_move[1]
+                        ):  # Closing last figure
+                            cmds_and_points[i] = (
+                                line_split(x0, y0, last_move[0], last_move[1])[0] + " m"
+                            )
+                    last_move = [cmds_and_points[i + 1], cmds_and_points[i + 2]]
 
                 # Disabling line mode, removing previous two points
                 is_line = False
@@ -482,12 +593,17 @@ class Shape:
                 i += 1
             elif is_line:
                 # Do the work with the two points found and the previous two
-                cmds_and_points[i], previous_two = line_split(previous_two[0], previous_two[1], cmds_and_points[i], cmds_and_points[i+1])
-                del cmds_and_points[i+1]
+                cmds_and_points[i], previous_two = line_split(
+                    previous_two[0],
+                    previous_two[1],
+                    cmds_and_points[i],
+                    cmds_and_points[i + 1],
+                )
+                del cmds_and_points[i + 1]
                 # Let's go to the next two points or tag
                 i += 1
                 n -= 1
-            else: # We're working with points that are not lines points, let's go forward
+            else:  # We're working with points that are not lines points, let's go forward
                 i += 2
 
         # Close last figure of new shape, taking two last points and two last points of move
@@ -495,17 +611,36 @@ class Shape:
         if not previous_two:
             while i >= 0:
                 current = cmds_and_points[i]
-                current_prev = cmds_and_points[i-1]
-                if current != 'm' and current != 'n' and current != 'b' and current != 's' and current != 'p' and current != 'c' and \
-                   current_prev != 'm' and current_prev != 'n' and current_prev != 'b' and current_prev != 's' and current_prev != 'p' and current_prev != 'c':
+                current_prev = cmds_and_points[i - 1]
+                if (
+                    current != "m"
+                    and current != "n"
+                    and current != "b"
+                    and current != "s"
+                    and current != "p"
+                    and current != "c"
+                    and current_prev != "m"
+                    and current_prev != "n"
+                    and current_prev != "b"
+                    and current_prev != "s"
+                    and current_prev != "p"
+                    and current_prev != "c"
+                ):
                     previous_two = [current, current_prev]
                     break
                 i -= 1
-        if not(previous_two[0] == last_move[0] and previous_two[1] == last_move[1]): # Split!
-            cmds_and_points.append("l " + line_split(previous_two[0], previous_two[1], last_move[0], last_move[1])[0])
+        if not (
+            previous_two[0] == last_move[0] and previous_two[1] == last_move[1]
+        ):  # Split!
+            cmds_and_points.append(
+                "l "
+                + line_split(
+                    previous_two[0], previous_two[1], last_move[0], last_move[1]
+                )[0]
+            )
 
         # Sew up everything back and update shape
-        self.drawing_cmds = ' '.join(cmds_and_points)
+        self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
     def __to_outline(self, bord_xy, bord_y=None, mode="round"):
@@ -538,7 +673,7 @@ class Shape:
             A shape object representing a ring.
         """
         try:
-            out_r2, in_r2 = out_r*2, in_r*2
+            out_r2, in_r2 = out_r * 2, in_r * 2
             off = out_r - in_r
             off_in_r = off + in_r
             off_in_r2 = off + in_r2
@@ -546,30 +681,68 @@ class Shape:
             raise TypeError("Number(s) expected")
 
         if in_r >= out_r:
-            raise ValueError("Valid number expected. Inner radius must be less than outer radius")
+            raise ValueError(
+                "Valid number expected. Inner radius must be less than outer radius"
+            )
 
         f = Shape.format_value
-        return Shape("m 0 %s "\
-        "b 0 %s 0 0 %s 0 "\
-        "%s 0 %s 0 %s %s "\
-        "%s %s %s %s %s %s "\
-        "%s %s 0 %s 0 %s "\
-        "m %s %s "\
-        "b %s %s %s %s %s %s "\
-        "%s %s %s %s %s %s "\
-        "%s %s %s %s %s %s "\
-        "%s %s %s %s %s %s" % (
-            f(out_r),                                                                           # outer move
-            f(out_r),     f(out_r),                                                             # outer curve 1
-            f(out_r),     f(out_r2),    f(out_r2),    f(out_r),                                 # outer curve 2
-            f(out_r2),    f(out_r),     f(out_r2),    f(out_r2),    f(out_r),     f(out_r2),    # outer curve 3
-            f(out_r),     f(out_r2),    f(out_r2),    f(out_r),                                 # outer curve 4
-            f(off),       f(off_in_r),                                                          # inner move
-            f(off),       f(off_in_r),  f(off),       f(off_in_r2), f(off_in_r),  f(off_in_r2), # inner curve 1
-            f(off_in_r),  f(off_in_r2), f(off_in_r2), f(off_in_r2), f(off_in_r2), f(off_in_r),	# inner curve 2
-            f(off_in_r2), f(off_in_r),  f(off_in_r2), f(off),       f(off_in_r),  f(off),       # inner curve 3
-            f(off_in_r),  f(off),       f(off),       f(off),       f(off),       f(off_in_r)   # inner curve 4
-        ))
+        return Shape(
+            "m 0 %s "
+            "b 0 %s 0 0 %s 0 "
+            "%s 0 %s 0 %s %s "
+            "%s %s %s %s %s %s "
+            "%s %s 0 %s 0 %s "
+            "m %s %s "
+            "b %s %s %s %s %s %s "
+            "%s %s %s %s %s %s "
+            "%s %s %s %s %s %s "
+            "%s %s %s %s %s %s"
+            % (
+                f(out_r),  # outer move
+                f(out_r),
+                f(out_r),  # outer curve 1
+                f(out_r),
+                f(out_r2),
+                f(out_r2),
+                f(out_r),  # outer curve 2
+                f(out_r2),
+                f(out_r),
+                f(out_r2),
+                f(out_r2),
+                f(out_r),
+                f(out_r2),  # outer curve 3
+                f(out_r),
+                f(out_r2),
+                f(out_r2),
+                f(out_r),  # outer curve 4
+                f(off),
+                f(off_in_r),  # inner move
+                f(off),
+                f(off_in_r),
+                f(off),
+                f(off_in_r2),
+                f(off_in_r),
+                f(off_in_r2),  # inner curve 1
+                f(off_in_r),
+                f(off_in_r2),
+                f(off_in_r2),
+                f(off_in_r2),
+                f(off_in_r2),
+                f(off_in_r),  # inner curve 2
+                f(off_in_r2),
+                f(off_in_r),
+                f(off_in_r2),
+                f(off),
+                f(off_in_r),
+                f(off),  # inner curve 3
+                f(off_in_r),
+                f(off),
+                f(off),
+                f(off),
+                f(off),
+                f(off_in_r),  # inner curve 4
+            )
+        )
 
     @staticmethod
     def ellipse(w, h):
@@ -585,23 +758,38 @@ class Shape:
             A shape object representing an ellipse.
         """
         try:
-            w2, h2 = w/2, h/2
+            w2, h2 = w / 2, h / 2
         except TypeError:
             raise TypeError("Number(s) expected")
 
         f = Shape.format_value
 
-        return Shape("m 0 %s "\
-        "b 0 %s 0 0 %s 0 "\
-        "%s 0 %s 0 %s %s "\
-        "%s %s %s %s %s %s "\
-        "%s %s 0 %s 0 %s" % (
-            f(h2),									# move
-            f(h2), f(w2),							# curve 1
-            f(w2), f(w),  f(w), f(h2),				# curve 2
-            f(w),  f(h2), f(w), f(h), f(w2), f(h),	# curve 3
-            f(w2), f(h),  f(h), f(h2)				# curve 4
-        ))
+        return Shape(
+            "m 0 %s "
+            "b 0 %s 0 0 %s 0 "
+            "%s 0 %s 0 %s %s "
+            "%s %s %s %s %s %s "
+            "%s %s 0 %s 0 %s"
+            % (
+                f(h2),  # move
+                f(h2),
+                f(w2),  # curve 1
+                f(w2),
+                f(w),
+                f(w),
+                f(h2),  # curve 2
+                f(w),
+                f(h2),
+                f(w),
+                f(h),
+                f(w2),
+                f(h),  # curve 3
+                f(w2),
+                f(h),
+                f(h),
+                f(h2),  # curve 4
+            )
+        )
 
     @staticmethod
     def heart(size, offset=0):
@@ -621,17 +809,20 @@ class Shape:
         except TypeError:
             raise TypeError("Size parameter must be a number")
         # Build shape from template
-        shape = Shape("m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30").map(lambda x, y: (x * mult, y * mult))
+        shape = Shape(
+            "m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30"
+        ).map(lambda x, y: (x * mult, y * mult))
 
         # Shift mid point of heart vertically
         count = 0
+
         def shift_mid_point(x, y):
             nonlocal count
             count += 1
 
             if count == 7:
                 try:
-                    return x, y+offset
+                    return x, y + offset
                 except TypeError:
                     raise TypeError("Offset parameter must be a number")
             return x, y
@@ -646,25 +837,39 @@ class Shape:
         """
         # Alias for utility functions
         f = Shape.format_value
+
         def rotate_on_axis_z(point, theta):
             # Internal function to rotate a point around z axis by a given angle.
             theta = math.radians(theta)
-            return Quaternion(axis=[0, 0, 1],angle=theta).rotate(point)
+            return Quaternion(axis=[0, 0, 1], angle=theta).rotate(point)
 
         # Building shape
         shape = ["m 0 %s %s" % (-outer_size, g_or_s)]
         inner_p, outer_p = 0, 0
 
-        for i in range(1, edges+1):
+        for i in range(1, edges + 1):
             # Inner edge
             inner_p = rotate_on_axis_z([0, -inner_size, 0], ((i - 0.5) / edges) * 360)
             # Outer edge
             outer_p = rotate_on_axis_z([0, -outer_size, 0], (i / edges) * 360)
             # Add curve / line
             if g_or_s == "l":
-                shape.append("%s %s %s %s" % (f(inner_p[0]), f(inner_p[1]), f(outer_p[0]), f(outer_p[1])))
+                shape.append(
+                    "%s %s %s %s"
+                    % (f(inner_p[0]), f(inner_p[1]), f(outer_p[0]), f(outer_p[1]))
+                )
             else:
-                shape.append("%s %s %s %s %s %s" % (f(inner_p[0]), f(inner_p[1]), f(inner_p[0]), f(inner_p[1]), f(outer_p[0]), f(outer_p[1])))
+                shape.append(
+                    "%s %s %s %s %s %s"
+                    % (
+                        f(inner_p[0]),
+                        f(inner_p[1]),
+                        f(inner_p[0]),
+                        f(inner_p[1]),
+                        f(outer_p[0]),
+                        f(outer_p[1]),
+                    )
+                )
 
         shape = Shape(" ".join(shape))
 
@@ -739,4 +944,15 @@ class Shape:
             raise TypeError("Number expected")
 
         f = Shape.format_value
-        return Shape("m %s %s l %s %s 0 %s %s %s" % (f(size/2), f(base), f(size), f(base+h), f(base+h), f(size/2), f(base)))
+        return Shape(
+            "m %s %s l %s %s 0 %s %s %s"
+            % (
+                f(size / 2),
+                f(base),
+                f(size),
+                f(base + h),
+                f(base + h),
+                f(size / 2),
+                f(base),
+            )
+        )

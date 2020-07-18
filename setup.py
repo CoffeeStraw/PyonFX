@@ -17,20 +17,21 @@ def find_version(*file_paths):
         return version_match.group(1)
     raise RuntimeError("Unable to find version string.")
 
+
 def get_requirements():
-    requirements = [
-        'pyquaternion',
-    ]
-    
-    if os.environ.get('READTHEDOCS') != 'True':
-        requirements.extend([
-            'pywin32; sys_platform == "win32"',
-            'pycairo; sys_platform == "linux" or sys_platform == "darwin"',
-            'PyGObject; sys_platform == "linux" or sys_platform == "darwin"',
-        ])
-    
+    requirements = ["pyquaternion"]
+
+    if os.environ.get("READTHEDOCS") != "True":
+        requirements.extend(
+            [
+                'pywin32; sys_platform == "win32"',
+                'pycairo; sys_platform == "linux" or sys_platform == "darwin"',
+                'PyGObject; sys_platform == "linux" or sys_platform == "darwin"',
+            ]
+        )
+
     return requirements
-    
+
 
 setuptools.setup(
     name="pyonfx",
@@ -44,12 +45,7 @@ setuptools.setup(
     packages=["pyonfx"],
     install_requires=get_requirements(),
     extras_require={
-        "dev": [
-            "pytest",
-            "pytest-check",
-            "sphinx_rtd_theme",
-            "sphinxcontrib-napoleon",
-        ]
+        "dev": ["pytest", "pytest-check", "sphinx_rtd_theme", "sphinxcontrib-napoleon"]
     },
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",

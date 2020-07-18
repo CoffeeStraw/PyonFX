@@ -25,23 +25,24 @@ from typing import List
 from .font_utility import Font
 from .convert import Convert
 
+
 def pretty_print(obj, indent=0, name=""):
     # Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
-    if   type(obj) == Line:
-        out = ' ' * indent + f"lines[{obj.i}] ({type(obj).__name__}):\n"
+    if type(obj) == Line:
+        out = " " * indent + f"lines[{obj.i}] ({type(obj).__name__}):\n"
     elif type(obj) == Word:
-        out = ' ' * indent + f"words[{obj.i}] ({type(obj).__name__}):\n"
+        out = " " * indent + f"words[{obj.i}] ({type(obj).__name__}):\n"
     elif type(obj) == Syllable:
-        out = ' ' * indent + f"syls[{obj.i}] ({type(obj).__name__}):\n"
+        out = " " * indent + f"syls[{obj.i}] ({type(obj).__name__}):\n"
     elif type(obj) == Char:
-        out = ' ' * indent + f"chars[{obj.i}] ({type(obj).__name__}):\n"
+        out = " " * indent + f"chars[{obj.i}] ({type(obj).__name__}):\n"
     else:
-        out = ' ' * indent + f"{name}({type(obj).__name__}):\n"
+        out = " " * indent + f"{name}({type(obj).__name__}):\n"
 
     # Let's print all this object fields
     indent += 4
     for k, v in obj.__dict__.items():
-        if '__dict__' in dir(v):
+        if "__dict__" in dir(v):
             # Work recursively to print another object
             out += pretty_print(v, indent, k + " ")
         elif type(v) == list:
@@ -50,7 +51,7 @@ def pretty_print(obj, indent=0, name=""):
                 out += pretty_print(el, indent, f"{k}[{i}] ")
         else:
             # Just print a field of this object
-            out += ' ' * indent +  f"{k}: {str(v)}\n"
+            out += " " * indent + f"{k}: {str(v)}\n"
 
     return out
 
@@ -68,12 +69,14 @@ class Meta:
         audio (str): Loaded audio path (absolute)
         video (str): Loaded video path (absolute)
     """
+
     wrap_style: int
     scaled_border_and_shadow: bool
     play_res_x: int
     play_res_y: int
     audio: str
     video: str
+
     def __repr__(self):
         return pretty_print(self)
 
@@ -111,6 +114,7 @@ class Style:
         margin_v (int): Distance from the bottom (or top if alignment >= 7) of the video frame
         encoding (int): Codepage used to map codepoints to glyphs
     """
+
     fontname: str
     fontsize: float
     color1: str
@@ -137,6 +141,7 @@ class Style:
     margin_r: int
     margin_v: int
     encoding: int
+
     def __repr__(self):
         return pretty_print(self)
 
@@ -148,9 +153,9 @@ class Char:
 
     Attributes:
         i (int): Char index number
-        word_i (int): Char word index (e.g.: In line text "Hello PyonFX users!", letter "u" will have word_i=2).
-        syl_i (int): Char syl index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", letter "F" will have syl_i=3).
-        syl_char_i (int): Char invidual syl index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", letter "e" of "users" will have syl_char_i=2).
+        word_i (int): Char word index (e.g.: In line text ``Hello PyonFX users!``, letter "u" will have word_i=2).
+        syl_i (int): Char syl index (e.g.: In line text ``{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!``, letter "F" will have syl_i=3).
+        syl_char_i (int): Char invidual syl index (e.g.: In line text ``{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!``, letter "e" of "users" will have syl_char_i=2).
         start_time (int): Char start time (in milliseconds).
         end_time (int): Char end time (in milliseconds).
         duration (int): Char duration (in milliseconds).
@@ -170,6 +175,7 @@ class Char:
         middle (float): Char text position middle.
         bottom (float): Char text position bottom.
     """
+
     i: int
     word_i: int
     syl_i: int
@@ -192,6 +198,7 @@ class Char:
     top: float
     middle: float
     bottom: float
+
     def __repr__(self):
         return pretty_print(self)
 
@@ -200,11 +207,11 @@ class Syllable:
     """Syllable object contains informations about a single syl of a line in the Ass.
 
     A syl can be defined as some text after a karaoke tag (k, ko, kf)
-    (e.g.: In "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", "Pyon" and "FX" are distinct syllables),
+    (e.g.: In ``{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!``, "Pyon" and "FX" are distinct syllables),
 
     Attributes:
         i (int): Syllable index number
-        word_i (int): Syllable word index (e.g.: In line text "{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!", syl "Pyon" will have word_i=1).
+        word_i (int): Syllable word index (e.g.: In line text ``{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!``, syl "Pyon" will have word_i=1).
         start_time (int): Syllable start time (in milliseconds).
         end_time (int): Syllable end time (in milliseconds).
         duration (int): Syllable duration (in milliseconds).
@@ -225,6 +232,7 @@ class Syllable:
         middle (float): Syllable text position middle.
         bottom (float): Syllable text position bottom.
     """
+
     i: int
     word_i: int
     start_time: int
@@ -246,6 +254,7 @@ class Syllable:
     top: float
     middle: float
     bottom: float
+
     def __repr__(self):
         return pretty_print(self)
 
@@ -276,6 +285,7 @@ class Word:
         middle (float): Word text position middle.
         bottom (float): Word text position bottom.
     """
+
     i: int
     start_time: int
     end_time: int
@@ -294,6 +304,7 @@ class Word:
     top: float
     middle: float
     bottom: float
+
     def __repr__(self):
         return pretty_print(self)
 
@@ -340,6 +351,7 @@ class Line:
         syls (list): List containing objects :class:`Syllable` in this line (if available) (*).
         chars (list): List containing objects :class:`Char` in this line (*).
     """
+
     i: int
     comment: bool
     layer: int
@@ -374,6 +386,7 @@ class Line:
     words: List[Word]
     syls: List[Syllable]
     chars: List[Char]
+
     def __repr__(self):
         return pretty_print(self)
 
@@ -414,7 +427,14 @@ class Ass:
             meta, styles, lines = io.get_data()
     """
 
-    def __init__(self, path_input="", path_output="Output.ass", keep_original=True, extended=True, vertical_kanji=True):
+    def __init__(
+        self,
+        path_input="",
+        path_output="Output.ass",
+        keep_original=True,
+        extended=True,
+        vertical_kanji=True,
+    ):
         # Starting to take process time
         self.__saved = False
         self.__plines = 0
@@ -428,7 +448,9 @@ class Ass:
 
         # Checking sub file validity (does it exists?)
         if not os.path.isfile(path_input):
-            raise FileNotFoundError("Invalid path for the Subtitle file: %s" % path_input)
+            raise FileNotFoundError(
+                "Invalid path for the Subtitle file: %s" % path_input
+            )
 
         # Getting absolute output file path
         if path_output == "Output.ass":
@@ -464,7 +486,10 @@ class Ass:
                             media_dir = os.path.dirname(media_dir)
                             mediafile = mediafile[3:]
 
-                        mediafile = os.path.normpath("%s%s%s" % (media_dir, os.sep, mediafile))
+                        mediafile = os.path.normpath(
+                            "%s%s%s" % (media_dir, os.sep, mediafile)
+                        )
+
                         if not os.path.isfile(mediafile):
                             mediafile = tmp
 
@@ -488,6 +513,7 @@ class Ass:
 
                 # Appending line to output
                 self.__output.append(line)
+
             # Parsing Styles
             elif section == "V4+ Styles":
                 # Appending line to output
@@ -498,7 +524,7 @@ class Ass:
                     # Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour,
                     # Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle,
                     # BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-                    style = [el for el in style[1].split(',')]
+                    style = [el for el in style[1].split(",")]
                     tmp = Style()
 
                     tmp.fontname = style[1]
@@ -547,7 +573,9 @@ class Ass:
             elif section == "Events":
                 # Appending line to output (commented) if keep_original is True
                 if keep_original:
-                    self.__output.append(re.sub(r"^(Dialogue|Comment):", "Comment:", line))
+                    self.__output.append(
+                        re.sub(r"^(Dialogue|Comment):", "Comment:", line)
+                    )
 
                 # Analyzing line
                 line = re.match(r"(Dialogue|Comment): (.+?)$", line)
@@ -560,7 +588,7 @@ class Ass:
                     li += 1
 
                     tmp.comment = line[1] == "Comment"
-                    line = [el for el in line[2].split(',')]
+                    line = [el for el in line[2].split(",")]
 
                     tmp.layer = int(line[0])
 
@@ -576,10 +604,9 @@ class Ass:
 
                     tmp.effect = line[8]
 
-                    tmp.raw_text = ','.join(line[9:])
+                    tmp.raw_text = ",".join(line[9:])
 
                     self.lines.append(tmp)
-
 
         # Adding informations to lines and meta?
         if not extended:
@@ -608,19 +635,34 @@ class Ass:
                 font_metrics = font.get_metrics()
 
                 line.width, line.height = font.get_text_extents(line.text)
-                line.ascent, line.descent, line.internal_leading, line.external_leading = font_metrics
+                (
+                    line.ascent,
+                    line.descent,
+                    line.internal_leading,
+                    line.external_leading,
+                ) = font_metrics
+
                 if self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
                     # Horizontal position
-                    tmp_margin_l = line.margin_l if line.margin_l != 0 else line.styleref.margin_l
-                    tmp_margin_r = line.margin_r if line.margin_r != 0 else line.styleref.margin_r
+                    tmp_margin_l = (
+                        line.margin_l if line.margin_l != 0 else line.styleref.margin_l
+                    )
+                    tmp_margin_r = (
+                        line.margin_r if line.margin_r != 0 else line.styleref.margin_r
+                    )
 
-                    if (line.styleref.alignment-1) % 3 == 0:
+                    if (line.styleref.alignment - 1) % 3 == 0:
                         line.left = tmp_margin_l
                         line.center = line.left + line.width / 2
                         line.right = line.left + line.width
                         line.x = line.left
-                    elif (line.styleref.alignment-2) % 3 == 0:
-                        line.left = self.meta.play_res_x / 2 - line.width / 2 + tmp_margin_l / 2 - tmp_margin_r / 2
+                    elif (line.styleref.alignment - 2) % 3 == 0:
+                        line.left = (
+                            self.meta.play_res_x / 2
+                            - line.width / 2
+                            + tmp_margin_l / 2
+                            - tmp_margin_r / 2
+                        )
                         line.center = line.left + line.width / 2
                         line.right = line.left + line.width
                         line.x = line.center
@@ -632,7 +674,11 @@ class Ass:
 
                     # Vertical position
                     if line.styleref.alignment > 6:
-                        line.top = line.margin_v if line.margin_v != 0 else line.styleref.margin_v
+                        line.top = (
+                            line.margin_v
+                            if line.margin_v != 0
+                            else line.styleref.margin_v
+                        )
                         line.middle = line.top + line.height / 2
                         line.bottom = line.top + line.height
                         line.y = line.top
@@ -642,7 +688,15 @@ class Ass:
                         line.bottom = line.top + line.height
                         line.y = line.middle
                     else:
-                        line.top = self.meta.play_res_y - (line.margin_v if line.margin_v != 0 else line.styleref.margin_v) - line.height
+                        line.top = (
+                            self.meta.play_res_y
+                            - (
+                                line.margin_v
+                                if line.margin_v != 0
+                                else line.styleref.margin_v
+                            )
+                            - line.height
+                        )
                         line.middle = line.top + line.height / 2
                         line.bottom = line.top + line.height
                         line.y = line.bottom
@@ -655,7 +709,9 @@ class Ass:
                 line.words = []
 
                 wi = 0
-                for prespace, word_text, postspace in re.findall(r"(\s*)([^\s]+)(\s*)", line.text):
+                for prespace, word_text, postspace in re.findall(
+                    r"(\s*)([^\s]+)(\s*)", line.text
+                ):
                     word = Word()
 
                     word.i = wi
@@ -672,7 +728,12 @@ class Ass:
                     word.postspace = len(postspace)
 
                     word.width, word.height = font.get_text_extents(word.text)
-                    word.ascent, word.descent, word.internal_leading, word.external_leading = font_metrics
+                    (
+                        word.ascent,
+                        word.descent,
+                        word.internal_leading,
+                        word.external_leading,
+                    ) = font_metrics
 
                     line.words.append(word)
 
@@ -682,15 +743,17 @@ class Ass:
                         cur_x = line.left
                         for word in line.words:
                             # Horizontal position
-                            cur_x = cur_x + word.prespace * (space_width + style_spacing)
+                            cur_x = cur_x + word.prespace * (
+                                space_width + style_spacing
+                            )
 
                             word.left = cur_x
                             word.center = word.left + word.width / 2
                             word.right = word.left + word.width
 
-                            if (line.styleref.alignment-1) % 3 == 0:
+                            if (line.styleref.alignment - 1) % 3 == 0:
                                 word.x = word.left
-                            elif (line.styleref.alignment-2) % 3 == 0:
+                            elif (line.styleref.alignment - 2) % 3 == 0:
                                 word.x = word.center
                             else:
                                 word.x = word.right
@@ -702,7 +765,12 @@ class Ass:
                             word.y = line.y
 
                             # Updating cur_x
-                            cur_x = cur_x + word.width + word.postspace * (space_width + style_spacing) + style_spacing
+                            cur_x = (
+                                cur_x
+                                + word.width
+                                + word.postspace * (space_width + style_spacing)
+                                + style_spacing
+                            )
                     else:
                         max_width, sum_height = 0, 0
                         for word in line.words:
@@ -737,7 +805,6 @@ class Ass:
                             word.y = word.middle
                             cur_y = cur_y + word.height
 
-
                 # Search for dialog's text chunks, to later create syllables
                 # A text chunk is a text with one or more {tags} preceding it
                 # Tags can be some text or empty string
@@ -748,25 +815,31 @@ class Ass:
 
                 if not tag:
                     # No tags found
-                    text_chunks.append({'tags': "", 'text': line.raw_text})
+                    text_chunks.append({"tags": "", "text": line.raw_text})
                 else:
                     # First chunk without tags?
                     if tag.start() != 0:
-                        text_chunks.append({'tags': "", 'text': line.raw_text[0:tag.start()]})
+                        text_chunks.append(
+                            {"tags": "", "text": line.raw_text[0 : tag.start()]}
+                        )
 
                     # Searching for other tags
                     while True:
                         next_tag = tag_pattern.search(line.raw_text, tag.end())
                         tmp = {
                             # Note that we're removing possibles '}{' caused by consecutive tags
-                            'tags': line.raw_text[tag.start()+1:tag.end()-1].replace('}{', ''),
-                            'text': line.raw_text[tag.end():(next_tag.start() if next_tag else None)],
-                            'word_i': word_i
+                            "tags": line.raw_text[
+                                tag.start() + 1 : tag.end() - 1
+                            ].replace("}{", ""),
+                            "text": line.raw_text[
+                                tag.end() : (next_tag.start() if next_tag else None)
+                            ],
+                            "word_i": word_i,
                         }
                         text_chunks.append(tmp)
 
                         # If there are some spaces after text, then we're at the end of the current word
-                        if re.match(r"(.*?)(\s+)$", tmp['text']):
+                        if re.match(r"(.*?)(\s+)$", tmp["text"]):
                             word_i = word_i + 1
 
                         if not next_tag:
@@ -776,22 +849,22 @@ class Ass:
                 # Adding syls
                 si = 0
                 last_time = 0
-                inline_fx = ''
+                inline_fx = ""
                 syl_tags_pattern = re.compile(r"(.*?)\\[kK][of]?(\d+)(.*)")
 
                 line.syls = []
-                for tc in text_chunks:                    
+                for tc in text_chunks:
                     # If we don't have at least one \k tag, everything is invalid
-                    if not syl_tags_pattern.match(tc['tags']):
+                    if not syl_tags_pattern.match(tc["tags"]):
                         line.syls.clear()
                         break
-                    
-                    posttags = tc['tags']
+
+                    posttags = tc["tags"]
                     syls_in_text_chunk = []
                     while True:
                         # Are there \k in posttags?
                         tags_syl = syl_tags_pattern.match(posttags)
-                        
+
                         if not tags_syl:
                             # Append all the temporary syls, except last one
                             for syl in syls_in_text_chunk[:-1]:
@@ -799,32 +872,47 @@ class Ass:
                                 if curr_inline_fx:
                                     inline_fx = curr_inline_fx[1]
                                 syl.inline_fx = inline_fx
-                                
-                                # Hidden syls are treated like empty syls
-                                syl.prespace, syl.text, syl.postspace = 0, '', 0
 
-                                syl.width, syl.height = font.get_text_extents('')
-                                syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font_metrics
+                                # Hidden syls are treated like empty syls
+                                syl.prespace, syl.text, syl.postspace = 0, "", 0
+
+                                syl.width, syl.height = font.get_text_extents("")
+                                (
+                                    syl.ascent,
+                                    syl.descent,
+                                    syl.internal_leading,
+                                    syl.external_leading,
+                                ) = font_metrics
 
                                 line.syls.append(syl)
-                            
+
                             # Append last syl
                             syl = syls_in_text_chunk[-1]
                             syl.tags += posttags
-                            
+
                             curr_inline_fx = re.search(r"\\\-([^\\]+)", syl.tags)
                             if curr_inline_fx:
                                 inline_fx = curr_inline_fx[1]
                             syl.inline_fx = inline_fx
-                            
-                            if tc['text'].isspace():
-                                syl.prespace, syl.text, syl.postspace = 0, tc['text'], 0
+
+                            if tc["text"].isspace():
+                                syl.prespace, syl.text, syl.postspace = 0, tc["text"], 0
                             else:
-                                syl.prespace, syl.text, syl.postspace = re.match(r"(\s*)(.*?)(\s*)$", tc['text']).groups()
-                                syl.prespace, syl.postspace = len(syl.prespace), len(syl.postspace)
+                                syl.prespace, syl.text, syl.postspace = re.match(
+                                    r"(\s*)(.*?)(\s*)$", tc["text"]
+                                ).groups()
+                                syl.prespace, syl.postspace = (
+                                    len(syl.prespace),
+                                    len(syl.postspace),
+                                )
 
                             syl.width, syl.height = font.get_text_extents(syl.text)
-                            syl.ascent, syl.descent, syl.internal_leading, syl.external_leading = font_metrics
+                            (
+                                syl.ascent,
+                                syl.descent,
+                                syl.internal_leading,
+                                syl.external_leading,
+                            ) = font_metrics
 
                             line.syls.append(syl)
                             break
@@ -842,7 +930,7 @@ class Ass:
                         syl.tags = pretags
 
                         syl.i = si
-                        syl.word_i = tc['word_i']
+                        syl.word_i = tc["word_i"]
 
                         syls_in_text_chunk.append(syl)
 
@@ -852,7 +940,11 @@ class Ass:
 
                 # Calculate syllables positions with all syllables data already available
                 if line.syls and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
-                    if line.styleref.alignment > 6 or line.styleref.alignment < 4 or not vertical_kanji:
+                    if (
+                        line.styleref.alignment > 6
+                        or line.styleref.alignment < 4
+                        or not vertical_kanji
+                    ):
                         cur_x = line.left
                         for syl in line.syls:
                             cur_x = cur_x + syl.prespace * (space_width + style_spacing)
@@ -861,14 +953,19 @@ class Ass:
                             syl.center = syl.left + syl.width / 2
                             syl.right = syl.left + syl.width
 
-                            if (line.styleref.alignment-1) % 3 == 0:
+                            if (line.styleref.alignment - 1) % 3 == 0:
                                 syl.x = syl.left
-                            elif (line.styleref.alignment-2) % 3 == 0:
+                            elif (line.styleref.alignment - 2) % 3 == 0:
                                 syl.x = syl.center
                             else:
                                 syl.x = syl.right
 
-                            cur_x = cur_x + syl.width + syl.postspace * (space_width + style_spacing) + style_spacing
+                            cur_x = (
+                                cur_x
+                                + syl.width
+                                + syl.postspace * (space_width + style_spacing)
+                                + style_spacing
+                            )
 
                             # Vertical position
                             syl.top = line.top
@@ -876,7 +973,7 @@ class Ass:
                             syl.bottom = line.bottom
                             syl.y = line.y
 
-                    else: # Kanji vertical position
+                    else:  # Kanji vertical position
                         max_width, sum_height = 0, 0
                         for syl in line.syls:
                             max_width = max(max_width, syl.width)
@@ -938,7 +1035,9 @@ class Ass:
                 # Getting chars
                 char_index = 0
                 for el in words_or_syls:
-                    el_text = "{}{}{}".format(" "*el.prespace, el.text, " "*el.postspace)
+                    el_text = "{}{}{}".format(
+                        " " * el.prespace, el.text, " " * el.postspace
+                    )
                     for ci, char_text in enumerate(list(el_text)):
                         char = Char()
                         char.i = ci
@@ -962,7 +1061,12 @@ class Ass:
                         char.text = char_text
 
                         char.width, char.height = font.get_text_extents(char.text)
-                        char.ascent, char.descent, char.internal_leading, char.external_leading = font_metrics
+                        (
+                            char.ascent,
+                            char.descent,
+                            char.internal_leading,
+                            char.external_leading,
+                        ) = font_metrics
 
                         line.chars.append(char)
 
@@ -976,9 +1080,9 @@ class Ass:
                             char.center = char.left + char.width / 2
                             char.right = char.left + char.width
 
-                            if (line.styleref.alignment-1) % 3 == 0:
+                            if (line.styleref.alignment - 1) % 3 == 0:
                                 char.x = char.left
-                            elif (line.styleref.alignment-2) % 3 == 0:
+                            elif (line.styleref.alignment - 2) % 3 == 0:
                                 char.x = char.center
                             else:
                                 char.x = char.right
@@ -1027,8 +1131,16 @@ class Ass:
         for style in lines_by_styles:
             lines_by_styles[style].sort(key=lambda x: x.start_time)
             for li, line in enumerate(lines_by_styles[style]):
-                line.leadin = 1000.1 if li == 0 else line.start_time - lines_by_styles[style][li-1].end_time
-                line.leadout = 1000.1 if li == len(lines_by_styles[style])-1 else lines_by_styles[style][li+1].start_time - line.end_time
+                line.leadin = (
+                    1000.1
+                    if li == 0
+                    else line.start_time - lines_by_styles[style][li - 1].end_time
+                )
+                line.leadout = (
+                    1000.1
+                    if li == len(lines_by_styles[style]) - 1
+                    else lines_by_styles[style][li + 1].start_time - line.end_time
+                )
 
     def get_data(self):
         """Utility function to retrieve easily meta styles and lines.
@@ -1048,19 +1160,22 @@ class Ass:
             line (:class:`Line`): A line object. If not valid, TypeError is raised.
         """
         if isinstance(line, Line):
-            self.__output.append("\n%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s" % (
-                "Comment" if line.comment else "Dialogue",
-                line.layer,
-                Convert.time(max(0, int(line.start_time))),
-                Convert.time(max(0, int(line.end_time))),
-                line.style,
-                line.actor,
-                line.margin_l,
-                line.margin_r,
-                line.margin_v,
-                line.effect,
-                line.text
-            ))
+            self.__output.append(
+                "\n%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s"
+                % (
+                    "Comment" if line.comment else "Dialogue",
+                    line.layer,
+                    Convert.time(max(0, int(line.start_time))),
+                    Convert.time(max(0, int(line.end_time))),
+                    line.style,
+                    line.actor,
+                    line.margin_l,
+                    line.margin_r,
+                    line.margin_v,
+                    line.effect,
+                    line.text,
+                )
+            )
             self.__plines += 1
         else:
             raise TypeError("Expected Line object, got %s." % type(line))
@@ -1073,12 +1188,15 @@ class Ass:
         """
 
         # Writing to file
-        with open(self.path_output, 'w', encoding="utf-8-sig") as f:
+        with open(self.path_output, "w", encoding="utf-8-sig") as f:
             f.writelines(self.__output)
         self.__saved = True
 
         if not quiet:
-            print("Produced lines: %d\nProcess duration (in seconds): %.3f" % (self.__plines, time.time() - self.__ptime))
+            print(
+                "Produced lines: %d\nProcess duration (in seconds): %.3f"
+                % (self.__plines, time.time() - self.__ptime)
+            )
 
     def open_aegisub(self):
         """Open the output (specified in self.path_output) with Aegisub.
@@ -1091,7 +1209,9 @@ class Ass:
 
         # Check if it was saved
         if not self.__saved:
-            print("[WARNING] You've tried to open the output with Aegisub before having saved. Check your code.")
+            print(
+                "[WARNING] You've tried to open the output with Aegisub before having saved. Check your code."
+            )
             return -1
 
         if sys.platform == "win32":
@@ -1102,7 +1222,7 @@ class Ass:
             except FileNotFoundError:
                 print("[WARNING] Aegisub not found.")
                 return -1
-        
+
         return 0
 
     def open_mpv(self, video_path="", video_start="", full_screen=False):
@@ -1119,13 +1239,17 @@ class Ass:
 
         # Check if it was saved
         if not self.__saved:
-            print("[ERROR] You've tried to open the output with MPV before having saved. Check your code.")
+            print(
+                "[ERROR] You've tried to open the output with MPV before having saved. Check your code."
+            )
             return -1
 
         # Check if mpv is usable
         if self.meta.video.startswith("?dummy") and not video_path:
-            print("[WARNING] Cannot use MPV (if you have it in your PATH) for file preview, since your .ass contains a dummy video.\n"\
-                  "You can specify a new video source using video_path parameter, check the documentation of the function.")
+            print(
+                "[WARNING] Cannot use MPV (if you have it in your PATH) for file preview, since your .ass contains a dummy video.\n"
+                "You can specify a new video source using video_path parameter, check the documentation of the function."
+            )
             return -1
 
         # Setting up the command to execute
@@ -1145,8 +1269,10 @@ class Ass:
         try:
             subprocess.call(cmd)
         except FileNotFoundError:
-            print("[WARNING] MPV not found in your environment variables.\n"\
-                  "Please refer to the documentation's \"Quick Start\" section if you don't know how to solve it.")
+            print(
+                "[WARNING] MPV not found in your environment variables.\n"
+                "Please refer to the documentation's \"Quick Start\" section if you don't know how to solve it."
+            )
             return -1
 
         return 0

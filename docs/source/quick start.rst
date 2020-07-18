@@ -86,7 +86,7 @@ Warning: The first of the following commands is not well tested. If you run into
    brew install pygobject3 gtk+3 cairo py3cairo pkg-config
    python3 -m pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
 
-Warning: If you have font issues, you might need to change the PangoCairo backend to fontconfig.
+Warning: If you experience output not rendered correctly, you might need to change the PangoCairo backend to fontconfig.
 
 .. code-block:: sh
    :emphasize-lines: 1
