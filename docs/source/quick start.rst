@@ -73,6 +73,27 @@ Warning: The first of the following commands is not well tested. If you run into
    sudo zypper install python3 python3-pip cairo-devel pkg-config python3-devel gcc gobject-introspection-devel python3-gobject python3-gobject-Gdk typelib-1_0-Gtk-3_0 libgtk-3-0
    python3 -m pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
 
+macOS
++++++
+
+You may need to install `Homebrew <https://brew.sh/>`_ first.
+
+Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
+
+.. code-block:: sh
+   :emphasize-lines: 1,2
+   
+   brew install pygobject3 gtk+3 cairo py3cairo pkg-config
+   python3 -m pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+
+Warning: If you have font issues, you might need to change the PangoCairo backend to fontconfig.
+
+.. code-block:: sh
+   :emphasize-lines: 1
+   
+   PANGOCAIRO_BACKEND=fc python3 namefile.py
+
+
 Installation - Extra Step
 +++++++++++++++++++++++++
 

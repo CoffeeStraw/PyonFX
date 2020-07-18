@@ -25,7 +25,7 @@ if sys.platform == "win32":
     import win32gui
     import win32ui
     import win32con
-elif sys.platform == "linux" and not "sphinx" in sys.modules:
+elif (sys.platform == "linux" or sys.platform == "darwin") and not "sphinx" in sys.modules:
     import cairo
     import gi
     gi.require_version('Pango', '1.0')
@@ -81,7 +81,7 @@ class Font:
             }
             self.pycfont = win32ui.CreateFont(font_spec)
             win32gui.SelectObject(self.dc, self.pycfont.GetSafeHandle())
-        elif sys.platform == "linux":
+        elif sys.platform == "linux" or sys.platform == "darwin":
             surface = cairo.ImageSurface(cairo.Format.A8, 1, 1)
 
             self.context = cairo.Context(surface)
@@ -119,7 +119,7 @@ class Font:
                 metrics['InternalLeading'] * self.downscale * self.yscale,
                 metrics['ExternalLeading'] * self.downscale * self.yscale
             )
-        elif sys.platform == "linux":
+        elif sys.platform == "linux" or sys.platform == "darwin":
             return (
                 # 'height': (self.metrics.get_ascent() + self.metrics.get_descent()) / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
                 self.metrics.get_ascent() / PANGO_SCALE * self.downscale * self.yscale * self.fonthack_scale,
@@ -138,7 +138,7 @@ class Font:
                 (cx * self.downscale + self.hspace * (len(text) - 1)) * self.xscale,
                 cy * self.downscale * self.yscale
             )
-        elif sys.platform == "linux":
+        elif sys.platform == "linux" or sys.platform == "darwin":
             if not text:
                 return 0.0, 0.0
 
@@ -227,7 +227,7 @@ class Font:
             win32gui.AbortPath(self.dc)
 
             return Shape(' '.join(shape))
-        elif sys.platform == "linux":
+        elif sys.platform == "linux" or sys.platform == "darwin":
             # Defining variables
             shape, last_type = [], None
 
