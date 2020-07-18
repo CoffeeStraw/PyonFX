@@ -36,7 +36,7 @@ jobs:
       - if: matrix.os == 'ubuntu-latest'
         name: Install dependencies (Linux)
         run: |
-          sudo apt install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
+          sudo apt-get install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - if: matrix.os == 'windows-latest'
