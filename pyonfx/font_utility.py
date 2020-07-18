@@ -25,7 +25,7 @@ if sys.platform == "win32":
     import win32gui
     import win32ui
     import win32con
-elif sys.platform == "linux":
+elif sys.platform == "linux" and not "sphinx" in sys.modules:
     import cairo
     import gi
     gi.require_version('Pango', '1.0')
