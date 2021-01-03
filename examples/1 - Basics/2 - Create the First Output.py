@@ -4,7 +4,7 @@ the default name for the output that will contains our original dialog lines (co
 
 The magic function is write_line(), a class function of Ass
 which converts a dialog line of class Line back to text form and appends it to "Output.ass".
-For more info: https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.html#pyonfx.ass_utility.Ass.write_line
+For more info: https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Ass.write_line
 
 To show the first manipulation, we take the first line of our input
 and print it back on the output changing only the text.
@@ -17,7 +17,7 @@ Instead, you should always create a copy of line to save the original, we will s
 
 At the end, you have to call save() class method to actually write your output.
 PyonFX will also automatically print how many lines you've written and the process duration.
-For more info: https://pyonfx.readthedocs.io/en/latest/reference/ass%20utility.html#pyonfx.ass_utility.Ass.save
+For more info: https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Ass.save
 
 Finally, we call the open_aegisub method to open the output with Aegisub. Generally you would prefer to open it
 with MPV by using the open_mpv method, but the examples'ass file do not have videos.
