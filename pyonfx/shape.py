@@ -17,8 +17,10 @@
 
 import re
 import math
+from typing import Callable
 from pyquaternion import Quaternion
 from inspect import signature
+from __future__ import annotations
 
 
 class Shape:
@@ -30,7 +32,7 @@ class Shape:
         drawing_cmds (str): The shape's drawing commands in ASS format as a string.
     """
 
-    def __init__(self, drawing_cmds):
+    def __init__(self, drawing_cmds: str):
         # Assure that drawing_cmds is a string
         if not isinstance(drawing_cmds, str):
             raise TypeError(
@@ -42,7 +44,7 @@ class Shape:
         # We return drawing commands as a string rapresentation of the object
         return self.drawing_cmds
 
-    def __eq__(self, other):
+    def __eq__(self, other: Shape):
         # Method used to compare two shapes
         if type(other) is type(self):
             return self.drawing_cmds == other.drawing_cmds
@@ -50,7 +52,7 @@ class Shape:
             return False
 
     @staticmethod
-    def format_value(x, prec=3):
+    def format_value(x, prec: int = 3):
         # Utility function to properly format values for shapes also returning them as a string
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
@@ -152,7 +154,7 @@ class Shape:
 
         return False
 
-    def map(self, fun):
+    def map(self, fun: Callable):
         """Sends every point of a shape through given transformation function to change them.
 
         **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
@@ -254,7 +256,7 @@ class Shape:
         x0, y0, x1, y1 = None, None, None, None
 
         # Calculate minimal and maximal coordinates
-        def compute_edges(x, y):
+        def compute_edges(x: float, y: float):
             nonlocal x0, y0, x1, y1
             if x0 is not None:
                 x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
@@ -265,7 +267,7 @@ class Shape:
         self.map(compute_edges)
         return x0, y0, x1, y1
 
-    def move(self, x=None, y=None):
+    def move(self, x: float = None, y: float = None):
         """Moves shape coordinates in given direction.
 
         | If neither x and y are passed, it will automatically center the shape to the origin (0,0).
@@ -296,7 +298,7 @@ class Shape:
         self.map(lambda cx, cy: (cx + x, cy + y))
         return self
 
-    def flatten(self, tolerance=1.0):
+    def flatten(self, tolerance: float = 1.0):
         """Splits shape's bezier curves into lines.
 
         | This is a low level function. Instead, you should use :func:`split` which already calls this function.
@@ -316,7 +318,7 @@ class Shape:
 
         # Inner functions definitions
         # 4th degree curve subdivider (De Casteljau)
-        def curve4_subdivide(x0, y0, x1, y1, x2, y2, x3, y3, pct):
+        def curve4_subdivide(x0: float, y0: float, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float, pct: float):
             # Calculate points on curve vectors
             x01, y01, x12, y12, x23, y23 = (
                 (x0 + x1) * pct,
@@ -354,7 +356,7 @@ class Shape:
             )
 
         # Check flatness of 4th degree curve with angles
-        def curve4_is_flat(x0, y0, x1, y1, x2, y2, x3, y3):
+        def curve4_is_flat(x0: float, y0: float, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float):
             # Pack curve vectors (only ones non zero)
             vecs = [[x1 - x0, y1 - y0], [x2 - x1, y2 - y1], [x3 - x2, y3 - y2]]
             vecs = [el for el in vecs if not (el[0] == 0 and el[1] == 0)]
@@ -382,7 +384,7 @@ class Shape:
             return True
 
         # Inner function to convert 4th degree curve to line points
-        def curve4_to_lines(x0, y0, x1, y1, x2, y2, x3, y3):
+        def curve4_to_lines(x0: float, y0: float, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float):
             # Line points buffer
             pts = ""
 
@@ -488,7 +490,7 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def split(self, max_len=16, tolerance=1.0):
+    def split(self, max_len: int = 16, tolerance: float = 1.0):
         """Splits shape bezier curves into lines and splits lines into shorter segments with maximum given length.
 
         **Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
@@ -513,7 +515,7 @@ class Shape:
             )
 
         # Internal function to help splitting a line
-        def line_split(x0, y0, x1, y1):
+        def line_split(x0: float, y0: float, x1: float, y1: float):
             x0, y0, x1, y1 = float(x0), float(y0), float(x1), float(y1)
             # Line direction & length
             rel_x, rel_y = x1 - x0, y1 - y0
@@ -643,7 +645,7 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def __to_outline(self, bord_xy, bord_y=None, mode="round"):
+    def __to_outline(self, bord_xy: float, bord_y: float = None, mode: str = "round"):
         """Converts shape command for filling to a shape command for stroking.
 
         **Tips:** *You could use this for border textures.*
@@ -660,7 +662,7 @@ class Shape:
         raise NotImplementedError
 
     @staticmethod
-    def ring(out_r, in_r):
+    def ring(out_r: float, in_r: float):
         """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
 
         **Tips:** *A ring with increasing inner radius, starting from 0, can look like an outfading point.*
@@ -745,7 +747,7 @@ class Shape:
         )
 
     @staticmethod
-    def ellipse(w, h):
+    def ellipse(w: float, h: float):
         """Returns a shape object of an ellipse with given width and height, centered around (0,0).
 
         **Tips:** *You could use that to create rounded stribes or arcs in combination with blurring for light effects.*
@@ -792,7 +794,7 @@ class Shape:
         )
 
     @staticmethod
-    def heart(size, offset=0):
+    def heart(size: float, offset: float = 0):
         """Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
 
         **Tips:** *An offset=size*(2/3) results in a splitted heart.*
@@ -831,7 +833,7 @@ class Shape:
         return shape.map(shift_mid_point)
 
     @staticmethod
-    def __glance_or_star(edges, inner_size, outer_size, g_or_s):
+    def __glance_or_star(edges: float, inner_size: float, outer_size: float, g_or_s: str):
         """
         General function to create a shape object representing star or glance.
         """
@@ -877,7 +879,7 @@ class Shape:
         return shape.move()
 
     @staticmethod
-    def star(edges, inner_size, outer_size):
+    def star(edges: float, inner_size: float, outer_size: float):
         """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
@@ -893,7 +895,7 @@ class Shape:
         return Shape.__glance_or_star(edges, inner_size, outer_size, "l")
 
     @staticmethod
-    def glance(edges, inner_size, outer_size):
+    def glance(edges: float, inner_size: float, outer_size: float):
         """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
@@ -909,7 +911,7 @@ class Shape:
         return Shape.__glance_or_star(edges, inner_size, outer_size, "b")
 
     @staticmethod
-    def rectangle(w=1, h=1):
+    def rectangle(w: float = 1, h: float = 1):
         """Returns a shape object of a rectangle with given width and height, centered around (0,0).
 
         **Tips:** *A rectangle with width=1 and height=1 is a pixel.*
@@ -928,7 +930,7 @@ class Shape:
             raise TypeError("Number(s) expected")
 
     @staticmethod
-    def triangle(size):
+    def triangle(size: float):
         """Returns a shape object of an equilateral triangle with given side length, centered around (0,0).
 
         Parameters:
