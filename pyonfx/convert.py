@@ -17,7 +17,7 @@
 
 import re
 import math
-from typing import Optional, Tuple, TypedDict, Union
+from typing import List, Optional, Tuple, TypedDict, Union
 from .ass_core import Char, Line, Pixel, Syllable, Word
 from .font_utility import Font
 from .shape import Shape
@@ -269,7 +269,7 @@ class Convert:
     @staticmethod
     def text_to_pixels(
         obj: Union[Line, Word, Syllable, Char], supersampling: int = 8
-    ) -> Pixel:
+    ) -> List[Pixel]:
         """| Converts text with given style information to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
@@ -308,7 +308,7 @@ class Convert:
         return Convert.shape_to_pixels(shape, supersampling)
 
     @staticmethod
-    def shape_to_pixels(shape: Shape, supersampling: int = 8):
+    def shape_to_pixels(shape: Shape, supersampling: int = 8) -> List[Pixel]:
         """| Converts a Shape object to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
@@ -428,7 +428,7 @@ class Convert:
             )
 
         # Calculates line x horizontal line intersection
-        def line_x_hline(x: int, y: int, vx: int, vy: int, y2: int):
+        def line_x_hline(x: int, y: int, vx: int, vy: int, y2: int) -> float:
             if vy != 0:
                 s = (y2 - y) / vy
                 if s >= 0 and s <= 1:
