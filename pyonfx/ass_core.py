@@ -21,7 +21,7 @@ import time
 import re
 import copy
 import subprocess
-from typing import List, TypedDict
+from typing import List, Optional, TypedDict
 from .font_utility import Font
 from .convert import Convert
 
@@ -149,7 +149,7 @@ class Style:
 class Pixel(TypedDict):
     x: int
     y: int
-    alpha: int
+    alpha: Optional[int]
 
 class Char:
     """Char object contains informations about a single char of a line in the Ass.
