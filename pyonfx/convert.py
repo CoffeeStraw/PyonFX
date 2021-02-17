@@ -17,10 +17,11 @@
 
 import re
 import math
-from typing import Union
+from typing import Optional, Tuple, TypedDict, Union
+from .ass_core import Char, Line, Pixel, Syllable, Word
 from .font_utility import Font
 from .shape import Shape
-from .ass_core import Line
+
 
 class Convert:
     """
@@ -29,7 +30,7 @@ class Convert:
     """
 
     @staticmethod
-    def time(ass_ms: int):
+    def time(ass_ms: Union[int, str]) -> Union[str, int, ValueError]:
         """Converts between milliseconds and ASS timestamp.
 
         You can probably ignore that function, you will not make use of it for KFX or typesetting generation.
@@ -60,7 +61,9 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def coloralpha(ass_r_a: Union[int, float], g: Union[int, float] = None, b: Union[int, float] = None, a: Union[int, float] = None):
+    def coloralpha(
+        ass_r_a: Union[int, str], g: int = None, b: int = None, a: int = None
+    ) -> Union[Tuple[int, int, int, Optional[int]], str]:
         """Converts between rgb color &/+ alpha numeric and ASS color &/+ alpha.
 
         - Passing a string to this function, you want a conversion from ASS color+alpha, ASS color or ASS alpha to integer values;
@@ -147,7 +150,9 @@ class Convert:
             raise ValueError("Color, Alpha, Color+Alpha as numeric or ASS expected")
 
     @staticmethod
-    def text_to_shape(obj: Line, fscx: float = None, fscy: float = None):
+    def text_to_shape(
+        obj: Union[Line, Word, Syllable, Char], fscx: float = None, fscy: float = None
+    ) -> Shape:
         """Converts text with given style information to an ASS shape.
 
         **Tips:** *You can easily create impressive deforming effects.*
@@ -191,7 +196,12 @@ class Convert:
         return shape
 
     @staticmethod
-    def text_to_clip(obj: Line, an: int = 5, fscx: float = None, fscy: float = None):
+    def text_to_clip(
+        obj: Union[Line, Word, Syllable, Char],
+        an: int = 5,
+        fscx: float = None,
+        fscy: float = None,
+    ) -> Shape:
         """Converts text with given style information to an ASS shape, applying some translation/scaling to it since
         it is not possible to position a shape with \\pos() once it is in a clip.
 
@@ -257,7 +267,9 @@ class Convert:
         return shape.move(cx, cy)
 
     @staticmethod
-    def text_to_pixels(obj: Line, supersampling: int = 8):
+    def text_to_pixels(
+        obj: Union[Line, Word, Syllable, Char], supersampling: int = 8
+    ) -> Pixel:
         """| Converts text with given style information to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
