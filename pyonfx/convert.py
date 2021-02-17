@@ -17,8 +17,10 @@
 
 import re
 import math
+from typing import Union
 from .font_utility import Font
-
+from .shape import Shape
+from .ass_core import Line
 
 class Convert:
     """
@@ -27,7 +29,7 @@ class Convert:
     """
 
     @staticmethod
-    def time(ass_ms):
+    def time(ass_ms: int):
         """Converts between milliseconds and ASS timestamp.
 
         You can probably ignore that function, you will not make use of it for KFX or typesetting generation.
@@ -58,7 +60,7 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def coloralpha(ass_r_a, g="", b="", a=""):
+    def coloralpha(ass_r_a: Union[int, float], g: Union[int, float] = None, b: Union[int, float] = None, a: Union[int, float] = None):
         """Converts between rgb color &/+ alpha numeric and ASS color &/+ alpha.
 
         - Passing a string to this function, you want a conversion from ASS color+alpha, ASS color or ASS alpha to integer values;
@@ -145,7 +147,7 @@ class Convert:
             raise ValueError("Color, Alpha, Color+Alpha as numeric or ASS expected")
 
     @staticmethod
-    def text_to_shape(obj, fscx=None, fscy=None):
+    def text_to_shape(obj: Line, fscx: float = None, fscy: float = None):
         """Converts text with given style information to an ASS shape.
 
         **Tips:** *You can easily create impressive deforming effects.*
@@ -189,7 +191,7 @@ class Convert:
         return shape
 
     @staticmethod
-    def text_to_clip(obj, an=5, fscx=None, fscy=None):
+    def text_to_clip(obj: Line, an: int = 5, fscx: float = None, fscy: float = None):
         """Converts text with given style information to an ASS shape, applying some translation/scaling to it since
         it is not possible to position a shape with \\pos() once it is in a clip.
 
@@ -255,7 +257,7 @@ class Convert:
         return shape.move(cx, cy)
 
     @staticmethod
-    def text_to_pixels(obj, supersampling=8):
+    def text_to_pixels(obj: Line, supersampling: int = 8):
         """| Converts text with given style information to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
@@ -294,7 +296,7 @@ class Convert:
         return Convert.shape_to_pixels(shape, supersampling)
 
     @staticmethod
-    def shape_to_pixels(shape, supersampling=8):
+    def shape_to_pixels(shape: Shape, supersampling: int = 8):
         """| Converts a Shape object to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
@@ -414,7 +416,7 @@ class Convert:
             )
 
         # Calculates line x horizontal line intersection
-        def line_x_hline(x, y, vx, vy, y2):
+        def line_x_hline(x: int, y: int, vx: int, vy: int, y2: int):
             if vy != 0:
                 s = (y2 - y) / vy
                 if s >= 0 and s <= 1:

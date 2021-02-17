@@ -17,6 +17,8 @@
 
 import math
 import re
+from typing import List, Union
+from .ass_core import Char, Line, Syllable, Word
 from .convert import Convert
 
 
@@ -26,7 +28,7 @@ class Utils:
     """
 
     @staticmethod
-    def all_non_empty(lines_chars_syls_or_words):
+    def all_non_empty(lines_chars_syls_or_words: List[Union[Line, Char, Syllable, Word]]):
         """
         Helps to not check everytime for text containing only spaces or object's duration equals to zero.
 
@@ -43,18 +45,18 @@ class Utils:
         return out
 
     @staticmethod
-    def clean_tags(text):
+    def clean_tags(text: str):
         # TODO: Cleans up ASS subtitle lines of badly-formed override. Returns a cleaned up text.
         pass
 
     @staticmethod
-    def accelerate(pct, accelerator):
+    def accelerate(pct: float, accelerator: float):
         # Modifies pct according to the acceleration provided.
         # TO DO: Implement acceleration based on bezier's curve
         return pct ** accelerator
 
     @staticmethod
-    def interpolate(pct, val1, val2, acc=1.0):
+    def interpolate(pct: float, val1: Union[int, float, str], val2: Union[int, float, str], acc=1.0):
         """
         | Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value as decimal number.
         | You can also provide a http://cubic-bezier.com to accelerate based on bezier curves. (TO DO)
@@ -81,7 +83,7 @@ class Utils:
         """
         if pct > 1.0 or pct < 0:
             raise ValueError(
-                f"Percent value must be a float between 0.0 and 1.0, but your was {pct}"
+                f"Percent value must be a float between 0.0 and 1.0, but yours was {pct}"
             )
 
         # Calculating acceleration (if requested)
@@ -129,7 +131,7 @@ class Utils:
 
 class FrameUtility:
     """
-    This class helps in the stressfull calculation of frames per frame.
+    This class helps in the stressful calculation of frames per frame.
 
     Parameters:
         start_time (positive float): Initial time
@@ -266,7 +268,7 @@ class ColorUtility:
             CU = ColorUtility([ line[0] ])
     """
 
-    def __init__(self, lines, offset=0):
+    def __init__(self, lines: List[Line], offset: int = 0):
         self.color_changes = []
         self.c1_req = False
         self.c3_req = False
@@ -368,7 +370,7 @@ class ColorUtility:
                         }
                     )
 
-    def get_color_change(self, line, c1=None, c3=None, c4=None):
+    def get_color_change(self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None):
         """Returns all the color_changes in the object that fit (in terms of time) between line.start_time and line.end_time.
 
         Parameters:
@@ -453,7 +455,7 @@ class ColorUtility:
 
         return transform
 
-    def get_fr_color_change(self, line, c1=None, c3=None, c4=None):
+    def get_fr_color_change(self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None):
         """Returns the single color(s) in the color_changes that fit the current frame (line.start_time) in your frame loop.
 
         Note:

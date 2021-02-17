@@ -19,6 +19,7 @@ This file contains the Font class definition, which has some functions
 to help getting informations from a specific font
 """
 import sys
+from .ass_core import Style
 from .shape import Shape
 
 if sys.platform == "win32":
@@ -48,7 +49,7 @@ class Font:
     Font class definition
     """
 
-    def __init__(self, style):
+    def __init__(self, style: Style):
         self.family = style.fontname
         self.bold = style.bold
         self.italic = style.italic
@@ -148,7 +149,7 @@ class Font:
         else:
             raise NotImplementedError
 
-    def get_text_extents(self, text):
+    def get_text_extents(self, text: str):
         if sys.platform == "win32":
             cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
@@ -160,7 +161,7 @@ class Font:
             if not text:
                 return 0.0, 0.0
 
-            def get_rect(new_text):
+            def get_rect(new_text: str):
                 self.layout.set_markup(
                     f"<span "
                     f'strikethrough="{str(self.strikeout).lower()}" '
@@ -190,7 +191,7 @@ class Font:
         else:
             raise NotImplementedError
 
-    def text_to_shape(self, text):
+    def text_to_shape(self, text: str):
         if sys.platform == "win32":
             # TODO: Calcultating distance between origins of character cells (just in case of spacing)
 
@@ -271,7 +272,7 @@ class Font:
             # Defining variables
             shape, last_type = [], None
 
-            def shape_from_text(new_text, x_add):
+            def shape_from_text(new_text: str, x_add: float):
                 nonlocal shape, last_type
 
                 self.layout.set_markup(
