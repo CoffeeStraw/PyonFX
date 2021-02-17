@@ -46,13 +46,10 @@ class Shape:
 
     def __eq__(self, other: Shape):
         # Method used to compare two shapes
-        if type(other) is type(self):
-            return self.drawing_cmds == other.drawing_cmds
-        else:
-            return False
+        return type(other) is type(self) and self.drawing_cmds == other.drawing_cmds
 
     @staticmethod
-    def format_value(x, prec: int = 3):
+    def format_value(x: float, prec: int = 3) -> str:
         # Utility function to properly format values for shapes also returning them as a string
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
@@ -318,7 +315,17 @@ class Shape:
 
         # Inner functions definitions
         # 4th degree curve subdivider (De Casteljau)
-        def curve4_subdivide(x0: float, y0: float, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float, pct: float):
+        def curve4_subdivide(
+            x0: float,
+            y0: float,
+            x1: float,
+            y1: float,
+            x2: float,
+            y2: float,
+            x3: float,
+            y3: float,
+            pct: float,
+        ):
             # Calculate points on curve vectors
             x01, y01, x12, y12, x23, y23 = (
                 (x0 + x1) * pct,
@@ -356,7 +363,16 @@ class Shape:
             )
 
         # Check flatness of 4th degree curve with angles
-        def curve4_is_flat(x0: float, y0: float, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float):
+        def curve4_is_flat(
+            x0: float,
+            y0: float,
+            x1: float,
+            y1: float,
+            x2: float,
+            y2: float,
+            x3: float,
+            y3: float,
+        ):
             # Pack curve vectors (only ones non zero)
             vecs = [[x1 - x0, y1 - y0], [x2 - x1, y2 - y1], [x3 - x2, y3 - y2]]
             vecs = [el for el in vecs if not (el[0] == 0 and el[1] == 0)]
@@ -384,7 +400,16 @@ class Shape:
             return True
 
         # Inner function to convert 4th degree curve to line points
-        def curve4_to_lines(x0: float, y0: float, x1: float, y1: float, x2: float, y2: float, x3: float, y3: float):
+        def curve4_to_lines(
+            x0: float,
+            y0: float,
+            x1: float,
+            y1: float,
+            x2: float,
+            y2: float,
+            x3: float,
+            y3: float,
+        ):
             # Line points buffer
             pts = ""
 
@@ -833,7 +858,9 @@ class Shape:
         return shape.map(shift_mid_point)
 
     @staticmethod
-    def __glance_or_star(edges: float, inner_size: float, outer_size: float, g_or_s: str):
+    def __glance_or_star(
+        edges: float, inner_size: float, outer_size: float, g_or_s: str
+    ):
         """
         General function to create a shape object representing star or glance.
         """
@@ -895,7 +922,7 @@ class Shape:
         return Shape.__glance_or_star(edges, inner_size, outer_size, "l")
 
     @staticmethod
-    def glance(edges: float, inner_size: float, outer_size: float):
+    def glance(edges: int, inner_size: float, outer_size: float):
         """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
@@ -911,7 +938,7 @@ class Shape:
         return Shape.__glance_or_star(edges, inner_size, outer_size, "b")
 
     @staticmethod
-    def rectangle(w: float = 1, h: float = 1):
+    def rectangle(w: float = 1.0, h: float = 1.0):
         """Returns a shape object of a rectangle with given width and height, centered around (0,0).
 
         **Tips:** *A rectangle with width=1 and height=1 is a pixel.*

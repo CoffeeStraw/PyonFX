@@ -18,7 +18,7 @@
 import math
 import re
 from typing import List, Union
-from .ass_core import Char, Line, Syllable, Word
+from .ass_core import Line, Word, Syllable, Char
 from .convert import Convert
 
 
@@ -28,7 +28,9 @@ class Utils:
     """
 
     @staticmethod
-    def all_non_empty(lines_chars_syls_or_words: List[Union[Line, Char, Syllable, Word]]):
+    def all_non_empty(
+        lines_chars_syls_or_words: List[Union[Line, Word, Syllable, Char]]
+    ) -> List[Union[Line, Word, Syllable, Char]]:
         """
         Helps to not check everytime for text containing only spaces or object's duration equals to zero.
 
@@ -56,7 +58,9 @@ class Utils:
         return pct ** accelerator
 
     @staticmethod
-    def interpolate(pct: float, val1: Union[int, float, str], val2: Union[int, float, str], acc=1.0):
+    def interpolate(
+        pct: float, val1: Union[float, str], val2: Union[float, str], acc: float = 1.0,
+    ) -> Union[str, float]:
         """
         | Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value as decimal number.
         | You can also provide a http://cubic-bezier.com to accelerate based on bezier curves. (TO DO)
@@ -370,7 +374,9 @@ class ColorUtility:
                         }
                     )
 
-    def get_color_change(self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None):
+    def get_color_change(
+        self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None
+    ):
         """Returns all the color_changes in the object that fit (in terms of time) between line.start_time and line.end_time.
 
         Parameters:
@@ -455,7 +461,9 @@ class ColorUtility:
 
         return transform
 
-    def get_fr_color_change(self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None):
+    def get_fr_color_change(
+        self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None
+    ):
         """Returns the single color(s) in the color_changes that fit the current frame (line.start_time) in your frame loop.
 
         Note:
