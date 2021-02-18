@@ -151,9 +151,7 @@ class Shape:
 
         return False
 
-    def map(
-        self, fun: Callable[[float, float, Optional[float]], Tuple[float, float]]
-    ) -> Shape:
+    def map(self, fun: Callable[[float, float, Optional[float]], Tuple[float, float]]):
         """Sends every point of a shape through given transformation function to change them.
 
         **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
@@ -269,7 +267,7 @@ class Shape:
         self.map(compute_edges)
         return x0, y0, x1, y1
 
-    def move(self, x: float = None, y: float = None) -> Shape:
+    def move(self, x: float = None, y: float = None):
         """Moves shape coordinates in given direction.
 
         | If neither x and y are passed, it will automatically center the shape to the origin (0,0).
@@ -300,7 +298,7 @@ class Shape:
         self.map(lambda cx, cy: (cx + x, cy + y))
         return self
 
-    def flatten(self, tolerance: float = 1.0) -> Shape:
+    def flatten(self, tolerance: float = 1.0):
         """Splits shape's bezier curves into lines.
 
         | This is a low level function. Instead, you should use :func:`split` which already calls this function.
@@ -520,7 +518,7 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def split(self, max_len: int = 16, tolerance: float = 1.0) -> Shape:
+    def split(self, max_len: int = 16, tolerance: float = 1.0):
         """Splits shape bezier curves into lines and splits lines into shorter segments with maximum given length.
 
         **Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
@@ -827,7 +825,7 @@ class Shape:
         )
 
     @staticmethod
-    def heart(size: float, offset: float = 0):
+    def heart(size: float, offset: float = 0) -> Shape:
         """Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
 
         **Tips:** *An offset=size*(2/3) results in a splitted heart.*
