@@ -17,8 +17,8 @@
 
 import re
 import math
-from typing import List, Optional, Tuple, TypedDict, Union
-from .ass_core import Char, Line, Pixel, Syllable, Word
+from typing import List, Optional, Tuple, Union
+from .ass_core import Char, Line, Word, Syllable, Pixel
 from .font_utility import Font
 from .shape import Shape
 
@@ -152,7 +152,7 @@ class Convert:
     @staticmethod
     def text_to_shape(
         obj: Union[Line, Word, Syllable, Char], fscx: float = None, fscy: float = None
-    ) -> Shape:
+    ):
         """Converts text with given style information to an ASS shape.
 
         **Tips:** *You can easily create impressive deforming effects.*
@@ -201,7 +201,7 @@ class Convert:
         an: int = 5,
         fscx: float = None,
         fscy: float = None,
-    ) -> Shape:
+    ):
         """Converts text with given style information to an ASS shape, applying some translation/scaling to it since
         it is not possible to position a shape with \\pos() once it is in a clip.
 
@@ -366,7 +366,7 @@ class Convert:
         # Renderer (on binary image with aliasing)
         lines, last_point, last_move = [], {}, {}
 
-        def collect_lines(x, y, typ):
+        def collect_lines(x: float, y: float, typ: str):
             # Collect lines (points + vectors)
             nonlocal lines, last_point, last_move
             x, y = int(round(x)), int(round(y))  # Use integers to avoid rounding errors

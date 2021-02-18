@@ -15,9 +15,9 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-import re
+from pyonfx.ass_core import Pixel
 import math
-from typing import Callable
+from typing import Callable, Optional, Tuple
 from pyquaternion import Quaternion
 from inspect import signature
 from __future__ import annotations
@@ -151,7 +151,9 @@ class Shape:
 
         return False
 
-    def map(self, fun: Callable):
+    def map(
+        self, fun: Callable[[float, float, Optional[float]], Tuple[float, float]]
+    ) -> Shape:
         """Sends every point of a shape through given transformation function to change them.
 
         **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
@@ -250,7 +252,10 @@ class Shape:
         """
 
         # Bounding data
-        x0, y0, x1, y1 = None, None, None, None
+        x0: float = None
+        y0: float = None
+        x1: float = None
+        y1: float = None
 
         # Calculate minimal and maximal coordinates
         def compute_edges(x: float, y: float):
@@ -264,7 +269,7 @@ class Shape:
         self.map(compute_edges)
         return x0, y0, x1, y1
 
-    def move(self, x: float = None, y: float = None):
+    def move(self, x: float = None, y: float = None) -> Shape:
         """Moves shape coordinates in given direction.
 
         | If neither x and y are passed, it will automatically center the shape to the origin (0,0).
@@ -295,7 +300,7 @@ class Shape:
         self.map(lambda cx, cy: (cx + x, cy + y))
         return self
 
-    def flatten(self, tolerance: float = 1.0):
+    def flatten(self, tolerance: float = 1.0) -> Shape:
         """Splits shape's bezier curves into lines.
 
         | This is a low level function. Instead, you should use :func:`split` which already calls this function.
@@ -378,13 +383,13 @@ class Shape:
             vecs = [el for el in vecs if not (el[0] == 0 and el[1] == 0)]
 
             # Inner functions to calculate degrees between two 2d vectors
-            def dotproduct(v1, v2):
+            def dotproduct(v1: list[float], v2: list[float]):
                 return sum((a * b) for a, b in zip(v1, v2))
 
-            def length(v):
+            def length(v: list[float]):
                 return math.sqrt(dotproduct(v, v))
 
-            def get_angle(v1, v2):
+            def get_angle(v1: list[float], v2: list[float]):
                 calc = max(
                     min(dotproduct(v1, v2) / (length(v1) * length(v2)), 1), -1
                 )  # Clamping value to prevent errors
@@ -515,7 +520,7 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def split(self, max_len: int = 16, tolerance: float = 1.0):
+    def split(self, max_len: int = 16, tolerance: float = 1.0) -> Shape:
         """Splits shape bezier curves into lines and splits lines into shorter segments with maximum given length.
 
         **Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
@@ -547,7 +552,8 @@ class Shape:
             distance = math.sqrt(rel_x * rel_x + rel_y * rel_y)
             # If the line is too long -> split
             if distance > max_len:
-                lines, distance_rest = [], distance % max_len
+                lines: list[str] = []
+                distance_rest = distance % max_len
                 cur_distance = distance_rest if distance_rest > 0 else max_len
 
                 while cur_distance <= distance:
@@ -670,7 +676,9 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def __to_outline(self, bord_xy: float, bord_y: float = None, mode: str = "round"):
+    def __to_outline(
+        self, bord_xy: float, bord_y: float = None, mode: str = "round"
+    ) -> Shape:
         """Converts shape command for filling to a shape command for stroking.
 
         **Tips:** *You could use this for border textures.*
@@ -843,7 +851,7 @@ class Shape:
         # Shift mid point of heart vertically
         count = 0
 
-        def shift_mid_point(x, y):
+        def shift_mid_point(x: int, y: int):
             nonlocal count
             count += 1
 
@@ -867,7 +875,7 @@ class Shape:
         # Alias for utility functions
         f = Shape.format_value
 
-        def rotate_on_axis_z(point, theta):
+        def rotate_on_axis_z(point: Pixel, theta: float):
             # Internal function to rotate a point around z axis by a given angle.
             theta = math.radians(theta)
             return Quaternion(axis=[0, 0, 1], angle=theta).rotate(point)

@@ -21,7 +21,7 @@ import time
 import re
 import copy
 import subprocess
-from typing import List, Optional, TypedDict
+from typing import List, NamedTuple
 from .font_utility import Font
 from .convert import Convert
 
@@ -146,10 +146,7 @@ class Style:
         return pretty_print(self)
 
 # According to pep-0589, this is the recommended way to declare typed dict.
-class Pixel(TypedDict):
-    x: int
-    y: int
-    alpha: Optional[int]
+Pixel = NamedTuple('Pixel', [('x', float), ('y', float)])
 
 class Char:
     """Char object contains informations about a single char of a line in the Ass.

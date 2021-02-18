@@ -47,7 +47,7 @@ class Utils:
         return out
 
     @staticmethod
-    def clean_tags(text: str):
+    def clean_tags(text: str) -> str:
         # TODO: Cleans up ASS subtitle lines of badly-formed override. Returns a cleaned up text.
         pass
 
@@ -159,7 +159,7 @@ class FrameUtility:
 
     """
 
-    def __init__(self, start_time, end_time, fr=41.71):
+    def __init__(self, start_time: float, end_time: float, fr: float = 41.71):
         # Checking for invalid values
         if start_time < 0 or end_time < 0 or fr <= 0 or end_time < start_time:
             raise ValueError("Positive values and/or end_time > start_time expected.")
@@ -192,7 +192,9 @@ class FrameUtility:
         self.start_time = self.start_time - self.fr * max(self.n - 1, 0)
         self.current_time = self.fr
 
-    def add(self, start_time, end_time, end_value, accelerator=1.0):
+    def add(
+        self, start_time: int, end_time: int, end_value: int, accelerator: float = 1.0
+    ):
         """
         | This function makes a lot easier the calculation of tags value.
         | You can see this as a \"\\t\" tag usable in frame per frame operations.
@@ -376,7 +378,7 @@ class ColorUtility:
 
     def get_color_change(
         self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None
-    ):
+    ) -> str:
         """Returns all the color_changes in the object that fit (in terms of time) between line.start_time and line.end_time.
 
         Parameters:
@@ -463,7 +465,7 @@ class ColorUtility:
 
     def get_fr_color_change(
         self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None
-    ):
+    ) -> str:
         """Returns the single color(s) in the color_changes that fit the current frame (line.start_time) in your frame loop.
 
         Note:
