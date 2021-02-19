@@ -151,7 +151,9 @@ class Shape:
 
         return False
 
-    def map(self, fun: Callable[[float, float, Optional[float]], Tuple[float, float]]):
+    def map(
+        self, fun: Callable[[float, float, Optional[float]], Tuple[float, float]]
+    ) -> Shape:
         """Sends every point of a shape through given transformation function to change them.
 
         **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
@@ -693,7 +695,7 @@ class Shape:
         raise NotImplementedError
 
     @staticmethod
-    def ring(out_r: float, in_r: float):
+    def ring(out_r: float, in_r: float) -> Shape:
         """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
 
         **Tips:** *A ring with increasing inner radius, starting from 0, can look like an outfading point.*
@@ -778,7 +780,7 @@ class Shape:
         )
 
     @staticmethod
-    def ellipse(w: float, h: float):
+    def ellipse(w: float, h: float) -> Shape:
         """Returns a shape object of an ellipse with given width and height, centered around (0,0).
 
         **Tips:** *You could use that to create rounded stribes or arcs in combination with blurring for light effects.*
@@ -866,7 +868,7 @@ class Shape:
     @staticmethod
     def __glance_or_star(
         edges: float, inner_size: float, outer_size: float, g_or_s: str
-    ):
+    ) -> Shape:
         """
         General function to create a shape object representing star or glance.
         """
@@ -912,7 +914,7 @@ class Shape:
         return shape.move()
 
     @staticmethod
-    def star(edges: float, inner_size: float, outer_size: float):
+    def star(edges: float, inner_size: float, outer_size: float) -> Shape:
         """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
@@ -928,7 +930,7 @@ class Shape:
         return Shape.__glance_or_star(edges, inner_size, outer_size, "l")
 
     @staticmethod
-    def glance(edges: int, inner_size: float, outer_size: float):
+    def glance(edges: int, inner_size: float, outer_size: float) -> Shape:
         """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
@@ -944,7 +946,7 @@ class Shape:
         return Shape.__glance_or_star(edges, inner_size, outer_size, "b")
 
     @staticmethod
-    def rectangle(w: float = 1.0, h: float = 1.0):
+    def rectangle(w: float = 1.0, h: float = 1.0) -> Shape:
         """Returns a shape object of a rectangle with given width and height, centered around (0,0).
 
         **Tips:** *A rectangle with width=1 and height=1 is a pixel.*

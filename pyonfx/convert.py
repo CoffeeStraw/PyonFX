@@ -152,7 +152,7 @@ class Convert:
     @staticmethod
     def text_to_shape(
         obj: Union[Line, Word, Syllable, Char], fscx: float = None, fscy: float = None
-    ):
+    ) -> Shape:
         """Converts text with given style information to an ASS shape.
 
         **Tips:** *You can easily create impressive deforming effects.*
@@ -201,7 +201,7 @@ class Convert:
         an: int = 5,
         fscx: float = None,
         fscy: float = None,
-    ):
+    ) -> Shape:
         """Converts text with given style information to an ASS shape, applying some translation/scaling to it since
         it is not possible to position a shape with \\pos() once it is in a clip.
 

@@ -191,7 +191,7 @@ class Font:
         else:
             raise NotImplementedError
 
-    def text_to_shape(self, text: str):
+    def text_to_shape(self, text: str) -> Shape:
         if sys.platform == "win32":
             # TODO: Calcultating distance between origins of character cells (just in case of spacing)
 
@@ -272,7 +272,7 @@ class Font:
             # Defining variables
             shape, last_type = [], None
 
-            def shape_from_text(new_text: str, x_add: float):
+            def shape_from_text(new_text: str, x_add: float) -> Shape:
                 nonlocal shape, last_type
 
                 self.layout.set_markup(

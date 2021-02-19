@@ -145,8 +145,10 @@ class Style:
     def __repr__(self):
         return pretty_print(self)
 
+
 # According to pep-0589, this is the recommended way to declare typed dict.
-Pixel = NamedTuple('Pixel', [('x', float), ('y', float)])
+Pixel = NamedTuple("Pixel", [("x", float), ("y", float)])
+
 
 class Char:
     """Char object contains informations about a single char of a line in the Ass.

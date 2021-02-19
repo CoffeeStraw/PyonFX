@@ -52,14 +52,17 @@ class Utils:
         pass
 
     @staticmethod
-    def accelerate(pct: float, accelerator: float):
+    def accelerate(pct: float, accelerator: float) -> float:
         # Modifies pct according to the acceleration provided.
         # TO DO: Implement acceleration based on bezier's curve
         return pct ** accelerator
 
     @staticmethod
     def interpolate(
-        pct: float, val1: Union[float, str], val2: Union[float, str], acc: float = 1.0,
+        pct: float,
+        val1: Union[float, str],
+        val2: Union[float, str],
+        acc: float = 1.0,
     ) -> Union[str, float]:
         """
         | Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value as decimal number.
@@ -194,7 +197,7 @@ class FrameUtility:
 
     def add(
         self, start_time: int, end_time: int, end_value: int, accelerator: float = 1.0
-    ):
+    ) -> Union[str, float]:
         """
         | This function makes a lot easier the calculation of tags value.
         | You can see this as a \"\\t\" tag usable in frame per frame operations.
@@ -241,18 +244,18 @@ class ColorUtility:
         * Every color-tag has to be in the format of ``c&Hxxxxxx&``, do not forget the last &;
         * You can put color changes without using transformations, like ``{\\1c&HFFFFFF&\\3c&H000000&}Test``, but those will be interpreted as ``{\\t(0,0,\\1c&HFFFFFF&\\3c&H000000&)}Test``;
         * For an example of how color changes should be put in your lines, check `this <https://github.com/CoffeeStraw/PyonFX/blob/master/examples/2%20-%20Beginner/in2.ass#L34-L36>`_.
-        
+
         Also, it is important to remember that **color changes in your lines are treated as if they were continuous**.
-        
+
         For example, let's assume we have two lines:
-        
+
         #. ``{\\1c&HFFFFFF&\\t(100,150,\\1c&H000000&)}Line1``, starting at 0ms, ending at 100ms;
         #. ``{}Line2``, starting at 100ms, ending at 200ms.
 
         Even if the second line **doesn't have any color changes** and you would expect to have the style's colors,
         **it will be treated as it has** ``\\1c&H000000&``. That could seem strange at first,
         but thinking about your generated lines, **the majority** will have **start_time and end_time different** from the ones of your original file.
-        
+
         Treating transformations as if they were continous, **ColorUtility will always know the right colors** to pick for you.
         Also, remember that even if you can't always see them directly on Aegisub, you can use transformations
         with negative times or with times that exceed line total duration.
