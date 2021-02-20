@@ -19,6 +19,7 @@ This file contains the Font class definition, which has some functions
 to help getting informations from a specific font
 """
 import sys
+from typing import Tuple
 from .ass_core import Style
 from .shape import Shape
 
@@ -127,7 +128,7 @@ class Font:
             win32gui.DeleteObject(self.pycfont.GetSafeHandle())
             win32gui.DeleteDC(self.dc)
 
-    def get_metrics(self):
+    def get_metrics(self) -> Tuple[float, float, float, float]:
         if sys.platform == "win32":
             const = self.downscale * self.yscale
             return (
@@ -149,7 +150,7 @@ class Font:
         else:
             raise NotImplementedError
 
-    def get_text_extents(self, text: str):
+    def get_text_extents(self, text: str) -> Tuple[float, float]:
         if sys.platform == "win32":
             cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
@@ -161,6 +162,7 @@ class Font:
             if not text:
                 return 0.0, 0.0
 
+            # TODO: Inspect and change to respective Layout from Pango
             def get_rect(new_text: str):
                 self.layout.set_markup(
                     f"<span "

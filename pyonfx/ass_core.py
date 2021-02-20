@@ -21,39 +21,9 @@ import time
 import re
 import copy
 import subprocess
-from typing import List, NamedTuple
+from typing import List, NamedTuple, Tuple, Union
 from .font_utility import Font
 from .convert import Convert
-
-
-def pretty_print(obj, indent=0, name=""):
-    # Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
-    if type(obj) == Line:
-        out = " " * indent + f"lines[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Word:
-        out = " " * indent + f"words[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Syllable:
-        out = " " * indent + f"syls[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Char:
-        out = " " * indent + f"chars[{obj.i}] ({type(obj).__name__}):\n"
-    else:
-        out = " " * indent + f"{name}({type(obj).__name__}):\n"
-
-    # Let's print all this object fields
-    indent += 4
-    for k, v in obj.__dict__.items():
-        if "__dict__" in dir(v):
-            # Work recursively to print another object
-            out += pretty_print(v, indent, k + " ")
-        elif type(v) == list:
-            for i, el in enumerate(v):
-                # Work recursively to print other objects inside a list
-                out += pretty_print(el, indent, f"{k}[{i}] ")
-        else:
-            # Just print a field of this object
-            out += " " * indent + f"{k}: {str(v)}\n"
-
-    return out
 
 
 class Meta:
@@ -480,7 +450,7 @@ class Ass:
             # Parsing Meta data
             elif section == "Script Info" or section == "Aegisub Project Garbage":
                 # Internal function that tries to get the absolute path for media files in meta
-                def get_media_abs_path(mediafile):
+                def get_media_abs_path(mediafile) -> str:
                     # If this is not a dummy video, let's try to get the absolute path for the video
                     if not mediafile.startswith("?dummy"):
                         tmp = mediafile
@@ -1146,7 +1116,7 @@ class Ass:
                     else lines_by_styles[style][li + 1].start_time - line.end_time
                 )
 
-    def get_data(self):
+    def get_data(self) -> Tuple[Meta, Style, List[Line]]:
         """Utility function to retrieve easily meta styles and lines.
 
         Returns:
@@ -1154,7 +1124,7 @@ class Ass:
         """
         return self.meta, self.styles, self.lines
 
-    def write_line(self, line):
+    def write_line(self, line: Line) -> None:
         """Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
 
         Use it whenever you've prepared a line, it will not impact performance since you
@@ -1184,7 +1154,7 @@ class Ass:
         else:
             raise TypeError("Expected Line object, got %s." % type(line))
 
-    def save(self, quiet=False):
+    def save(self, quiet: bool = False) -> None:
         """Write everything inside the private output list to a file.
 
         Parameters:
@@ -1202,7 +1172,7 @@ class Ass:
                 % (self.__plines, time.time() - self.__ptime)
             )
 
-    def open_aegisub(self):
+    def open_aegisub(self) -> None:
         """Open the output (specified in self.path_output) with Aegisub.
 
         This can be usefull if you don't have MPV installed or you want to look at your output in detailed.
@@ -1229,7 +1199,9 @@ class Ass:
 
         return 0
 
-    def open_mpv(self, video_path="", video_start="", full_screen=False):
+    def open_mpv(
+        self, video_path: str = "", video_start: str = "", full_screen: bool = False
+    ) -> None:
         """Open the output (specified in self.path_output) in softsub with the MPV player.
         To utilize this function, MPV player is required. Additionally if you're on Windows, MPV must be in the PATH (check https://pyonfx.readthedocs.io/en/latest/quick%20start.html#installation-extra-step).
 
@@ -1280,3 +1252,35 @@ class Ass:
             return -1
 
         return 0
+
+
+def pretty_print(
+    obj: Union[Meta, Style, Line, Word, Syllable, Char], indent: int = 0, name: str = ""
+) -> str:
+    # Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
+    if type(obj) == Line:
+        out = " " * indent + f"lines[{obj.i}] ({type(obj).__name__}):\n"
+    elif type(obj) == Word:
+        out = " " * indent + f"words[{obj.i}] ({type(obj).__name__}):\n"
+    elif type(obj) == Syllable:
+        out = " " * indent + f"syls[{obj.i}] ({type(obj).__name__}):\n"
+    elif type(obj) == Char:
+        out = " " * indent + f"chars[{obj.i}] ({type(obj).__name__}):\n"
+    else:
+        out = " " * indent + f"{name}({type(obj).__name__}):\n"
+
+    # Let's print all this object fields
+    indent += 4
+    for k, v in obj.__dict__.items():
+        if "__dict__" in dir(v):
+            # Work recursively to print another object
+            out += pretty_print(v, indent, k + " ")
+        elif type(v) == list:
+            for i, el in enumerate(v):
+                # Work recursively to print other objects inside a list
+                out += pretty_print(el, indent, f"{k}[{i}] ")
+        else:
+            # Just print a field of this object
+            out += " " * indent + f"{k}: {str(v)}\n"
+
+    return out
