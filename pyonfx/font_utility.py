@@ -162,7 +162,7 @@ class Font:
             if not text:
                 return 0.0, 0.0
 
-            # TODO: Inspect and change to respective Layout from Pango
+            # TODO: Inspect and change type hint to respective "Layout" from Pango
             def get_rect(new_text: str):
                 self.layout.set_markup(
                     f"<span "
