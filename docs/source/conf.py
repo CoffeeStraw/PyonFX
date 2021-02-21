@@ -24,6 +24,7 @@ version = ""
 release = __version__
 
 # -- General configuration ---------------------------------------------------
+autodoc_typehints = "none"
 autodoc_member_order = "bysource"
 
 extensions = [
