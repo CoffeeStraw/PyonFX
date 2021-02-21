@@ -15,11 +15,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
+from __future__ import annotations
 import math
 import re
-from typing import List, Union
-from .ass_core import Line, Word, Syllable, Char
+from typing import List, Union, TYPE_CHECKING
+
 from .convert import Convert
+
+if TYPE_CHECKING:
+    from .ass_core import Line, Word, Syllable, Char
 
 
 class Utils:
@@ -54,7 +58,7 @@ class Utils:
     @staticmethod
     def accelerate(pct: float, accelerator: float) -> float:
         # Modifies pct according to the acceleration provided.
-        # TO DO: Implement acceleration based on bezier's curve
+        # TODO: Implement acceleration based on bezier's curve
         return pct ** accelerator
 
     @staticmethod
@@ -196,12 +200,22 @@ class FrameUtility:
         self.current_time = self.fr
 
     def add(
-        self, start_time: int, end_time: int, end_value: int, accelerator: float = 1.0
-    ) -> Union[str, float]:
+        self,
+        start_time: int,
+        end_time: int,
+        end_value: float,
+        accelerator: float = 1.0,
+    ) -> float:
         """
-        | This function makes a lot easier the calculation of tags value.
-        | You can see this as a \"\\t\" tag usable in frame per frame operations.
-        | Use it in a for loop which iterates a FrameUtility object, as you can see in the example.
+        This function makes a lot easier the calculation of tags value.
+        You can see this as a \"\\t\" tag usable in frame per frame operations.
+        Use it in a for loop which iterates a FrameUtility object, as you can see in the example.
+
+        Parameters:
+            start_time (int): Initial time
+            end_time (int): Final time
+            end_value (int or float): Value reached at end_time
+            accelerator (float): Accelerator value
 
         Examples:
             ..  code-block:: python3

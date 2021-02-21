@@ -15,21 +15,20 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 """
-This file contains the Font class definition, which has some functions
+This module contains the Font class definition, which has some functions
 to help getting informations from a specific font
 """
+from __future__ import annotations
 import sys
-from typing import Tuple
-from .ass_core import Style
+from typing import Tuple, TYPE_CHECKING
+
 from .shape import Shape
 
 if sys.platform == "win32":
     import win32gui
     import win32ui
     import win32con
-elif (
-    sys.platform == "linux" or sys.platform == "darwin"
-) and not "sphinx" in sys.modules:
+elif sys.platform in ["linux", "darwin"] and not "sphinx" in sys.modules:
     import cairo
     import gi
 
@@ -38,6 +37,9 @@ elif (
 
     from gi.repository import Pango, PangoCairo
     import html
+
+if TYPE_CHECKING:
+    from .ass_core import Style
 
 # CONFIGURATION
 FONT_PRECISION = 64  # Font scale for better precision output from native font system
@@ -162,8 +164,7 @@ class Font:
             if not text:
                 return 0.0, 0.0
 
-            # TODO: Inspect and change type hint to respective "Layout" from Pango
-            def get_rect(new_text: str):
+            def get_rect(new_text):
                 self.layout.set_markup(
                     f"<span "
                     f'strikethrough="{str(self.strikeout).lower()}" '
@@ -274,7 +275,7 @@ class Font:
             # Defining variables
             shape, last_type = [], None
 
-            def shape_from_text(new_text: str, x_add: float) -> Shape:
+            def shape_from_text(new_text, x_add):
                 nonlocal shape, last_type
 
                 self.layout.set_markup(

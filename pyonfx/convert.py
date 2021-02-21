@@ -15,12 +15,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
+from __future__ import annotations
 import re
 import math
-from typing import List, Optional, Tuple, Union
-from .ass_core import Char, Line, Word, Syllable, Pixel
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
+
 from .font_utility import Font
-from .shape import Shape
+
+if TYPE_CHECKING:
+    from .ass_core import Line, Word, Syllable, Char, Pixel
+    from .shape import Shape
 
 
 class Convert:
@@ -36,7 +40,7 @@ class Convert:
         You can probably ignore that function, you will not make use of it for KFX or typesetting generation.
 
         Parameters:
-            ass_ms (either int or str): If int, than milliseconds are expected, else ASS timestamp as str is expected.
+            ass_ms (int or str): If int, than milliseconds are expected, else ASS timestamp as str is expected.
 
         Returns:
             If milliseconds -> ASS timestamp, else if ASS timestamp -> milliseconds, else ValueError will be raised.
@@ -366,7 +370,7 @@ class Convert:
         # Renderer (on binary image with aliasing)
         lines, last_point, last_move = [], {}, {}
 
-        def collect_lines(x: float, y: float, typ: str):
+        def collect_lines(x, y, typ):
             # Collect lines (points + vectors)
             nonlocal lines, last_point, last_move
             x, y = int(round(x)), int(round(y))  # Use integers to avoid rounding errors
@@ -428,7 +432,7 @@ class Convert:
             )
 
         # Calculates line x horizontal line intersection
-        def line_x_hline(x: int, y: int, vx: int, vy: int, y2: int) -> float:
+        def line_x_hline(x, y, vx, vy, y2):
             if vy != 0:
                 s = (y2 - y) / vy
                 if s >= 0 and s <= 1:
@@ -474,11 +478,11 @@ class Convert:
 
                 if opacity > 0:
                     pixels.append(
-                        {
-                            "alpha": opacity * (downscale * downscale),
-                            "x": (x - shift_x) * downscale,
-                            "y": (y - shift_y) * downscale,
-                        }
+                        Pixel(
+                            x=(x - shift_x) * downscale,
+                            y=(y - shift_y) * downscale,
+                            alpha=opacity * downscale ** 2,
+                        )
                     )
 
         return pixels

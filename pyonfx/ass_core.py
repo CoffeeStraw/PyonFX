@@ -15,13 +15,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
+from __future__ import annotations
+import re
 import os
 import sys
 import time
-import re
 import copy
 import subprocess
-from typing import List, NamedTuple, Tuple, Union
+from typing import List, NamedTuple, Tuple, Union, Optional
+
 from .font_utility import Font
 from .convert import Convert
 
@@ -117,7 +119,7 @@ class Style:
 
 
 # According to pep-0589, this is the recommended way to declare typed dict.
-Pixel = NamedTuple("Pixel", [("x", float), ("y", float)])
+Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", float)])
 
 
 class Char:
@@ -364,7 +366,7 @@ class Line:
     def __repr__(self):
         return pretty_print(self)
 
-    def copy(self):
+    def copy(self) -> Line:
         """
         Returns:
             A deep copy of this object (line)
@@ -403,11 +405,11 @@ class Ass:
 
     def __init__(
         self,
-        path_input="",
-        path_output="Output.ass",
-        keep_original=True,
-        extended=True,
-        vertical_kanji=True,
+        path_input: str = "",
+        path_output: str = "Output.ass",
+        keep_original: bool = True,
+        extended: bool = True,
+        vertical_kanji: bool = True,
     ):
         # Starting to take process time
         self.__saved = False
@@ -450,7 +452,7 @@ class Ass:
             # Parsing Meta data
             elif section == "Script Info" or section == "Aegisub Project Garbage":
                 # Internal function that tries to get the absolute path for media files in meta
-                def get_media_abs_path(mediafile) -> str:
+                def get_media_abs_path(mediafile):
                     # If this is not a dummy video, let's try to get the absolute path for the video
                     if not mediafile.startswith("?dummy"):
                         tmp = mediafile
@@ -1124,7 +1126,7 @@ class Ass:
         """
         return self.meta, self.styles, self.lines
 
-    def write_line(self, line: Line) -> None:
+    def write_line(self, line: Line) -> Optional[TypeError]:
         """Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
 
         Use it whenever you've prepared a line, it will not impact performance since you
@@ -1172,7 +1174,7 @@ class Ass:
                 % (self.__plines, time.time() - self.__ptime)
             )
 
-    def open_aegisub(self) -> None:
+    def open_aegisub(self) -> int:
         """Open the output (specified in self.path_output) with Aegisub.
 
         This can be usefull if you don't have MPV installed or you want to look at your output in detailed.
@@ -1201,7 +1203,7 @@ class Ass:
 
     def open_mpv(
         self, video_path: str = "", video_start: str = "", full_screen: bool = False
-    ) -> None:
+    ) -> int:
         """Open the output (specified in self.path_output) in softsub with the MPV player.
         To utilize this function, MPV player is required. Additionally if you're on Windows, MPV must be in the PATH (check https://pyonfx.readthedocs.io/en/latest/quick%20start.html#installation-extra-step).
 

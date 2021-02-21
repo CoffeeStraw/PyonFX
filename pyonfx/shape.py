@@ -15,12 +15,11 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-from pyonfx.ass_core import Pixel
+from __future__ import annotations
 import math
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, List, Tuple, Union
 from pyquaternion import Quaternion
 from inspect import signature
-from __future__ import annotations
 
 
 class Shape:
@@ -53,7 +52,7 @@ class Shape:
         # Utility function to properly format values for shapes also returning them as a string
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
-    def has_error(self):
+    def has_error(self) -> Union[bool, str]:
         """Utility function that checks if the shape is valid.
 
         Returns:
@@ -152,7 +151,7 @@ class Shape:
         return False
 
     def map(
-        self, fun: Callable[[float, float, Optional[float]], Tuple[float, float]]
+        self, fun: Callable[[float, float, Optional[str]], Tuple[float, float]]
     ) -> Shape:
         """Sends every point of a shape through given transformation function to change them.
 
@@ -234,7 +233,7 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def bounding(self):
+    def bounding(self) -> Tuple[float, float, float, float]:
         """Calculates shape bounding box.
 
         **Tips:** *Using this you can get more precise information about a shape (width, height, position).*
@@ -258,7 +257,7 @@ class Shape:
         y1: float = None
 
         # Calculate minimal and maximal coordinates
-        def compute_edges(x: float, y: float):
+        def compute_edges(x, y):
             nonlocal x0, y0, x1, y1
             if x0 is not None:
                 x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
@@ -269,7 +268,7 @@ class Shape:
         self.map(compute_edges)
         return x0, y0, x1, y1
 
-    def move(self, x: float = None, y: float = None):
+    def move(self, x: float = None, y: float = None) -> Shape:
         """Moves shape coordinates in given direction.
 
         | If neither x and y are passed, it will automatically center the shape to the origin (0,0).
@@ -300,7 +299,7 @@ class Shape:
         self.map(lambda cx, cy: (cx + x, cy + y))
         return self
 
-    def flatten(self, tolerance: float = 1.0):
+    def flatten(self, tolerance: float = 1.0) -> Shape:
         """Splits shape's bezier curves into lines.
 
         | This is a low level function. Instead, you should use :func:`split` which already calls this function.
@@ -321,15 +320,15 @@ class Shape:
         # Inner functions definitions
         # 4th degree curve subdivider (De Casteljau)
         def curve4_subdivide(
-            x0: float,
-            y0: float,
-            x1: float,
-            y1: float,
-            x2: float,
-            y2: float,
-            x3: float,
-            y3: float,
-            pct: float,
+            x0,
+            y0,
+            x1,
+            y1,
+            x2,
+            y2,
+            x3,
+            y3,
+            pct,
         ):
             # Calculate points on curve vectors
             x01, y01, x12, y12, x23, y23 = (
@@ -369,27 +368,27 @@ class Shape:
 
         # Check flatness of 4th degree curve with angles
         def curve4_is_flat(
-            x0: float,
-            y0: float,
-            x1: float,
-            y1: float,
-            x2: float,
-            y2: float,
-            x3: float,
-            y3: float,
+            x0,
+            y0,
+            x1,
+            y1,
+            x2,
+            y2,
+            x3,
+            y3,
         ):
             # Pack curve vectors (only ones non zero)
             vecs = [[x1 - x0, y1 - y0], [x2 - x1, y2 - y1], [x3 - x2, y3 - y2]]
             vecs = [el for el in vecs if not (el[0] == 0 and el[1] == 0)]
 
             # Inner functions to calculate degrees between two 2d vectors
-            def dotproduct(v1: list[float], v2: list[float]):
+            def dotproduct(v1, v2):
                 return sum((a * b) for a, b in zip(v1, v2))
 
-            def length(v: list[float]):
+            def length(v):
                 return math.sqrt(dotproduct(v, v))
 
-            def get_angle(v1: list[float], v2: list[float]):
+            def get_angle(v1, v2):
                 calc = max(
                     min(dotproduct(v1, v2) / (length(v1) * length(v2)), 1), -1
                 )  # Clamping value to prevent errors
@@ -406,14 +405,14 @@ class Shape:
 
         # Inner function to convert 4th degree curve to line points
         def curve4_to_lines(
-            x0: float,
-            y0: float,
-            x1: float,
-            y1: float,
-            x2: float,
-            y2: float,
-            x3: float,
-            y3: float,
+            x0,
+            y0,
+            x1,
+            y1,
+            x2,
+            y2,
+            x3,
+            y3,
         ):
             # Line points buffer
             pts = ""
@@ -520,14 +519,14 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def split(self, max_len: int = 16, tolerance: float = 1.0):
+    def split(self, max_len: float = 16, tolerance: float = 1.0) -> Shape:
         """Splits shape bezier curves into lines and splits lines into shorter segments with maximum given length.
 
         **Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
 
         Parameters:
-            tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
             max_len (int or float): The max length that you want all the lines to be
+            tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
 
         Returns:
             A pointer to the current object.
@@ -851,7 +850,7 @@ class Shape:
         # Shift mid point of heart vertically
         count = 0
 
-        def shift_mid_point(x: int, y: int):
+        def shift_mid_point(x, y):
             nonlocal count
             count += 1
 
@@ -867,7 +866,7 @@ class Shape:
 
     @staticmethod
     def __glance_or_star(
-        edges: float, inner_size: float, outer_size: float, g_or_s: str
+        edges: int, inner_size: float, outer_size: float, g_or_s: str
     ) -> Shape:
         """
         General function to create a shape object representing star or glance.
@@ -875,7 +874,7 @@ class Shape:
         # Alias for utility functions
         f = Shape.format_value
 
-        def rotate_on_axis_z(point: Pixel, theta: float):
+        def rotate_on_axis_z(point, theta):
             # Internal function to rotate a point around z axis by a given angle.
             theta = math.radians(theta)
             return Quaternion(axis=[0, 0, 1], angle=theta).rotate(point)
@@ -914,7 +913,7 @@ class Shape:
         return shape.move()
 
     @staticmethod
-    def star(edges: float, inner_size: float, outer_size: float) -> Shape:
+    def star(edges: int, inner_size: float, outer_size: float) -> Shape:
         """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
@@ -965,7 +964,7 @@ class Shape:
             raise TypeError("Number(s) expected")
 
     @staticmethod
-    def triangle(size: float):
+    def triangle(size: float) -> Shape:
         """Returns a shape object of an equilateral triangle with given side length, centered around (0,0).
 
         Parameters:
