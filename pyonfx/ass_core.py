@@ -437,6 +437,7 @@ class Ass:
         self.path_input = path_input
         self.path_output = path_output
         self.__output = []
+        self.__output_extradata = []
 
         section = ""
         li = 0
@@ -447,7 +448,8 @@ class Ass:
                 # Updating section
                 section = section_pattern.match(line)[1]
                 # Appending line to output
-                self.__output.append(line)
+                if section != "Aegisub Extradata":
+                    self.__output.append(line)
 
             # Parsing Meta data
             elif section == "Script Info" or section == "Aegisub Project Garbage":
@@ -545,13 +547,16 @@ class Ass:
                     tmp.encoding = int(style[22])
 
                     self.styles[style[0]] = tmp
+
             # Parsing Dialogues
             elif section == "Events":
                 # Appending line to output (commented) if keep_original is True
                 if keep_original:
                     self.__output.append(
-                        re.sub(r"^(Dialogue|Comment):", "Comment:", line)
+                        re.sub(r"^(Dialogue|Comment):", "Comment:", line, count=1)
                     )
+                elif line.startswith("Format"):
+                    self.__output.append(line.strip())
 
                 # Analyzing line
                 line = re.match(r"(Dialogue|Comment): (.+?)$", line)
@@ -583,6 +588,12 @@ class Ass:
                     tmp.raw_text = ",".join(line[9:])
 
                     self.lines.append(tmp)
+
+            elif section == "Aegisub Extradata":
+                self.__output_extradata.append(line)
+
+            else:
+                raise ValueError(f"Unexpected section in the input file: [{section}]")
 
         # Adding informations to lines and meta?
         if not extended:
@@ -1165,7 +1176,11 @@ class Ass:
 
         # Writing to file
         with open(self.path_output, "w", encoding="utf-8-sig") as f:
-            f.writelines(self.__output)
+            f.writelines(self.__output + ["\n"])
+            if self.__output_extradata:
+                f.write("\n[Aegisub Extradata]\n")
+                f.writelines(self.__output_extradata)
+
         self.__saved = True
 
         if not quiet:
