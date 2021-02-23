@@ -15,9 +15,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
+from __future__ import annotations
 import math
 import re
+from typing import List, Union, TYPE_CHECKING
+
 from .convert import Convert
+
+if TYPE_CHECKING:
+    from .ass_core import Line, Word, Syllable, Char
 
 
 class Utils:
@@ -26,7 +32,9 @@ class Utils:
     """
 
     @staticmethod
-    def all_non_empty(lines_chars_syls_or_words):
+    def all_non_empty(
+        lines_chars_syls_or_words: List[Union[Line, Word, Syllable, Char]]
+    ) -> List[Union[Line, Word, Syllable, Char]]:
         """
         Helps to not check everytime for text containing only spaces or object's duration equals to zero.
 
@@ -43,18 +51,23 @@ class Utils:
         return out
 
     @staticmethod
-    def clean_tags(text):
+    def clean_tags(text: str) -> str:
         # TODO: Cleans up ASS subtitle lines of badly-formed override. Returns a cleaned up text.
         pass
 
     @staticmethod
-    def accelerate(pct, accelerator):
+    def accelerate(pct: float, accelerator: float) -> float:
         # Modifies pct according to the acceleration provided.
-        # TO DO: Implement acceleration based on bezier's curve
+        # TODO: Implement acceleration based on bezier's curve
         return pct ** accelerator
 
     @staticmethod
-    def interpolate(pct, val1, val2, acc=1.0):
+    def interpolate(
+        pct: float,
+        val1: Union[float, str],
+        val2: Union[float, str],
+        acc: float = 1.0,
+    ) -> Union[str, float]:
         """
         | Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value as decimal number.
         | You can also provide a http://cubic-bezier.com to accelerate based on bezier curves. (TO DO)
@@ -81,7 +94,7 @@ class Utils:
         """
         if pct > 1.0 or pct < 0:
             raise ValueError(
-                f"Percent value must be a float between 0.0 and 1.0, but your was {pct}"
+                f"Percent value must be a float between 0.0 and 1.0, but yours was {pct}"
             )
 
         # Calculating acceleration (if requested)
@@ -129,7 +142,7 @@ class Utils:
 
 class FrameUtility:
     """
-    This class helps in the stressfull calculation of frames per frame.
+    This class helps in the stressful calculation of frames per frame.
 
     Parameters:
         start_time (positive float): Initial time
@@ -153,7 +166,7 @@ class FrameUtility:
 
     """
 
-    def __init__(self, start_time, end_time, fr=41.71):
+    def __init__(self, start_time: float, end_time: float, fr: float = 41.71):
         # Checking for invalid values
         if start_time < 0 or end_time < 0 or fr <= 0 or end_time < start_time:
             raise ValueError("Positive values and/or end_time > start_time expected.")
@@ -186,11 +199,23 @@ class FrameUtility:
         self.start_time = self.start_time - self.fr * max(self.n - 1, 0)
         self.current_time = self.fr
 
-    def add(self, start_time, end_time, end_value, accelerator=1.0):
+    def add(
+        self,
+        start_time: int,
+        end_time: int,
+        end_value: float,
+        accelerator: float = 1.0,
+    ) -> float:
         """
-        | This function makes a lot easier the calculation of tags value.
-        | You can see this as a \"\\t\" tag usable in frame per frame operations.
-        | Use it in a for loop which iterates a FrameUtility object, as you can see in the example.
+        This function makes a lot easier the calculation of tags value.
+        You can see this as a \"\\t\" tag usable in frame per frame operations.
+        Use it in a for loop which iterates a FrameUtility object, as you can see in the example.
+
+        Parameters:
+            start_time (int): Initial time
+            end_time (int): Final time
+            end_value (int or float): Value reached at end_time
+            accelerator (float): Accelerator value
 
         Examples:
             ..  code-block:: python3
@@ -233,18 +258,18 @@ class ColorUtility:
         * Every color-tag has to be in the format of ``c&Hxxxxxx&``, do not forget the last &;
         * You can put color changes without using transformations, like ``{\\1c&HFFFFFF&\\3c&H000000&}Test``, but those will be interpreted as ``{\\t(0,0,\\1c&HFFFFFF&\\3c&H000000&)}Test``;
         * For an example of how color changes should be put in your lines, check `this <https://github.com/CoffeeStraw/PyonFX/blob/master/examples/2%20-%20Beginner/in2.ass#L34-L36>`_.
-        
+
         Also, it is important to remember that **color changes in your lines are treated as if they were continuous**.
-        
+
         For example, let's assume we have two lines:
-        
+
         #. ``{\\1c&HFFFFFF&\\t(100,150,\\1c&H000000&)}Line1``, starting at 0ms, ending at 100ms;
         #. ``{}Line2``, starting at 100ms, ending at 200ms.
 
         Even if the second line **doesn't have any color changes** and you would expect to have the style's colors,
         **it will be treated as it has** ``\\1c&H000000&``. That could seem strange at first,
         but thinking about your generated lines, **the majority** will have **start_time and end_time different** from the ones of your original file.
-        
+
         Treating transformations as if they were continous, **ColorUtility will always know the right colors** to pick for you.
         Also, remember that even if you can't always see them directly on Aegisub, you can use transformations
         with negative times or with times that exceed line total duration.
@@ -266,7 +291,7 @@ class ColorUtility:
             CU = ColorUtility([ line[0] ])
     """
 
-    def __init__(self, lines, offset=0):
+    def __init__(self, lines: List[Line], offset: int = 0):
         self.color_changes = []
         self.c1_req = False
         self.c3_req = False
@@ -368,7 +393,9 @@ class ColorUtility:
                         }
                     )
 
-    def get_color_change(self, line, c1=None, c3=None, c4=None):
+    def get_color_change(
+        self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None
+    ) -> str:
         """Returns all the color_changes in the object that fit (in terms of time) between line.start_time and line.end_time.
 
         Parameters:
@@ -453,7 +480,9 @@ class ColorUtility:
 
         return transform
 
-    def get_fr_color_change(self, line, c1=None, c3=None, c4=None):
+    def get_fr_color_change(
+        self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None
+    ) -> str:
         """Returns the single color(s) in the color_changes that fit the current frame (line.start_time) in your frame loop.
 
         Note:

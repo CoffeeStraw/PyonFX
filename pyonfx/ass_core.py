@@ -15,45 +15,17 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
+from __future__ import annotations
+import re
 import os
 import sys
 import time
-import re
 import copy
 import subprocess
-from typing import List
+from typing import List, NamedTuple, Tuple, Union, Optional
+
 from .font_utility import Font
 from .convert import Convert
-
-
-def pretty_print(obj, indent=0, name=""):
-    # Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
-    if type(obj) == Line:
-        out = " " * indent + f"lines[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Word:
-        out = " " * indent + f"words[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Syllable:
-        out = " " * indent + f"syls[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Char:
-        out = " " * indent + f"chars[{obj.i}] ({type(obj).__name__}):\n"
-    else:
-        out = " " * indent + f"{name}({type(obj).__name__}):\n"
-
-    # Let's print all this object fields
-    indent += 4
-    for k, v in obj.__dict__.items():
-        if "__dict__" in dir(v):
-            # Work recursively to print another object
-            out += pretty_print(v, indent, k + " ")
-        elif type(v) == list:
-            for i, el in enumerate(v):
-                # Work recursively to print other objects inside a list
-                out += pretty_print(el, indent, f"{k}[{i}] ")
-        else:
-            # Just print a field of this object
-            out += " " * indent + f"{k}: {str(v)}\n"
-
-    return out
 
 
 class Meta:
@@ -144,6 +116,10 @@ class Style:
 
     def __repr__(self):
         return pretty_print(self)
+
+
+# According to pep-0589, this is the recommended way to declare typed dict.
+Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", float)])
 
 
 class Char:
@@ -390,7 +366,7 @@ class Line:
     def __repr__(self):
         return pretty_print(self)
 
-    def copy(self):
+    def copy(self) -> Line:
         """
         Returns:
             A deep copy of this object (line)
@@ -429,11 +405,11 @@ class Ass:
 
     def __init__(
         self,
-        path_input="",
-        path_output="Output.ass",
-        keep_original=True,
-        extended=True,
-        vertical_kanji=True,
+        path_input: str = "",
+        path_output: str = "Output.ass",
+        keep_original: bool = True,
+        extended: bool = True,
+        vertical_kanji: bool = True,
     ):
         # Starting to take process time
         self.__saved = False
@@ -1142,7 +1118,7 @@ class Ass:
                     else lines_by_styles[style][li + 1].start_time - line.end_time
                 )
 
-    def get_data(self):
+    def get_data(self) -> Tuple[Meta, Style, List[Line]]:
         """Utility function to retrieve easily meta styles and lines.
 
         Returns:
@@ -1150,7 +1126,7 @@ class Ass:
         """
         return self.meta, self.styles, self.lines
 
-    def write_line(self, line):
+    def write_line(self, line: Line) -> Optional[TypeError]:
         """Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
 
         Use it whenever you've prepared a line, it will not impact performance since you
@@ -1180,7 +1156,7 @@ class Ass:
         else:
             raise TypeError("Expected Line object, got %s." % type(line))
 
-    def save(self, quiet=False):
+    def save(self, quiet: bool = False) -> None:
         """Write everything inside the private output list to a file.
 
         Parameters:
@@ -1198,7 +1174,7 @@ class Ass:
                 % (self.__plines, time.time() - self.__ptime)
             )
 
-    def open_aegisub(self):
+    def open_aegisub(self) -> int:
         """Open the output (specified in self.path_output) with Aegisub.
 
         This can be usefull if you don't have MPV installed or you want to look at your output in detailed.
@@ -1225,7 +1201,9 @@ class Ass:
 
         return 0
 
-    def open_mpv(self, video_path="", video_start="", full_screen=False):
+    def open_mpv(
+        self, video_path: str = "", video_start: str = "", full_screen: bool = False
+    ) -> int:
         """Open the output (specified in self.path_output) in softsub with the MPV player.
         To utilize this function, MPV player is required. Additionally if you're on Windows, MPV must be in the PATH (check https://pyonfx.readthedocs.io/en/latest/quick%20start.html#installation-extra-step).
 
@@ -1276,3 +1254,35 @@ class Ass:
             return -1
 
         return 0
+
+
+def pretty_print(
+    obj: Union[Meta, Style, Line, Word, Syllable, Char], indent: int = 0, name: str = ""
+) -> str:
+    # Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
+    if type(obj) == Line:
+        out = " " * indent + f"lines[{obj.i}] ({type(obj).__name__}):\n"
+    elif type(obj) == Word:
+        out = " " * indent + f"words[{obj.i}] ({type(obj).__name__}):\n"
+    elif type(obj) == Syllable:
+        out = " " * indent + f"syls[{obj.i}] ({type(obj).__name__}):\n"
+    elif type(obj) == Char:
+        out = " " * indent + f"chars[{obj.i}] ({type(obj).__name__}):\n"
+    else:
+        out = " " * indent + f"{name}({type(obj).__name__}):\n"
+
+    # Let's print all this object fields
+    indent += 4
+    for k, v in obj.__dict__.items():
+        if "__dict__" in dir(v):
+            # Work recursively to print another object
+            out += pretty_print(v, indent, k + " ")
+        elif type(v) == list:
+            for i, el in enumerate(v):
+                # Work recursively to print other objects inside a list
+                out += pretty_print(el, indent, f"{k}[{i}] ")
+        else:
+            # Just print a field of this object
+            out += " " * indent + f"{k}: {str(v)}\n"
+
+    return out

@@ -15,19 +15,20 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 """
-This file contains the Font class definition, which has some functions
+This module contains the Font class definition, which has some functions
 to help getting informations from a specific font
 """
+from __future__ import annotations
 import sys
+from typing import Tuple, TYPE_CHECKING
+
 from .shape import Shape
 
 if sys.platform == "win32":
     import win32gui
     import win32ui
     import win32con
-elif (
-    sys.platform == "linux" or sys.platform == "darwin"
-) and not "sphinx" in sys.modules:
+elif sys.platform in ["linux", "darwin"] and not "sphinx" in sys.modules:
     import cairo
     import gi
 
@@ -36,6 +37,9 @@ elif (
 
     from gi.repository import Pango, PangoCairo
     import html
+
+if TYPE_CHECKING:
+    from .ass_core import Style
 
 # CONFIGURATION
 FONT_PRECISION = 64  # Font scale for better precision output from native font system
@@ -48,7 +52,7 @@ class Font:
     Font class definition
     """
 
-    def __init__(self, style):
+    def __init__(self, style: Style):
         self.family = style.fontname
         self.bold = style.bold
         self.italic = style.italic
@@ -126,7 +130,7 @@ class Font:
             win32gui.DeleteObject(self.pycfont.GetSafeHandle())
             win32gui.DeleteDC(self.dc)
 
-    def get_metrics(self):
+    def get_metrics(self) -> Tuple[float, float, float, float]:
         if sys.platform == "win32":
             const = self.downscale * self.yscale
             return (
@@ -148,7 +152,7 @@ class Font:
         else:
             raise NotImplementedError
 
-    def get_text_extents(self, text):
+    def get_text_extents(self, text: str) -> Tuple[float, float]:
         if sys.platform == "win32":
             cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
@@ -190,7 +194,7 @@ class Font:
         else:
             raise NotImplementedError
 
-    def text_to_shape(self, text):
+    def text_to_shape(self, text: str) -> Shape:
         if sys.platform == "win32":
             # TODO: Calcultating distance between origins of character cells (just in case of spacing)
 

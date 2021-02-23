@@ -15,9 +15,16 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
+from __future__ import annotations
 import re
 import math
+from typing import List, Optional, Tuple, Union, TYPE_CHECKING
+
 from .font_utility import Font
+
+if TYPE_CHECKING:
+    from .ass_core import Line, Word, Syllable, Char, Pixel
+    from .shape import Shape
 
 
 class Convert:
@@ -27,13 +34,13 @@ class Convert:
     """
 
     @staticmethod
-    def time(ass_ms):
+    def time(ass_ms: Union[int, str]) -> Union[str, int, ValueError]:
         """Converts between milliseconds and ASS timestamp.
 
         You can probably ignore that function, you will not make use of it for KFX or typesetting generation.
 
         Parameters:
-            ass_ms (either int or str): If int, than milliseconds are expected, else ASS timestamp as str is expected.
+            ass_ms (int or str): If int, than milliseconds are expected, else ASS timestamp as str is expected.
 
         Returns:
             If milliseconds -> ASS timestamp, else if ASS timestamp -> milliseconds, else ValueError will be raised.
@@ -58,7 +65,9 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def coloralpha(ass_r_a, g="", b="", a=""):
+    def coloralpha(
+        ass_r_a: Union[int, str], g: int = None, b: int = None, a: int = None
+    ) -> Union[Tuple[int, int, int, Optional[int]], str]:
         """Converts between rgb color &/+ alpha numeric and ASS color &/+ alpha.
 
         - Passing a string to this function, you want a conversion from ASS color+alpha, ASS color or ASS alpha to integer values;
@@ -145,7 +154,9 @@ class Convert:
             raise ValueError("Color, Alpha, Color+Alpha as numeric or ASS expected")
 
     @staticmethod
-    def text_to_shape(obj, fscx=None, fscy=None):
+    def text_to_shape(
+        obj: Union[Line, Word, Syllable, Char], fscx: float = None, fscy: float = None
+    ) -> Shape:
         """Converts text with given style information to an ASS shape.
 
         **Tips:** *You can easily create impressive deforming effects.*
@@ -189,7 +200,12 @@ class Convert:
         return shape
 
     @staticmethod
-    def text_to_clip(obj, an=5, fscx=None, fscy=None):
+    def text_to_clip(
+        obj: Union[Line, Word, Syllable, Char],
+        an: int = 5,
+        fscx: float = None,
+        fscy: float = None,
+    ) -> Shape:
         """Converts text with given style information to an ASS shape, applying some translation/scaling to it since
         it is not possible to position a shape with \\pos() once it is in a clip.
 
@@ -255,7 +271,9 @@ class Convert:
         return shape.move(cx, cy)
 
     @staticmethod
-    def text_to_pixels(obj, supersampling=8):
+    def text_to_pixels(
+        obj: Union[Line, Word, Syllable, Char], supersampling: int = 8
+    ) -> List[Pixel]:
         """| Converts text with given style information to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
@@ -294,7 +312,7 @@ class Convert:
         return Convert.shape_to_pixels(shape, supersampling)
 
     @staticmethod
-    def shape_to_pixels(shape, supersampling=8):
+    def shape_to_pixels(shape: Shape, supersampling: int = 8) -> List[Pixel]:
         """| Converts a Shape object to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
@@ -460,11 +478,11 @@ class Convert:
 
                 if opacity > 0:
                     pixels.append(
-                        {
-                            "alpha": opacity * (downscale * downscale),
-                            "x": (x - shift_x) * downscale,
-                            "y": (y - shift_y) * downscale,
-                        }
+                        Pixel(
+                            x=(x - shift_x) * downscale,
+                            y=(y - shift_y) * downscale,
+                            alpha=opacity * downscale ** 2,
+                        )
                     )
 
         return pixels
