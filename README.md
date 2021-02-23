@@ -3,9 +3,9 @@
   <img src="https://github.com/CoffeeStraw/PyonFX/blob/master/docs/source/_static/PyonFX%20Logo.png?raw=true" alt="PyonFX Logo" width="600">
 </h1>
 
-<h4 align="center">An easy way to do KFX and complex typesetting based on subtitle format ASS (Advanced Substation Alpha).</h4>
-<p align="center">Powered by <b>Python3</b>, PyonFX aims to offer <b>stability</b>, <b>efficiency</b> and <b>ease of use</b> 
-for everyone who want to create something more visually complex with the ASS format.</p>
+<h4 align="center">An easy way to perform advanced KFX and complex typesetting using the ASS format (Advanced Substation Alpha).</h4>
+<p align="center">Powered by <b>Python3</b>, PyonFX aims to offer <b>stability</b>, <b>efficiency</b>, and <b>ease of use</b>
+to anyone who wants to create something more visually complex within ASS.</p>
 
 <p align="center">
   <a href="https://www.python.org/">
@@ -29,19 +29,19 @@ for everyone who want to create something more visually complex with the ASS for
 
 # Documentation
 
-A fully documentation of the project containing a quick-start guide and an explanation of all the functions and variables (with examples) can be found on [Read The Docs](http://pyonfx.rtfd.io/).
+You can find the full documentation of PyonFX, as well as a quick-start guide and examples, on [Read The Docs](http://pyonfx.rtfd.io/).
 
 ## Contributing
 
-If you want to contribute to PyonFX, be sure to review the [contribution
+If you want to contribute to PyonFX, please make sure to review the [contribution
 guidelines](CONTRIBUTING.md).
 
-This project will use [GitHub issues](https://github.com/CoffeeStraw/PyonFX/issues) for
-tracking **requests and bugs**, so please *don't use* issues for general questions and discussion.
+This project makes use of [GitHub issues](https://github.com/CoffeeStraw/PyonFX/issues) for
+tracking **requests and bugs only**, so please *don't* use issues for general questions and discussion.
 
 ## License
 
-This project is licensed under the LGPL v3.0 License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the LGPL v3.0 License — see the [LICENSE](LICENSE) file for further details.
 
 ## Acknowledgments
 

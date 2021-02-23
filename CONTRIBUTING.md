@@ -1,17 +1,17 @@
 # Contributing
 
-When contributing to PyonFX, please first discuss the change you wish to make via issue with the owner of this repository before making a change.
+When contributing to PyonFX, please discuss any changes you wish to make via creating an issue with the owner of this repository before making a change.
 
-Please note there is a code of conduct, you have to follow it in all your interactions with the project.
+Plesae ensure you follow the code of conduct in all your interactions with the project.
 
 ## Pull Request Checklist
 
-Before sending your pull requests, make sure you followed this list.
+Before sending your pull requests, make sure you have done the following:
 
 - Read the General Contribution Guidelines in the section right below this.
-- Check if my changes are consistent with the guidelines.
-- Run Unit Tests (and eventually create new ones) using pytest.
-- Increase the version number in the __init__.py file. It follows the following meaning: MainVersion.NewFeature.BugFixes. So if you have done just some bug fixes, increase the last number, if you've added a new feature increase the second number. The first number should never be touched, 0 stands for beta stage, 1 for release stage.
+- Checked if your changes are consistent with the guidelines.
+- Ran Unit Tests (and created new ones if applicable) using pytest.
+- Increased the version number in the __init__.py file. It follows the following setup: MainVersion.NewFeature.BugFixes. This means that if your commit contains bux fixes, you must increment the final number. If you've added a new feature, increase the second number. You should never have to touch the first number, as 0 stands for "beta stage" and 1 for "release stage".
 
 #### General Contribution Guidelines and philosophy for contribution
 
