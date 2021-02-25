@@ -107,7 +107,7 @@ You need to add the folder that contains the .exe of mpv, generally C:\\Program 
 
 
 Starting out
-++++++++
+++++++++++++
 
 Before starting, you may want to make sure everything works as intended. I suggest you to try running some of the examples in the `official GitHub repository of the project <https://github.com/CoffeeStraw/PyonFX/tree/master/examples>`_.
 
