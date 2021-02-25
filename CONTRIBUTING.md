@@ -2,7 +2,7 @@
 
 When contributing to PyonFX, please discuss any changes you wish to make via creating an issue with the owner of this repository before making a change.
 
-Plesae ensure you follow the code of conduct in all your interactions with the project.
+Please ensure you follow the code of conduct in all your interactions with the project.
 
 ## Pull Request Checklist
 
