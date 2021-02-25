@@ -140,7 +140,7 @@ Tips
 ----------
 
 .. rubric:: Footnotes
-.. [#f1] List of all ASS tags with usage explanation: https://web.archive.org/web/20200722050630/
+.. [#f1] List of all ASS tags with usage explanation: https://web.archive.org/web/20200722050630/http://docs.aegisub.org/3.2/ASS_Tags/
 .. [#f2] Suggested tutorials for learning Python3:
 
    * Italian: https://github.com/AllenDowney/ThinkPythonItalian/blob/master/thinkpython_italian.pdf
