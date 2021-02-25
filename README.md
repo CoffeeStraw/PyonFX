@@ -3,7 +3,7 @@
   <img src="https://github.com/CoffeeStraw/PyonFX/blob/master/docs/source/_static/PyonFX%20Logo.png?raw=true" alt="PyonFX Logo" width="600">
 </h1>
 
-<h4 align="center">An easy way to perform advanced KFX and complex typesetting using the ASS format (Advanced Substation Alpha).</h4>
+<h4 align="center">An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).</h4>
 <p align="center">Powered by <b>Python3</b>, PyonFX aims to offer <b>stability</b>, <b>efficiency</b>, and <b>ease of use</b>
 to anyone who wants to create something more visually complex within ASS.</p>
 

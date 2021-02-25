@@ -8,26 +8,26 @@ First things first, you must have a good idea of how to create your effects. You
 * **ASS format**. As PyonFX is an advanced tool for typesetting and karaoke, it is meant to be used by experienced typesetters who are familiar with the tags Libass supports, as well as how they function. Check the footnote [#f1]_ for a complete list of tags.
 * **Python3 scripting language**. A programming language like Python allows you to define functions for your effects, how many times to perform, what to perform it on based on conditions, etc. In essense, it gives you much more freedom, as you aren't tied to buttons or sliders but instead get to define everything exactly how you want it. **You only need to know the basics for this module**. Knowledge on how to use variable, functions, conditions, loops, comparisons, string formatting, lists, and dictionaries is more than enough. You can find a link to some good tutorials in the footnotes[#f2]_.
 
-To generate the effects, you'll have to write a Python3 script. Within it you will fully define the process of your KFX or advanced typesetting creation.
+To use PyonFX, you'll have to write a Python3 script. Within it you will fully define the process of your KFX or advanced typesetting creation.
 
-If you run into problems while installing Python3, there are resources online to help you out, like https://realpython.com/installing-python/ for example.
+If you run into problems installing Python3, there are resources online to help you out, like https://realpython.com/installing-python/ for example.
 
 Windows
 +++++++
 
 If you haven't installed it yet, make sure to **install** Python3.
-You can **download** it from the `official website: <https://www.python.org/downloads/>`_.
+You can **download** it from the `official website <https://www.python.org/downloads/>`_.
 Make sure you check the box that says "Add Python 3.x to PATH". This is very important to avoid some extra steps that would make Python callable in every directory from the command prompt.
 
 
-Run the following command below. It will use pip3 to install and update the library:
+Run the following command below. It will use pip to install and update the library:
 
 .. code-block:: sh
    :emphasize-lines: 1
 
-   pip3 install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+   pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
 
-That's all you need to do for now. If you need to install this library at a later date, run that same command again.
+That's all you need to do for now. If you need to update this library at a later date, run that same command again.
 
 Ubuntu/Debian
 +++++++++++++
@@ -109,9 +109,9 @@ You need to add the folder that contains the .exe of mpv, generally C:\\Program 
 Starting out
 ++++++++
 
-Before starting, you may want to make sure everything functions as intended. I suggest you to try running some of the examples in the `official GitHub repository of the project <https://github.com/CoffeeStraw/PyonFX/tree/master/examples>`_.
+Before starting, you may want to make sure everything works as intended. I suggest you to try running some of the examples in the `official GitHub repository of the project <https://github.com/CoffeeStraw/PyonFX/tree/master/examples>`_.
 
-To run a script in python, run the following command:
+To run a script in python, execute the following command:
 
 .. code-block:: sh
    :emphasize-lines: 1
@@ -140,7 +140,7 @@ Tips
 ----------
 
 .. rubric:: Footnotes
-.. [#f1] List of all ASS tags with usage explanation: http://docs.aegisub.org/3.2/ASS_Tags/
+.. [#f1] List of all ASS tags with usage explanation: https://web.archive.org/web/20200722050630/http://docs.aegisub.org/3.2/ASS_Tags/
 .. [#f2] Suggested tutorials for learning Python3:
 
    * Italian: https://github.com/AllenDowney/ThinkPythonItalian/blob/master/thinkpython_italian.pdf
