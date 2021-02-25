@@ -10,7 +10,7 @@ First things first, you must have a good idea of how to create your effects. You
 
 To use PyonFX, you'll have to write a Python3 script. Within it you will fully define the process of your KFX or advanced typesetting creation.
 
-If you run into problems installing Python3, there are resources online to help you out, like https://realpython.com/installing-python/ for example.
+If you don't know how to install Python3, there are resources online that can help you out, like https://realpython.com/installing-python/ for example.
 
 Windows
 +++++++
