@@ -6,7 +6,7 @@ Quick Start Guide
 First things first, you must have a good idea of how to create your effects. You will need to learn (if you haven't already) the following:
 
 * **ASS format**. As PyonFX is an advanced tool for typesetting and karaoke, it is meant to be used by experienced typesetters who are familiar with the tags Libass supports, as well as how they function. Check the footnote [#f1]_ for a complete list of tags.
-* **Python3 scripting language**. A programming language like Python allows you to define functions for your effects, how many times to perform, what to perform it on based on conditions, etc. In essense, it gives you much more freedom, as you aren't tied to buttons or sliders but instead get to define everything exactly how you want it. **You only need to know the basics for this module**. Knowledge on how to use variable, functions, conditions, loops, comparisons, string formatting, lists, and dictionaries is more than enough. You can find a link to some good tutorials in the footnotes[#f2]_.
+* **Python3 scripting language**. A programming language like Python allows you to define a set of instructions to be executed by your computer. Compared to softwares with GUI it gives you much more freedom, as you aren't tied to buttons or sliders. **You only need to know the basics for this module**. Knowledge on how to use variable, functions, conditions, loops, comparisons, string formatting, lists, and dictionaries is more than enough. You can find a link to some good tutorials in the footnotes[#f2]_.
 
 To use PyonFX, you'll have to write a Python3 script. Within it you will fully define the process of your KFX or advanced typesetting creation.
 
