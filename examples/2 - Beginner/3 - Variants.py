@@ -1,4 +1,3 @@
-# noqa: F405
 """
 Inline effects is a method to define exclusive effects for syllables.
 Fields "Actor" and "Effect" can also be used to define exclusive effects, but you will define them for the whole line.

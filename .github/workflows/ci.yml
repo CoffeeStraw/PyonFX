@@ -28,14 +28,14 @@ jobs:
           path: ${{ env.pythonLocation }}
           key: ${{matrix.os}}-${{matrix.python-version}}-${{ hashFiles('setup.py') }}-${{ hashFiles('requirements.txt') }}
       - name: Install Python requirements
-        run: pip install --upgrade --upgrade-strategy eager .[dev]
+        run: |
+          pip install --upgrade --upgrade-strategy eager .[dev]
+          pip install flake8
 
       - name: Lint with flake8
         run: |
-          pip install flake8
           flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
           flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-        shell: bash
 
       - name: Cancelling pipeline (failed)
         if: failure()

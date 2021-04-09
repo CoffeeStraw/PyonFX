@@ -1,4 +1,3 @@
-# noqa: F405
 """
 Let's go a bit further.
 

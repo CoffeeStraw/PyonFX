@@ -1,4 +1,3 @@
-# noqa: F405
 """
 This script visualizes which ASS values you got from input ASS file.
 
