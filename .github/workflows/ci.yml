@@ -1,0 +1,92 @@
+# Workflow label
+name: CI
+
+# Workflow trigger
+on: [push, pull_request]
+
+# Workflow tasks
+jobs:
+  # Apply lint, check formatting
+  lint:
+    name: "Lint (Python ${{ matrix.python-version }})"
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: [3.7, 3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Cache Python
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{matrix.os}}-${{matrix.python-version}}-${{ hashFiles('setup.py') }}-${{ hashFiles('requirements.txt') }}
+      - name: Install Python requirements
+        run: pip install --upgrade --upgrade-strategy eager .[dev]
+
+      - name: Lint with flake8
+        run: |
+          pip install flake8
+          flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
+          flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        shell: bash
+
+      - name: Cancelling pipeline (failed)
+        if: failure()
+        uses: andymckay/cancel-action@0.2
+
+      - name: Check formatting with black
+        run: black --check .
+
+  # Execute pytest to check PyonFX's functionalities
+  test:
+    name: "Test (${{matrix.os}}, Python ${{ matrix.python-version }})"
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.7, 3.8, 3.9]
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install platform-specific requirements (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
+      - name: Install platform-specific requirements (macOS) # Note: brew is very slow sometimes
+        if: matrix.os == 'macos-latest'
+        run: brew install pygobject3 gtk+3 cairo py3cairo pkg-config
+
+      - name: Install fonts (non-Windows)
+        if: matrix.os != 'windows-latest'
+        run: |
+          GO111MODULE=on GOBIN=$HOME/.local/bin go get github.com/Crosse/font-install@v1.4.1
+          $HOME/.local/bin/font-install https://mirrors.tuna.tsinghua.edu.cn/osdn/mix-mplus-ipa/58720/migu-1p-20130430.zip
+        shell: bash
+      - name: Install fonts (Windows)
+        if: matrix.os == 'windows-latest'
+        run: powershell ./.github/scripts/install-fonts.ps1 https://mirrors.tuna.tsinghua.edu.cn/osdn/mix-mplus-ipa/58720/migu-1p-20130430.zip
+        shell: pwsh
+
+      - name: Cache Python
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.pythonLocation }}
+          key: ${{matrix.os}}-${{matrix.python-version}}-${{ hashFiles('setup.py') }}-${{ hashFiles('requirements.txt') }}
+      - name: Install Python requirements
+        run: pip install --upgrade --upgrade-strategy eager .[dev]
+
+      - name: Test
+        run: PANGOCAIRO_BACKEND=fc pytest
+        shell: bash
