@@ -46,6 +46,7 @@ setuptools.setup(
     install_requires=get_requirements(),
     extras_require={
         "dev": [
+            "black",
             "pytest",
             "pytest-check",
             "sphinx_rtd_theme",
