@@ -32,4 +32,3 @@ def test_frames():
         fsc += FU.add(0, 50, 50)
         fsc += FU.add(50, 100, -50)
         # print(fsc, s, e, i, n)
-

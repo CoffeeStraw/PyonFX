@@ -4,8 +4,8 @@ The alternative is to create one dialog line for every frame. But frame per fram
 pretty stressful to set up, and here's where an utility provided by pyonfx come handy.
 In romaji, syllables jitter by frame-per-frame reposition is calculated and
 fscx/fscy increase is calculated using FrameUtility, provided in the utils module.
-	(Docs: https://pyonfx.readthedocs.io/en/latest/reference/utils.html#pyonfx.utils.FrameUtility)
-	(About the random uniform function: https://docs.python.org/3/library/random.html#random.uniform)
+    (Docs: https://pyonfx.readthedocs.io/en/latest/reference/utils.html#pyonfx.utils.FrameUtility)
+    (About the random uniform function: https://docs.python.org/3/library/random.html#random.uniform)
 You will also see a pretty standard way to make a gradual leadin and leadout, the main idea is to
 leave some little delay between syllables so that there is more time to develop an effect.
 
