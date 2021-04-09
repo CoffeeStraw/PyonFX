@@ -41,11 +41,11 @@ def romaji(line, l):
         l.dur = l.end_time - l.start_time
 
         for pixel in Convert.text_to_pixels(syl):
-            x, y = math.floor(syl.left) + pixel["x"], math.floor(syl.top) + pixel["y"]
+            x, y = math.floor(syl.left) + pixel.x, math.floor(syl.top) + pixel.y
             x2, y2 = x + random.uniform(-off, off), y + random.uniform(-off, off)
             alpha = (
-                "\\alpha" + Convert.coloralpha(pixel["alpha"])
-                if pixel["alpha"] != 255
+                "\\alpha" + Convert.coloralpha(pixel.alpha)
+                if pixel.alpha != 255
                 else ""
             )
 
@@ -67,14 +67,12 @@ def romaji(line, l):
     for pi, pixel in enumerate(Convert.shape_to_pixels(Shape.heart(50))):
         # Random shape heart to pixel effect just to show this function too
         x, y = (
-            math.floor(line.left) - 60 + pixel["x"],
-            math.floor(line.top) + pixel["y"],
+            math.floor(line.left) - 60 + pixel.x,
+            math.floor(line.top) + pixel.y,
         )
         x2, y2 = x + 10 * (-1) ** pi, y + 10 * (-1) ** pi
         alpha = (
-            "\\alpha" + Convert.coloralpha(pixel["alpha"])
-            if pixel["alpha"] != 255
-            else ""
+            "\\alpha" + Convert.coloralpha(pixel.alpha) if pixel.alpha != 255 else ""
         )
 
         l.text = "{\\p1\\move(%d,%d,%d,%d)%s\\fad(0,%d)}%s" % (

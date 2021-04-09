@@ -110,8 +110,8 @@ def romaji(line, l):
                 x = syl.center - syl.width * (1 - frame_pct)
                 y = syl.top - math.sin(frame_pct * math.pi) * jump_height
 
-                alpha = 0
-                alpha += FU.add(0, syl.duration, 255)
+                alpha = 255
+                alpha += FU.add(0, syl.duration, -255)
                 alpha = Convert.coloralpha(alpha)
 
                 l.text = (
@@ -137,10 +137,10 @@ def romaji(line, l):
             x = syl.center + frame_pct * jump_width
             y = syl.top - math.sin(frame_pct * math.pi) * jump_height
 
-            alpha = 255
+            alpha = 0
             # Last jump should fade-out
             if syl.i == len(line.syls) - 1:
-                alpha += FU.add(0, syl.duration, -255)
+                alpha += FU.add(0, syl.duration, 255)
             alpha = Convert.coloralpha(alpha)
 
             l.text = "{\\alpha%s\\pos(%.3f,%.3f)\\bord1\\blur1\\1c%s\\3c%s\\p1}%s" % (

@@ -55,8 +55,8 @@ def romaji(line, l):
             l.start_time = s
             l.end_time = e
 
-            # This lines of codes will reproduce
-            # "\\t(0,%d,\\fscx140)\\t(%d,%d,\\fscx100)" % (syl.duration/3, syl.duration/3, syl.duration)
+            # These lines of codes will reproduce
+            # "\\t(0,%d,\\fscx140\\fscy140)\\t(%d,%d,\\fscx100\\fscy100)" % (syl.duration/3, syl.duration/3, syl.duration)
             fsc = 100
             fsc += FU.add(0, syl.duration / 3, 40)
             fsc += FU.add(syl.duration / 3, syl.duration, -40)

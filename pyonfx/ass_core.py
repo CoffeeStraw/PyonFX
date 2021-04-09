@@ -22,7 +22,7 @@ import sys
 import time
 import copy
 import subprocess
-from typing import List, NamedTuple, Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional
 
 from .font_utility import Font
 from .convert import Convert
@@ -116,10 +116,6 @@ class Style:
 
     def __repr__(self):
         return pretty_print(self)
-
-
-# According to pep-0589, this is the recommended way to declare typed dict.
-Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", float)])
 
 
 class Char:

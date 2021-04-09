@@ -44,8 +44,8 @@ def romaji(line, l):
             fsc += FU.add(0, syl.duration / 3, 20)
             fsc += FU.add(syl.duration / 3, syl.duration, -20)
 
-            alpha = 255
-            alpha -= FU.add(syl.duration / 2, syl.duration, 255)
+            alpha = 0
+            alpha += FU.add(syl.duration / 2, syl.duration, 255)
             alpha = Convert.coloralpha(alpha)
 
             l.text = "{\\an9\\pos(%.3f,%.3f)\\fscx%.3f\\fscy%.3f}%s" % (
