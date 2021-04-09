@@ -1,3 +1,4 @@
+# noqa: F405
 """
 This script creates your first dialog line in "Output.ass", which is
 the default name for the output that will contains our original dialog lines (commented) + our new generated lines.

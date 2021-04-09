@@ -1,3 +1,4 @@
+# noqa: F405
 from pyonfx import *
 import random
 

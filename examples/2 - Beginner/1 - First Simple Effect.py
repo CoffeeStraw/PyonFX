@@ -1,3 +1,4 @@
+# noqa: F405
 """
 And here we are with our first complete effect.
 As you can see, we have now filled our romaji, kanji and sub functions.
