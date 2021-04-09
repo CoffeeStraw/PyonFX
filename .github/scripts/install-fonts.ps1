@@ -1,9 +1,9 @@
 $clnt = new-object System.Net.WebClient
-$clnt.DownloadFile("https://mirrors.tuna.tsinghua.edu.cn/osdn/mix-mplus-ipa/58720/migu-1p-20130430.zip", "migu.zip")
+$clnt.DownloadFile($args[0], "tmp.zip")
 
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-[System.IO.Compression.ZipFile]::ExtractToDirectory("migu.zip", "C:\InstallFont\")
-[System.IO.File]::Delete("migu.zip")
+[System.IO.Compression.ZipFile]::ExtractToDirectory("tmp.zip", "C:\InstallFont\")
+[System.IO.File]::Delete("tmp.zip")
 
 $SourceDir   = "C:\InstallFont\"
 $Source      = "C:\InstallFont\*"

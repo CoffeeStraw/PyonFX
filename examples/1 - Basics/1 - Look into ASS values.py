@@ -5,7 +5,7 @@ First of all you need to create an Ass object, which will help you to manage
 input/output. Once created, it will automatically extract all the informations
 from the input .ass file.
 
-For more info about the use of Ass class: 
+For more info about the use of Ass class:
 https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Ass
 
 By executing this script, you'll discover how ASS contents,

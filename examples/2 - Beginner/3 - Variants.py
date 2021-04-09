@@ -45,18 +45,15 @@ def romaji(line, l):
         l.end_time = line.start_time + syl.start_time
         l.dur = l.end_time - l.start_time
 
-        l.text = (
-            "{\\an5\\move(%.3f,%.3f,%.3f,%.3f,0,%d)\\blur2\\t(0,%d,\\blur0)\\fad(%d,0)}%s"
-            % (
-                syl.center + math.cos(syl.i / 2) * off_x,
-                syl.middle + math.sin(syl.i / 4) * off_y,
-                syl.center,
-                syl.middle,
-                delay,
-                delay,
-                delay,
-                syl.text,
-            )
+        l.text = "{\\an5\\move(%.3f,%.3f,%.3f,%.3f,0,%d)\\blur2\\t(0,%d,\\blur0)\\fad(%d,0)}%s" % (
+            syl.center + math.cos(syl.i / 2) * off_x,
+            syl.middle + math.sin(syl.i / 4) * off_y,
+            syl.center,
+            syl.middle,
+            delay,
+            delay,
+            delay,
+            syl.text,
         )
 
         io.write_line(l)
@@ -86,19 +83,16 @@ def romaji(line, l):
                 l.dur,
             )
 
-        l.text = (
-            "{\\an5\\pos(%.3f,%.3f)%s\\t(0,80,\\fscx105\\fscy105\\1c%s\\3c%s)\\t(80,%d,\\fscx100\\fscy100\\1c%s\\3c%s)}%s"
-            % (
-                syl.center,
-                syl.middle,
-                on_inline_effect_2,
-                c1,
-                c3,
-                l.dur - 80,
-                line.styleref.color1,
-                line.styleref.color3,
-                syl.text,
-            )
+        l.text = "{\\an5\\pos(%.3f,%.3f)%s\\t(0,80,\\fscx105\\fscy105\\1c%s\\3c%s)\\t(80,%d,\\fscx100\\fscy100\\1c%s\\3c%s)}%s" % (
+            syl.center,
+            syl.middle,
+            on_inline_effect_2,
+            c1,
+            c3,
+            l.dur - 80,
+            line.styleref.color1,
+            line.styleref.color3,
+            syl.text,
         )
 
         io.write_line(l)
@@ -203,18 +197,15 @@ def kanji(line, l):
         l.end_time = line.start_time + syl.start_time
         l.dur = l.end_time - l.start_time
 
-        l.text = (
-            "{\\an5\\move(%.3f,%.3f,%.3f,%.3f,0,%d)\\blur2\\t(0,%d,\\blur0)\\fad(%d,0)}%s"
-            % (
-                syl.center + math.cos(syl.i / 2) * off_x,
-                syl.middle + math.sin(syl.i / 4) * off_y,
-                syl.center,
-                syl.middle,
-                delay,
-                delay,
-                delay,
-                syl.text,
-            )
+        l.text = "{\\an5\\move(%.3f,%.3f,%.3f,%.3f,0,%d)\\blur2\\t(0,%d,\\blur0)\\fad(%d,0)}%s" % (
+            syl.center + math.cos(syl.i / 2) * off_x,
+            syl.middle + math.sin(syl.i / 4) * off_y,
+            syl.center,
+            syl.middle,
+            delay,
+            delay,
+            delay,
+            syl.text,
         )
 
         io.write_line(l)
@@ -244,19 +235,16 @@ def kanji(line, l):
                 l.dur,
             )
 
-        l.text = (
-            "{\\an5\\pos(%.3f,%.3f)%s\\t(0,80,\\fscx105\\fscy105\\1c%s\\3c%s)\\t(80,%d,\\fscx100\\fscy100\\1c%s\\3c%s)}%s"
-            % (
-                syl.center,
-                syl.middle,
-                on_inline_effect_2,
-                c1,
-                c3,
-                l.dur - 80,
-                line.styleref.color1,
-                line.styleref.color3,
-                syl.text,
-            )
+        l.text = "{\\an5\\pos(%.3f,%.3f)%s\\t(0,80,\\fscx105\\fscy105\\1c%s\\3c%s)\\t(80,%d,\\fscx100\\fscy100\\1c%s\\3c%s)}%s" % (
+            syl.center,
+            syl.middle,
+            on_inline_effect_2,
+            c1,
+            c3,
+            l.dur - 80,
+            line.styleref.color1,
+            line.styleref.color3,
+            syl.text,
         )
 
         io.write_line(l)

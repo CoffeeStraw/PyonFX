@@ -45,7 +45,13 @@ setuptools.setup(
     packages=["pyonfx"],
     install_requires=get_requirements(),
     extras_require={
-        "dev": ["pytest", "pytest-check", "sphinx_rtd_theme", "sphinxcontrib-napoleon"]
+        "dev": [
+            "black",
+            "pytest",
+            "pytest-check",
+            "sphinx_rtd_theme",
+            "sphinxcontrib-napoleon",
+        ]
     },
     classifiers=[
         "Development Status :: 2 - Pre-Alpha",
