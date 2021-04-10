@@ -20,7 +20,7 @@ import re
 import math
 import colorsys
 from enum import Enum
-from typing import List, NamedTuple, Optional, Tuple, Union, TYPE_CHECKING
+from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
 
@@ -87,7 +87,7 @@ class Convert:
             alpha_ass (str): A string in the format '&HXX&'.
 
         Returns:
-            An integer in [0, 255] representing `alpha_ass` converted.
+            An integer in [0, 255] representing ``alpha_ass`` converted.
 
         Examples:
             ..  code-block:: python3
@@ -116,7 +116,7 @@ class Convert:
             alpha_int (int): Integer in [0, 255] representing an alpha value.
 
         Returns:
-            A string in the format '&HXX&' representing `alpha_int` converted.
+            A string in the format '&HXX&' representing ``alpha_int`` converted.
 
         Examples:
             ..  code-block:: python3
@@ -145,11 +145,18 @@ class Convert:
     def color(
         c: Union[
             str,
-            Tuple[
-                Union[int, float],
-                Union[int, float],
-                Union[int, float],
-                Optional[Union[int, float]],
+            Union[
+                Tuple[
+                    Union[int, float],
+                    Union[int, float],
+                    Union[int, float],
+                ],
+                Tuple[
+                    Union[int, float],
+                    Union[int, float],
+                    Union[int, float],
+                    Union[int, float],
+                ],
             ],
         ],
         input_format: ColorModel,
@@ -165,13 +172,13 @@ class Convert:
         """Converts a provided color from a color model to another.
 
         Parameters:
-            c (str or tuple of int or tuple of float): A color in the format `input_format`.
-            input_format (ColorModel): The color format of `c`.
+            c (str or tuple of int or tuple of float): A color in the format ``input_format``.
+            input_format (ColorModel): The color format of ``c``.
             output_format (ColorModel): The color format for the output.
             round_output (bool): A boolean to determine whether the output should be rounded or not.
 
         Returns:
-            A color in the format `output_format`.
+            A color in the format ``output_format``.
 
         Examples:
             ..  code-block:: python3
@@ -181,6 +188,9 @@ class Convert:
             >>> (255, 0, 0)
         """
         try:
+            # Text for exception if input is out of ranges
+            input_range_e = f"Provided input '{c}' has value(s) out of the range "
+
             # Parse input, obtaining its corresponding (r,g,b,a) values
             if input_format == ColorModel.ASS:
                 match = re.fullmatch(r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})&", c)
@@ -191,11 +201,15 @@ class Convert:
                 )
                 a, b, g, r = map(lambda x: int(x, 16), match.groups())
             elif input_format == ColorModel.RGB:
+                if not all(0 <= n <= 255 for n in c):
+                    raise ValueError(input_range_e + "[0, 255].")
                 (r, g, b), a = c, 255
             elif input_format == ColorModel.RGB_STR:
                 match = re.fullmatch(r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", c)
                 (r, g, b), a = map(lambda x: int(x, 16), match.groups()), 255
             elif input_format == ColorModel.RGBA:
+                if not all(0 <= n <= 255 for n in c):
+                    raise ValueError(input_range_e + "[0, 255].")
                 r, g, b, a = c
             elif input_format == ColorModel.RGBA_STR:
                 match = re.fullmatch(
@@ -203,21 +217,12 @@ class Convert:
                 )
                 r, g, b, a = map(lambda x: int(x, 16), match.groups())
             elif input_format == ColorModel.HSV:
+                if not (0 <= c[0] < 360 and 0 <= c[1] <= 100 and 0 <= c[2] <= 100):
+                    raise ValueError(
+                        input_range_e + "( [0, 360), [0, 100], [0, 100] )."
+                    )
                 h, s, v = c[0] / 360, c[1] / 100, c[2] / 100
                 (r, g, b), a = map(lambda x: 255 * x, colorsys.hsv_to_rgb(h, s, v)), 255
-            else:
-                raise ValueError(f"Unsupported input_format ('{input_format}').")
-
-            # Check (r, g, b, a) to be in range [0, 255]
-            if not all(0 <= n <= 255 for n in (r, g, b, a)):
-                r = (
-                    "( [0, 360), [0, 100], [0, 100] )"
-                    if input_format == ColorModel.HSV
-                    else "[0, 255]"
-                )
-                raise ValueError(
-                    f"Provided input '{c}' has value(s) out of the range {r}."
-                )
         except (AttributeError, ValueError, TypeError) as e:
             # AttributeError -> re.fullmatch failed
             # ValueError     -> too many values to unpack
@@ -226,25 +231,30 @@ class Convert:
                 f"Provided input '{c}' is not in the format '{input_format}'."
             ) from e
 
-        # At this point we have valid (r,g,b,a), convert them to the desired output_format
-        if output_format == ColorModel.ASS:
-            return f"&H{round(b):02X}{round(g):02X}{round(r):02X}&"
-        elif output_format == ColorModel.ASS_STYLE:
-            return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(r):02X}"
-        elif output_format == ColorModel.RGB:
-            method = round if round_output else float
-            return tuple(map(method, (r, g, b)))
-        elif output_format == ColorModel.RGB_STR:
-            return f"#{round(r):02X}{round(g):02X}{round(b):02X}"
-        elif output_format == ColorModel.RGBA:
-            method = round if round_output else float
-            return tuple(map(method, (r, g, b, a)))
-        elif output_format == ColorModel.RGBA_STR:
-            return f"#{round(r):02X}{round(g):02X}{round(b):02X}{round(a):02X}"
-        elif output_format == ColorModel.HSV:
-            method = round if round_output else float
-            h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-            return method(h * 360) % 360, method(s * 100), method(v * 100)
+        # Convert (r,g,b,a) to the desired output_format
+        try:
+            if output_format == ColorModel.ASS:
+                return f"&H{round(b):02X}{round(g):02X}{round(r):02X}&"
+            elif output_format == ColorModel.ASS_STYLE:
+                return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(r):02X}"
+            elif output_format == ColorModel.RGB:
+                method = round if round_output else float
+                return tuple(map(method, (r, g, b)))
+            elif output_format == ColorModel.RGB_STR:
+                return f"#{round(r):02X}{round(g):02X}{round(b):02X}"
+            elif output_format == ColorModel.RGBA:
+                method = round if round_output else float
+                return tuple(map(method, (r, g, b, a)))
+            elif output_format == ColorModel.RGBA_STR:
+                return f"#{round(r):02X}{round(g):02X}{round(b):02X}{round(a):02X}"
+            elif output_format == ColorModel.HSV:
+                method = round if round_output else float
+                h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                return method(h * 360) % 360, method(s * 100), method(v * 100)
+            else:
+                raise ValueError(f"Unsupported output_format ('{output_format}').")
+        except NameError as e:
+            raise ValueError(f"Unsupported input_format ('{input_format}').") from e
 
     @staticmethod
     def color_ass_to_rgb(
@@ -257,7 +267,7 @@ class Convert:
             as_str (bool): A boolean to determine the output type format.
 
         Returns:
-            The output represents `color_ass` converted. If `as_str`=False, the output is a tuple of integers in range [0, 255].
+            The output represents ``color_ass`` converted. If ``as_str`` = False, the output is a tuple of integers in range *[0, 255]*.
             Else, the output is a string in the format '#RRGGBB'.
 
         Examples:
@@ -284,8 +294,8 @@ class Convert:
             round_output (bool): A boolean to determine whether the output should be rounded or not.
 
         Returns:
-            The output represents `color_ass` converted. If `round_output`=True, the output is a tuple of integers in range ( [0, 360), [0, 100], [0, 100] ).
-            Else, the output is a tuple of floats in range ( [0, 360), [0, 100], [0, 100] ).
+            The output represents ``color_ass`` converted. If ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*.
+            Else, the output is a tuple of floats in range *( [0, 360), [0, 100], [0, 100] )*.
 
         Examples:
             ..  code-block:: python3
@@ -307,10 +317,10 @@ class Convert:
         """Converts from RGB color to corresponding ASS color.
 
         Parameters:
-            color_rgb (str or tuple of int or tuple of float): Either a string in the format '#RRGGBB' or a tuple of three integers (or floats) in the range [0, 255].
+            color_rgb (str or tuple of int or tuple of float): Either a string in the format '#RRGGBB' or a tuple of three integers (or floats) in the range *[0, 255]*.
 
         Returns:
-            A string in the format '&HBBGGRR&' representing `color_rgb` converted.
+            A string in the format '&HBBGGRR&' representing ``color_rgb`` converted.
 
         Examples:
             ..  code-block:: python3
@@ -335,12 +345,12 @@ class Convert:
         """Converts from RGB color to corresponding HSV color.
 
         Parameters:
-            color_rgb (str or tuple of int or tuple of float): Either a string in the format '#RRGGBB' or a tuple of three integers (or floats) in the range [0, 255].
+            color_rgb (str or tuple of int or tuple of float): Either a string in the format '#RRGGBB' or a tuple of three integers (or floats) in the range *[0, 255]*.
             round_output (bool): A boolean to determine whether the output should be rounded or not.
 
         Returns:
-            The output represents `color_rgb` converted. If `round_output`=True, the output is a tuple of integers in range ( [0, 360), [0, 100], [0, 100] ).
-            Else, the output is a tuple of floats in range ( [0, 360), [0, 100], [0, 100] ).
+            The output represents ``color_rgb`` converted. If ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*.
+            Else, the output is a tuple of floats in range *( [0, 360), [0, 100], [0, 100] )*.
 
         Examples:
             ..  code-block:: python3
@@ -365,10 +375,10 @@ class Convert:
         """Converts from HSV color string to corresponding ASS color.
 
         Parameters:
-            color_hsv (tuple of int/float): A tuple of three integers (or floats) in the range ( [0, 360), [0, 100], [0, 100] ).
+            color_hsv (tuple of int/float): A tuple of three integers (or floats) in the range *( [0, 360), [0, 100], [0, 100] )*.
 
         Returns:
-            A string in the format '&HBBGGRR&' representing `color_hsv` converted.
+            A string in the format '&HBBGGRR&' representing ``color_hsv`` converted.
 
         Examples:
             ..  code-block:: python3
@@ -388,13 +398,13 @@ class Convert:
         """Converts from HSV color string to corresponding RGB color.
 
         Parameters:
-            color_hsv (tuple of int/float): A tuple of three integers (or floats) in the range ( [0, 360), [0, 100], [0, 100] ).
+            color_hsv (tuple of int/float): A tuple of three integers (or floats) in the range *( [0, 360), [0, 100], [0, 100] )*.
             as_str (bool): A boolean to determine the output type format.
             round_output (bool): A boolean to determine whether the output should be rounded or not.
 
         Returns:
-            The output represents `color_hsv` converted. If `as_str`=False, the output is a tuple
-            ( also, if `round_output`=True, the output is a tuple of integers in range ( [0, 360), [0, 100], [0, 100] ), else a tuple of float in range ( [0, 360), [0, 100], [0, 100] ) ).
+            The output represents ``color_hsv`` converted. If ``as_str`` = False, the output is a tuple
+            ( also, if ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*, else a tuple of float in range *( [0, 360), [0, 100], [0, 100] ) )*.
             Else, the output is a string in the format '#RRGGBB'.
 
         Examples:
