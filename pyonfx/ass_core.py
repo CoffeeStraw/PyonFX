@@ -504,21 +504,21 @@ class Ass:
                     tmp.fontname = style[1]
                     tmp.fontsize = float(style[2])
 
-                    r, g, b, a = Convert.coloralpha(style[3])
-                    tmp.color1 = Convert.coloralpha(r, g, b)
-                    tmp.alpha1 = Convert.coloralpha(a)
+                    r, g, b, a = Convert.color_ass_to_rgba(style[3])
+                    tmp.color1 = Convert.color_rgb_to_ass((r, g, b))
+                    tmp.alpha1 = Convert.color_alpha_to_ass(a)
 
-                    r, g, b, a = Convert.coloralpha(style[4])
-                    tmp.color2 = Convert.coloralpha(r, g, b)
-                    tmp.alpha2 = Convert.coloralpha(a)
+                    r, g, b, a = Convert.color_ass_to_rgba(style[4])
+                    tmp.color2 = Convert.color_rgb_to_ass((r, g, b))
+                    tmp.alpha2 = Convert.color_alpha_to_ass(a)
 
-                    r, g, b, a = Convert.coloralpha(style[5])
-                    tmp.color3 = Convert.coloralpha(r, g, b)
-                    tmp.alpha3 = Convert.coloralpha(a)
+                    r, g, b, a = Convert.color_ass_to_rgba(style[5])
+                    tmp.color3 = Convert.color_rgb_to_ass((r, g, b))
+                    tmp.alpha3 = Convert.color_alpha_to_ass(a)
 
-                    r, g, b, a = Convert.coloralpha(style[6])
-                    tmp.color4 = Convert.coloralpha(r, g, b)
-                    tmp.alpha4 = Convert.coloralpha(a)
+                    r, g, b, a = Convert.color_ass_to_rgba(style[6])
+                    tmp.color4 = Convert.color_rgb_to_ass((r, g, b))
+                    tmp.alpha4 = Convert.color_alpha_to_ass(a)
 
                     tmp.bold = style[7] == "-1"
                     tmp.italic = style[8] == "-1"

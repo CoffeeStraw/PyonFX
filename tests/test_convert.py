@@ -16,14 +16,50 @@ max_deviation = 3
 
 
 def test_coloralpha():
-    assert Convert.coloralpha(255) == "&HFF&"
-    assert Convert.coloralpha("&HFF&") == 255
+    # Test alpha conversion
+    assert Convert.color_ass_to_alpha("&HFF&") == 255
+    assert Convert.color_alpha_to_ass(255) == "&HFF&"
 
-    assert Convert.coloralpha("&H0000FF&") == (255, 0, 0)
-    assert Convert.coloralpha(255, 0, 0) == "&H0000FF&"
+    # Test ass (bgr) -> rgb conversion
+    assert Convert.color_ass_to_rgb("&H0000FF&") == (255, 0, 0)
+    assert Convert.color_ass_to_rgb("&H0000FF&", as_str=True) == "#FF0000"
 
-    assert Convert.coloralpha("&HFF00FF00") == (0, 255, 0, 255)
-    assert Convert.coloralpha(0, 255, 0, 255) == "&HFF00FF00"
+    # Test ass (abgr) -> rgb conversion
+    assert Convert.color_ass_to_rgb("&H550000FF") == (255, 0, 0)
+    assert Convert.color_ass_to_rgb("&H550000FF", as_str=True) == "#FF0000"
+
+    # Test rgb -> ass (bgr) conversion
+    assert Convert.color_rgb_to_ass((255, 0, 0)) == "&H0000FF&"
+    assert Convert.color_rgb_to_ass("#FF0000") == "&H0000FF&"
+
+    # Test ass (bgr) -> rgba conversion
+    assert Convert.color_ass_to_rgba("&H00FF00&") == (0, 255, 0, 255)
+    assert Convert.color_ass_to_rgba("&H00FF00&", as_str=True) == "#00FF00FF"
+
+    # Test ass (abgr) -> rgba conversion
+    assert Convert.color_ass_to_rgba("&HFF00FF00") == (0, 255, 0, 255)
+    assert Convert.color_ass_to_rgba("&HFF00FF00", as_str=True) == "#00FF00FF"
+
+    # Test rgba -> ass (abgr) conversion
+    assert Convert.color_rgba_to_ass((0, 255, 0, 255)) == "&HFF00FF00"
+    assert Convert.color_rgba_to_ass("#00FF00FF") == "&HFF00FF00"
+
+    # Test ass (bgr) -> hsv conversion
+    assert Convert.color_ass_to_hsv("&H0000FF&") == (0, 100, 100)
+
+    # Test ass (bgra) -> hsv conversion
+    assert Convert.color_ass_to_hsv("&H550000FF") == (0, 100, 100)
+
+    # Test hsv -> ass conversion
+    assert Convert.color_hsv_to_ass((0, 100, 100)) == "&H0000FF&"
+
+    # Test rgb -> hsv conversion
+    assert Convert.color_rgb_to_hsv((255, 0, 0)) == (0, 100, 100)
+    assert Convert.color_rgb_to_hsv("#FF0000") == (0, 100, 100)
+
+    # Test hsv -> rgb conversion
+    assert Convert.color_hsv_to_rgb((0, 100, 100)) == (255, 0, 0)
+    assert Convert.color_hsv_to_rgb((0, 100, 100), as_str=True) == "#FF0000"
 
 
 def test_text_to_shape():
