@@ -107,10 +107,13 @@ class Convert:
             match = re.fullmatch(r"&H([0-9A-F]{2})&", alpha_ass)
             return int(match.group(1), 16)
         except TypeError as e:
-            raise TypeError(f"Provided ASS alpha was expected of type 'str', but you provided a '{type(alpha_ass)}'.") from e
+            raise TypeError(
+                f"Provided ASS alpha was expected of type 'str', but you provided a '{type(alpha_ass)}'."
+            ) from e
         except AttributeError as e:
-            raise ValueError(f"Provided ASS alpha string '{alpha_ass}' is not in the expected format '&H..&'.") from e
-        
+            raise ValueError(
+                f"Provided ASS alpha string '{alpha_ass}' is not in the expected format '&H..&'."
+            ) from e
 
     @staticmethod
     def alpha_int_to_ass(alpha_int: int) -> str:
@@ -131,16 +134,27 @@ class Convert:
         """
         try:
             if not 0 <= alpha_int <= 255:
-                raise ValueError(f"Provided alpha integer '{alpha_int}' is out of the range [0, 255].")
+                raise ValueError(
+                    f"Provided alpha integer '{alpha_int}' is out of the range [0, 255]."
+                )
         except TypeError as e:
-            raise TypeError(f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'.") from e
+            raise TypeError(
+                f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'."
+            ) from e
         try:
             return f"&H{alpha_int:02X}&"
         except ValueError as e:
-            raise TypeError(f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'.") from e
+            raise TypeError(
+                f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'."
+            ) from e
 
     @staticmethod
-    def color(inp: ColorInputType, input_format: ColorModel, output_format: ColorModel, round_output: bool = True) -> Union[
+    def color(
+        inp: ColorInputType,
+        input_format: ColorModel,
+        output_format: ColorModel,
+        round_output: bool = True,
+    ) -> Union[
         str,
         Tuple[int, int, int],
         Tuple[int, int, int, int],
@@ -174,7 +188,9 @@ class Convert:
                 b, g, r = map(lambda x: int(x, 16), match.groups())
                 a = 255  # assume it is fully opaque
             elif input_format == ColorModel.ASS_STYLE:
-                match = re.fullmatch(r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", inp)
+                match = re.fullmatch(
+                    r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", inp
+                )
                 a, b, g, r = map(lambda x: int(x, 16), match.groups())
             elif input_format == ColorModel.RGB:
                 if not all(0 <= n <= 255 for n in inp):
@@ -190,10 +206,14 @@ class Convert:
                     raise ValueError("Color values out of range")
                 r, g, b, a = inp
             elif input_format == ColorModel.RGBA_STR:
-                match = re.fullmatch(r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", inp)
+                match = re.fullmatch(
+                    r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", inp
+                )
                 r, g, b, a = map(lambda x: int(x, 16), match.groups())
             elif input_format == ColorModel.HSV:
-                if not (0 <= inp[0] < 360 and 0 <= inp[1] <= 100 and 0 <= inp[2] <= 100):
+                if not (
+                    0 <= inp[0] < 360 and 0 <= inp[1] <= 100 and 0 <= inp[2] <= 100
+                ):
                     raise ValueError("Color values out of range")
                 h, s, v = inp[0] / 360, inp[1] / 100, inp[2] / 100
                 r, g, b = map(lambda x: 255 * x, colorsys.hsv_to_rgb(h, s, v))
@@ -239,36 +259,59 @@ class Convert:
             raise ValueError("Invalid input")
 
     @staticmethod
-    def color_ass_to_rgb(color_ass: str, as_str: bool = False) -> Union[str, Tuple[int, int, int]]:
-        return Convert.color(color_ass, ColorModel.ASS, ColorModel.RGB_STR if as_str else ColorModel.RGB)
+    def color_ass_to_rgb(
+        color_ass: str, as_str: bool = False
+    ) -> Union[str, Tuple[int, int, int]]:
+        return Convert.color(
+            color_ass, ColorModel.ASS, ColorModel.RGB_STR if as_str else ColorModel.RGB
+        )
 
     @staticmethod
-    def color_rgb_to_ass(inp: Union[
-        str,
-        Tuple[Union[int, float], Union[int, float], Union[int, float]]
-    ]) -> str:
-        return Convert.color(inp, ColorModel.RGB_STR if type(inp) == str else ColorModel.RGB, ColorModel.ASS)
+    def color_rgb_to_ass(
+        inp: Union[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]]
+    ) -> str:
+        return Convert.color(
+            inp,
+            ColorModel.RGB_STR if type(inp) == str else ColorModel.RGB,
+            ColorModel.ASS,
+        )
 
     @staticmethod
-    def color_ass_to_hsv(inp: str, round_output: bool = True) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
+    def color_ass_to_hsv(
+        inp: str, round_output: bool = True
+    ) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
         return Convert.color(inp, ColorModel.ASS, ColorModel.HSV, round_output)
 
     @staticmethod
-    def color_hsv_to_ass(inp: Tuple[Union[int, float], Union[int, float], Union[int, float]]) -> str:
+    def color_hsv_to_ass(
+        inp: Tuple[Union[int, float], Union[int, float], Union[int, float]]
+    ) -> str:
         return Convert.color(inp, ColorModel.HSV, ColorModel.ASS)
 
     @staticmethod
-    def color_hsv_to_rgb(inp: Tuple[
-        Union[int, float], Union[int, float], Union[int, float]
-    ], as_str: bool = False, round_output: bool = True) -> str:
-        return Convert.color(inp, ColorModel.HSV, ColorModel.RGB_STR if as_str else ColorModel.RGB, round_output)
+    def color_hsv_to_rgb(
+        inp: Tuple[Union[int, float], Union[int, float], Union[int, float]],
+        as_str: bool = False,
+        round_output: bool = True,
+    ) -> str:
+        return Convert.color(
+            inp,
+            ColorModel.HSV,
+            ColorModel.RGB_STR if as_str else ColorModel.RGB,
+            round_output,
+        )
 
     @staticmethod
-    def color_rgb_to_hsv(inp: Union[
-        str,
-        Tuple[Union[int, float], Union[int, float], Union[int, float]]
-    ], round_output: bool = True) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
-        return Convert.color(inp, ColorModel.RGB_STR if type(inp) == str else ColorModel.RGB, ColorModel.HSV, round_output)
+    def color_rgb_to_hsv(
+        inp: Union[str, Tuple[Union[int, float], Union[int, float], Union[int, float]]],
+        round_output: bool = True,
+    ) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
+        return Convert.color(
+            inp,
+            ColorModel.RGB_STR if type(inp) == str else ColorModel.RGB,
+            ColorModel.HSV,
+            round_output,
+        )
 
     @staticmethod
     def text_to_shape(
