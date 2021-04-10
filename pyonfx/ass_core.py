@@ -383,6 +383,7 @@ class Ass:
         keep_original (bool): If True, you will find all the lines of the input file commented before the new lines generated.
         extended (bool): Calculate more informations from lines (usually you will not have to touch this).
         vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically.
+            Additionally, ``line`` fields will be re-calculated based on the re-positioned ``line.chars``.
 
     Attributes:
         path_input (str): Path for input file (absolute).
@@ -953,22 +954,6 @@ class Ass:
 
                         cur_y = self.meta.play_res_y / 2 - sum_height / 2
 
-                        # Fixing line positions
-                        line.top = cur_y
-                        line.middle = self.meta.play_res_y / 2
-                        line.bottom = line.top + sum_height
-                        line.width = max_width
-                        line.height = sum_height
-                        if line.styleref.alignment == 4:
-                            line.center = line.left + max_width / 2
-                            line.right = line.left + max_width
-                        elif line.styleref.alignment == 5:
-                            line.left = line.center - max_width / 2
-                            line.right = line.left + max_width
-                        else:
-                            line.left = line.right - max_width
-                            line.center = line.left + max_width / 2
-
                         for syl in line.syls:
                             # Horizontal position
                             x_fix = (max_width - syl.width) / 2
@@ -1073,6 +1058,23 @@ class Ass:
                             sum_height = sum_height + char.height
 
                         cur_y = x_fix = self.meta.play_res_y / 2 - sum_height / 2
+
+                        # Fixing line positions
+                        line.top = cur_y
+                        line.middle = self.meta.play_res_y / 2
+                        line.bottom = line.top + sum_height
+                        line.width = max_width
+                        line.height = sum_height
+                        if line.styleref.alignment == 4:
+                            line.center = line.left + max_width / 2
+                            line.right = line.left + max_width
+                        elif line.styleref.alignment == 5:
+                            line.left = line.center - max_width / 2
+                            line.right = line.left + max_width
+                        else:
+                            line.left = line.right - max_width
+                            line.center = line.left + max_width / 2
+
                         for char in line.chars:
                             # Horizontal position
                             x_fix = (max_width - char.width) / 2
