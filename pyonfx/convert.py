@@ -18,7 +18,9 @@
 from __future__ import annotations
 import re
 import math
-from typing import List, NamedTuple, Optional, Tuple, Union, TYPE_CHECKING
+import colorsys
+from enum import Enum
+from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
 
@@ -28,6 +30,16 @@ if TYPE_CHECKING:
 
 # A simple NamedTuple to represent pixels
 Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", float)])
+
+
+class ColorModel(Enum):
+    ASS = "&HBBGGRR&"
+    ASS_STYLE = "&HAABBGGRR"
+    RGB = "(r, g, b)"
+    RGB_STR = "#RRGGBB"
+    RGBA = "(r, g, b, a)"
+    RGBA_STR = "#RRGGBBAA"
+    HSV = "(h, s, v)"
 
 
 class Convert:
@@ -68,93 +80,350 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def coloralpha(
-        ass_r_a: Union[int, str], g: int = None, b: int = None, a: int = None
-    ) -> Union[Tuple[int, int, int, Optional[int]], str]:
-        """Converts between rgb color &/+ alpha numeric and ASS color &/+ alpha.
-
-        - Passing a string to this function, you want a conversion from ASS color+alpha, ASS color or ASS alpha to integer values;
-        - Passing a single number, you want a conversion from ASS alpha value to ASS alpha string;
-        - Passing 3 or 4 numbers, you want a conversion from rgb (or rgba) values to ASS color (or ASS color+alpha) string.
+    def alpha_ass_to_int(alpha_ass: str) -> int:
+        """Converts from ASS alpha string to corresponding integer value.
 
         Parameters:
-            ass_r_a (int or str): If a str is given, either an ASS color+alpha, ASS color, an ASS alpha string is expected; if an int is given, a value between 0 and 255 (inclusive) is expected.
-            g (int, optional): If given, a value between 0 and 255 (inclusive) is expected.
-            b (int, optional): If given, a value between 0 and 255 (inclusive) is expected.
-            a (int, optional): If given, a value between 0 and 255 (inclusive) is expected.
+            alpha_ass (str): A string in the format '&HXX&'.
 
         Returns:
-            According to the parameters, either a tuple containing rgb (or rgba) integer values or a str containing an ASS color+alpha, an ASS color or an ASS alpha.
+            An integer in [0, 255] representing ``alpha_ass`` converted.
 
         Examples:
             ..  code-block:: python3
 
-                print( Convert.coloralpha(0) )
-                print( Convert.coloralpha("&HFF&") )
+                print(Convert.alpha_ass_to_int("&HFF&"))
 
-                print( Convert.coloralpha("&H0000FF&") )
-                print( Convert.coloralpha(255, 0, 0) )
-
-                print( Convert.coloralpha("&HFF00FF00") )
-                print( Convert.coloralpha(0, 255, 0, 255) )
-
-            >>> &H00&
             >>> 255
-            >>> (255, 0, 0)
-            >>> &H0000FF&
-            >>> (0, 255, 0, 255)
-            >>> &HFF00FF00
         """
-        # Alpha / red numeric?
-        if (
-            (type(ass_r_a) == int or type(ass_r_a) == float)
-            and ass_r_a >= 0
-            and ass_r_a <= 255
-        ):
-            # Green + blue numeric?
-            if (
-                (type(g) == int or type(g) == float)
-                and g >= 0
-                and g <= 255
-                and (type(b) == int or type(b) == float)
-                and b >= 0
-                and b <= 255
-            ):
-                # Alpha numeric?
-                if (type(a) == int or type(a) == float) and a >= 0 and a <= 255:
-                    return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(ass_r_a):02X}"
-                else:
-                    return f"&H{round(b):02X}{round(g):02X}{round(ass_r_a):02X}&"
-            elif not (g or b or a):
-                return f"&H{round(ass_r_a):02X}&"
-            else:
+        try:
+            match = re.fullmatch(r"&H([0-9A-F]{2})&", alpha_ass)
+            return int(match.group(1), 16)
+        except TypeError as e:
+            raise TypeError(
+                f"Provided ASS alpha was expected of type 'str', but you provided a '{type(alpha_ass)}'."
+            ) from e
+        except AttributeError as e:
+            raise ValueError(
+                f"Provided ASS alpha string '{alpha_ass}' is not in the expected format '&H..&'."
+            ) from e
+
+    @staticmethod
+    def alpha_int_to_ass(alpha_int: int) -> str:
+        """Converts from integer value to corresponding ASS alpha string.
+
+        Parameters:
+            alpha_int (int): Integer in [0, 255] representing an alpha value.
+
+        Returns:
+            A string in the format '&HXX&' representing ``alpha_int`` converted.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.alpha_int_to_ass(255))
+
+            >>> "&HFF&"
+        """
+        try:
+            if not 0 <= alpha_int <= 255:
                 raise ValueError(
-                    "Bad usage. Either pass 1 value, 3 values, or 4 values."
+                    f"Provided alpha integer '{alpha_int}' is out of the range [0, 255]."
                 )
-        # ASS value?
-        elif type(ass_r_a) == str:
-            # ASS alpha?
-            if re.match(r"^&H[0-9a-fA-F]{2}&$", ass_r_a):
-                return int(ass_r_a[2:4], 16)
-            # ASS color?
-            elif re.match(r"^&H[0-9a-fA-F]{6}&$", ass_r_a):
-                return (
-                    int(ass_r_a[6:8], 16),
-                    int(ass_r_a[4:6], 16),
-                    int(ass_r_a[2:4], 16),
+        except TypeError as e:
+            raise TypeError(
+                f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'."
+            ) from e
+        try:
+            return f"&H{alpha_int:02X}&"
+        except ValueError as e:
+            raise TypeError(
+                f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'."
+            ) from e
+
+    @staticmethod
+    def color(
+        c: Union[
+            str,
+            Union[
+                Tuple[
+                    Union[int, float],
+                    Union[int, float],
+                    Union[int, float],
+                ],
+                Tuple[
+                    Union[int, float],
+                    Union[int, float],
+                    Union[int, float],
+                    Union[int, float],
+                ],
+            ],
+        ],
+        input_format: ColorModel,
+        output_format: ColorModel,
+        round_output: bool = True,
+    ) -> Union[
+        str,
+        Tuple[int, int, int],
+        Tuple[int, int, int, int],
+        Tuple[float, float, float],
+        Tuple[float, float, float, float],
+    ]:
+        """Converts a provided color from a color model to another.
+
+        Parameters:
+            c (str or tuple of int or tuple of float): A color in the format ``input_format``.
+            input_format (ColorModel): The color format of ``c``.
+            output_format (ColorModel): The color format for the output.
+            round_output (bool): A boolean to determine whether the output should be rounded or not.
+
+        Returns:
+            A color in the format ``output_format``.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.color("&H0000FF&", ColorModel.ASS, ColorModel.RGB))
+
+            >>> (255, 0, 0)
+        """
+        try:
+            # Text for exception if input is out of ranges
+            input_range_e = f"Provided input '{c}' has value(s) out of the range "
+
+            # Parse input, obtaining its corresponding (r,g,b,a) values
+            if input_format == ColorModel.ASS:
+                match = re.fullmatch(r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})&", c)
+                (b, g, r), a = map(lambda x: int(x, 16), match.groups()), 255
+            elif input_format == ColorModel.ASS_STYLE:
+                match = re.fullmatch(
+                    r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", c
                 )
-            # ASS color+alpha (from style definition)?
-            elif re.match(r"^&H[0-9a-fA-F]{8}$", ass_r_a):
-                return (
-                    int(ass_r_a[8:10], 16),
-                    int(ass_r_a[6:8], 16),
-                    int(ass_r_a[4:6], 16),
-                    int(ass_r_a[2:4], 16),
+                a, b, g, r = map(lambda x: int(x, 16), match.groups())
+            elif input_format == ColorModel.RGB:
+                if not all(0 <= n <= 255 for n in c):
+                    raise ValueError(input_range_e + "[0, 255].")
+                (r, g, b), a = c, 255
+            elif input_format == ColorModel.RGB_STR:
+                match = re.fullmatch(r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", c)
+                (r, g, b), a = map(lambda x: int(x, 16), match.groups()), 255
+            elif input_format == ColorModel.RGBA:
+                if not all(0 <= n <= 255 for n in c):
+                    raise ValueError(input_range_e + "[0, 255].")
+                r, g, b, a = c
+            elif input_format == ColorModel.RGBA_STR:
+                match = re.fullmatch(
+                    r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", c
                 )
+                r, g, b, a = map(lambda x: int(x, 16), match.groups())
+            elif input_format == ColorModel.HSV:
+                if not (0 <= c[0] < 360 and 0 <= c[1] <= 100 and 0 <= c[2] <= 100):
+                    raise ValueError(
+                        input_range_e + "( [0, 360), [0, 100], [0, 100] )."
+                    )
+                h, s, v = c[0] / 360, c[1] / 100, c[2] / 100
+                (r, g, b), a = map(lambda x: 255 * x, colorsys.hsv_to_rgb(h, s, v)), 255
+        except (AttributeError, ValueError, TypeError) as e:
+            # AttributeError -> re.fullmatch failed
+            # ValueError     -> too many values to unpack
+            # TypeError      -> in case the provided tuple is not a list of numbers
+            raise ValueError(
+                f"Provided input '{c}' is not in the format '{input_format}'."
+            ) from e
+
+        # Convert (r,g,b,a) to the desired output_format
+        try:
+            if output_format == ColorModel.ASS:
+                return f"&H{round(b):02X}{round(g):02X}{round(r):02X}&"
+            elif output_format == ColorModel.ASS_STYLE:
+                return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(r):02X}"
+            elif output_format == ColorModel.RGB:
+                method = round if round_output else float
+                return tuple(map(method, (r, g, b)))
+            elif output_format == ColorModel.RGB_STR:
+                return f"#{round(r):02X}{round(g):02X}{round(b):02X}"
+            elif output_format == ColorModel.RGBA:
+                method = round if round_output else float
+                return tuple(map(method, (r, g, b, a)))
+            elif output_format == ColorModel.RGBA_STR:
+                return f"#{round(r):02X}{round(g):02X}{round(b):02X}{round(a):02X}"
+            elif output_format == ColorModel.HSV:
+                method = round if round_output else float
+                h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
+                return method(h * 360) % 360, method(s * 100), method(v * 100)
             else:
-                raise ValueError("Invalid ASS string")
-        else:
-            raise ValueError("Color, Alpha, Color+Alpha as numeric or ASS expected")
+                raise ValueError(f"Unsupported output_format ('{output_format}').")
+        except NameError as e:
+            raise ValueError(f"Unsupported input_format ('{input_format}').") from e
+
+    @staticmethod
+    def color_ass_to_rgb(
+        color_ass: str, as_str: bool = False
+    ) -> Union[str, Tuple[int, int, int]]:
+        """Converts from ASS color string to corresponding RGB color.
+
+        Parameters:
+            color_ass (str): A string in the format '&HBBGGRR&'.
+            as_str (bool): A boolean to determine the output type format.
+
+        Returns:
+            The output represents ``color_ass`` converted. If ``as_str`` = False, the output is a tuple of integers in range *[0, 255]*.
+            Else, the output is a string in the format '#RRGGBB'.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.color_ass_to_rgb("&HABCDEF&"))
+                print(Convert.color_ass_to_rgb("&HABCDEF&", as_str=True))
+
+            >>> (239, 205, 171)
+            >>> "#EFCDAB"
+        """
+        return Convert.color(
+            color_ass, ColorModel.ASS, ColorModel.RGB_STR if as_str else ColorModel.RGB
+        )
+
+    @staticmethod
+    def color_ass_to_hsv(
+        color_ass: str, round_output: bool = True
+    ) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
+        """Converts from ASS color string to corresponding HSV color.
+
+        Parameters:
+            color_ass (str): A string in the format '&HBBGGRR&'.
+            round_output (bool): A boolean to determine whether the output should be rounded or not.
+
+        Returns:
+            The output represents ``color_ass`` converted. If ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*.
+            Else, the output is a tuple of floats in range *( [0, 360), [0, 100], [0, 100] )*.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.color_ass_to_hsv("&HABCDEF&"))
+                print(Convert.color_ass_to_hsv("&HABCDEF&", round_output=False))
+
+            >>> (30, 28, 94)
+            >>> (30.000000000000014, 28.451882845188294, 93.72549019607843)
+        """
+        return Convert.color(color_ass, ColorModel.ASS, ColorModel.HSV, round_output)
+
+    @staticmethod
+    def color_rgb_to_ass(
+        color_rgb: Union[
+            str, Tuple[Union[int, float], Union[int, float], Union[int, float]]
+        ]
+    ) -> str:
+        """Converts from RGB color to corresponding ASS color.
+
+        Parameters:
+            color_rgb (str or tuple of int or tuple of float): Either a string in the format '#RRGGBB' or a tuple of three integers (or floats) in the range *[0, 255]*.
+
+        Returns:
+            A string in the format '&HBBGGRR&' representing ``color_rgb`` converted.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.color_rgb_to_ass("#ABCDEF"))
+
+            >>> "&HEFCDAB&"
+        """
+        return Convert.color(
+            color_rgb,
+            ColorModel.RGB_STR if type(color_rgb) is str else ColorModel.RGB,
+            ColorModel.ASS,
+        )
+
+    @staticmethod
+    def color_rgb_to_hsv(
+        color_rgb: Union[
+            str, Tuple[Union[int, float], Union[int, float], Union[int, float]]
+        ],
+        round_output: bool = True,
+    ) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
+        """Converts from RGB color to corresponding HSV color.
+
+        Parameters:
+            color_rgb (str or tuple of int or tuple of float): Either a string in the format '#RRGGBB' or a tuple of three integers (or floats) in the range *[0, 255]*.
+            round_output (bool): A boolean to determine whether the output should be rounded or not.
+
+        Returns:
+            The output represents ``color_rgb`` converted. If ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*.
+            Else, the output is a tuple of floats in range *( [0, 360), [0, 100], [0, 100] )*.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.color_rgb_to_hsv("#ABCDEF"))
+                print(Convert.color_rgb_to_hsv("#ABCDEF"), round_output=False)
+
+            >>> (210, 28, 94)
+            >>> (210.0, 28.451882845188294, 93.72549019607843)
+        """
+        return Convert.color(
+            color_rgb,
+            ColorModel.RGB_STR if type(color_rgb) is str else ColorModel.RGB,
+            ColorModel.HSV,
+            round_output,
+        )
+
+    @staticmethod
+    def color_hsv_to_ass(
+        color_hsv: Tuple[Union[int, float], Union[int, float], Union[int, float]]
+    ) -> str:
+        """Converts from HSV color string to corresponding ASS color.
+
+        Parameters:
+            color_hsv (tuple of int/float): A tuple of three integers (or floats) in the range *( [0, 360), [0, 100], [0, 100] )*.
+
+        Returns:
+            A string in the format '&HBBGGRR&' representing ``color_hsv`` converted.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.color_hsv_to_ass((100, 100, 100)))
+
+            >>> "&H00FF55&"
+        """
+        return Convert.color(color_hsv, ColorModel.HSV, ColorModel.ASS)
+
+    @staticmethod
+    def color_hsv_to_rgb(
+        color_hsv: Tuple[Union[int, float], Union[int, float], Union[int, float]],
+        as_str: bool = False,
+        round_output: bool = True,
+    ) -> str:
+        """Converts from HSV color string to corresponding RGB color.
+
+        Parameters:
+            color_hsv (tuple of int/float): A tuple of three integers (or floats) in the range *( [0, 360), [0, 100], [0, 100] )*.
+            as_str (bool): A boolean to determine the output type format.
+            round_output (bool): A boolean to determine whether the output should be rounded or not.
+
+        Returns:
+            The output represents ``color_hsv`` converted. If ``as_str`` = False, the output is a tuple
+            ( also, if ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*, else a tuple of float in range *( [0, 360), [0, 100], [0, 100] ) )*.
+            Else, the output is a string in the format '#RRGGBB'.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.color_hsv_to_rgb((100, 100, 100)))
+                print(Convert.color_hsv_to_rgb((100, 100, 100), as_str=True))
+                print(Convert.color_hsv_to_rgb((100, 100, 100), round_output=False))
+
+            >>> (85, 255, 0)
+            >>> "#55FF00"
+            >>> (84.99999999999999, 255.0, 0.0)
+        """
+        return Convert.color(
+            color_hsv,
+            ColorModel.HSV,
+            ColorModel.RGB_STR if as_str else ColorModel.RGB,
+            round_output,
+        )
 
     @staticmethod
     def text_to_shape(
@@ -306,7 +575,7 @@ class Convert:
                 p_sh = Shape.rectangle()
                 for pixel in Convert.text_to_pixels(line):
                     x, y = math.floor(line.left) + pixel['x'], math.floor(line.top) + pixel['y']
-                    alpha = "\\alpha" + Convert.coloralpha(pixel['alpha']) if pixel['alpha'] != 255 else ""
+                    alpha = "\\alpha" + Convert.color_alpha_to_ass(pixel['alpha']) if pixel['alpha'] != 255 else ""
 
                     line.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, p_sh)
                     io.write_line(line)
@@ -346,7 +615,7 @@ class Convert:
                 for pixel in Convert.shape_to_pixels(Shape.heart(100)):
                     # Random circle to pixel effect just to show
                     x, y = math.floor(line.left) + pixel['x'], math.floor(line.top) + pixel['y']
-                    alpha = "\\alpha" + Convert.coloralpha(pixel['alpha']) if pixel['alpha'] != 255 else ""
+                    alpha = "\\alpha" + Convert.color_alpha_to_ass(pixel['alpha']) if pixel['alpha'] != 255 else ""
 
                     line.text = "{\\p1\\pos(%d,%d)%s\\fad(0,%d)}%s" % (x, y, alpha, l.dur/4, p_sh)
                     io.write_line(line)
