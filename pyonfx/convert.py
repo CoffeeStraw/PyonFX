@@ -38,24 +38,15 @@ ColorInputType = Union[
     Tuple[Union[int, float], Union[int, float], Union[int, float], Union[int, float]],
 ]
 
-# Color output typealias
-ColorOutputType = Union[
-    str,
-    Tuple[int, int, int],
-    Tuple[int, int, int, int],
-    Tuple[float, float, float],
-    Tuple[float, float, float, float],
-]
 
-
-class ColorEnum(Enum):
-    ASS_BGR = 0, "&HBBGGRR&"
-    ASS_ABGR = 1, "&HAABBGGRR"
-    RGB_DEC = 2, "(r, g, b)"
-    RGB_STR = 3, "#RRGGBB"
-    RGBA_DEC = 4, "(r, g, b, a)"
-    RGBA_STR = 5, "#RRGGBBAA"
-    HSV_DEC = 6, "(h, s, v)"
+class ColorModel(Enum):
+    ASS = "&HBBGGRR&"
+    ASS_STYLE = "&HAABBGGRR"
+    RGB = "(r, g, b)"
+    RGB_STR = "#RRGGBB"
+    RGBA = "(r, g, b, a)"
+    RGBA_STR = "#RRGGBBAA"
+    HSV = "(h, s, v)"
 
 
 class Convert:
@@ -96,14 +87,20 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def color(inp: ColorInputType, input_format: ColorEnum, output_format: ColorEnum, round_output: bool = True) -> ColorOutputType:
+    def color(inp: ColorInputType, input_format: ColorModel, output_format: ColorModel, round_output: bool = True) -> Union[
+        str,
+        Tuple[int, int, int],
+        Tuple[int, int, int, int],
+        Tuple[float, float, float],
+        Tuple[float, float, float, float],
+    ]:
         """Converts between different color formats.
 
         Parameters:
             inp (str or tuple of 3-4 numbers): Input color format
-            input_format (ColorEnum): Color format for input parameter
-            output_format (ColorEnum): Desired color format for the output
-            round_output (bool): Whether the output should be rounded. (Only needed for HSV conversion)
+            input_format (ColorModel): Color format for input parameter
+            output_format (ColorModel): Desired color format for the output
+            round_output (bool): Whether the output should be rounded.
 
         Returns:
             Color in output format
@@ -111,7 +108,7 @@ class Convert:
         Examples:
             ..  code-block:: python3
 
-                print(Convert.color("&H0000FF&", ColorEnum.ASS_BGR, ColorEnum.RGB_DEC))
+                print(Convert.color("&H0000FF&", ColorModel.ASS, ColorModel.RGB))
 
             >>> (255, 0, 0)
         """
@@ -119,30 +116,30 @@ class Convert:
             r, g, b, a = None, None, None, None
 
             # Parse input
-            if input_format == ColorEnum.ASS_BGR:
+            if input_format == ColorModel.ASS:
                 match = re.fullmatch(r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})&", inp)
                 b, g, r = map(lambda x: int(x, 16), match.groups())
                 a = 255  # assume it is fully opaque
-            elif input_format == ColorEnum.ASS_ABGR:
+            elif input_format == ColorModel.ASS_STYLE:
                 match = re.fullmatch(r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", inp)
                 a, b, g, r = map(lambda x: int(x, 16), match.groups())
-            elif input_format == ColorEnum.RGB_DEC:
+            elif input_format == ColorModel.RGB:
                 if not all(0 <= n <= 255 for n in inp):
                     raise ValueError("Color values out of range")
                 r, g, b = inp
                 a = 255  # assume it is fully opaque
-            elif input_format == ColorEnum.RGB_STR:
+            elif input_format == ColorModel.RGB_STR:
                 match = re.fullmatch(r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", inp)
                 r, g, b = map(lambda x: int(x, 16), match.groups())
                 a = 255  # assume it is fully opaque
-            elif input_format == ColorEnum.RGBA_DEC:
+            elif input_format == ColorModel.RGBA:
                 if not all(0 <= n <= 255 for n in inp):
                     raise ValueError("Color values out of range")
                 r, g, b, a = inp
-            elif input_format == ColorEnum.RGBA_STR:
+            elif input_format == ColorModel.RGBA_STR:
                 match = re.fullmatch(r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", inp)
                 r, g, b, a = map(lambda x: int(x, 16), match.groups())
-            elif input_format == ColorEnum.HSV_DEC:
+            elif input_format == ColorModel.HSV:
                 if not (0 <= inp[0] < 360 and 0 <= inp[1] <= 100 and 0 <= inp[2] <= 100):
                     raise ValueError("Color values out of range")
                 h, s, v = inp[0] / 360, inp[1] / 100, inp[2] / 100
@@ -159,25 +156,25 @@ class Convert:
                 else:
                     return tuple(inp)
 
-            if output_format == ColorEnum.ASS_BGR:
+            if output_format == ColorModel.ASS:
                 return f"&H{round(b):02X}{round(g):02X}{round(r):02X}&"
-            elif output_format == ColorEnum.ASS_ABGR:
+            elif output_format == ColorModel.ASS_STYLE:
                 return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(r):02X}"
-            elif output_format == ColorEnum.RGB_DEC:
+            elif output_format == ColorModel.RGB:
                 if round_output:
                     return round(r), round(g), round(b)
                 else:
                     return float(r), float(g), float(b)
-            elif output_format == ColorEnum.RGB_STR:
+            elif output_format == ColorModel.RGB_STR:
                 return f"#{round(r):02X}{round(g):02X}{round(b):02X}"
-            elif output_format == ColorEnum.RGBA_DEC:
+            elif output_format == ColorModel.RGBA:
                 if round_output:
                     return round(r), round(g), round(b), round(a)
                 else:
                     return float(r), float(g), float(b), float(a)
-            elif output_format == ColorEnum.RGBA_STR:
+            elif output_format == ColorModel.RGBA_STR:
                 return f"#{round(r):02X}{round(g):02X}{round(b):02X}{round(a):02X}"
-            elif output_format == ColorEnum.HSV_DEC:
+            elif output_format == ColorModel.HSV:
                 h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
                 h, s, v = h * 360, s * 100, v * 100
 
@@ -189,7 +186,7 @@ class Convert:
             raise ValueError("Invalid input")
 
     @staticmethod
-    def color_ass_to_alpha(inp: str) -> int:
+    def alpha_ass_to_dec(inp: str) -> int:
         """Converts from ASS alpha to an alpha value.
 
         Parameters:
@@ -212,7 +209,7 @@ class Convert:
             raise ValueError("Invalid input")
 
     @staticmethod
-    def color_alpha_to_ass(inp: Union[int, float]) -> str:
+    def alpha_dec_to_ass(inp: Union[int, float]) -> str:
         """Converts from ASS alpha to an alpha value.
 
         Parameters:
@@ -233,53 +230,36 @@ class Convert:
         return f"&H{round(inp):02X}&"
 
     @staticmethod
-    def color_ass_to_rgb(inp: str, as_str: bool = False) -> Union[str, Tuple[int, int, int]]:
-        input_format = ColorEnum.ASS_ABGR if len(inp) == len("&HAABBGGRR") else ColorEnum.ASS_BGR
-        return Convert.color(inp, input_format, ColorEnum.RGB_STR if as_str else ColorEnum.RGB_DEC)
+    def color_ass_to_rgb(color_ass: str, as_str: bool = False) -> Union[str, Tuple[int, int, int]]:
+        return Convert.color(color_ass, ColorModel.ASS, ColorModel.RGB_STR if as_str else ColorModel.RGB)
 
     @staticmethod
     def color_rgb_to_ass(inp: Union[
         str,
         Tuple[Union[int, float], Union[int, float], Union[int, float]]
     ]) -> str:
-        input_format = ColorEnum.RGB_STR if type(inp) == str else ColorEnum.RGB_DEC
-        return Convert.color(inp, input_format, ColorEnum.ASS_BGR)
-
-    @staticmethod
-    def color_ass_to_rgba(inp: str, as_str: bool = False) -> Union[str, Tuple[int, int, int, int]]:
-        input_format = ColorEnum.ASS_ABGR if len(inp) == len("&HAABBGGRR") else ColorEnum.ASS_BGR
-        return Convert.color(inp, input_format, ColorEnum.RGBA_STR if as_str else ColorEnum.RGBA_DEC)
-
-    @staticmethod
-    def color_rgba_to_ass(inp: Union[
-        str,
-        Tuple[Union[int, float], Union[int, float], Union[int, float], Union[int, float]]
-    ]) -> str:
-        input_format = ColorEnum.RGBA_STR if type(inp) == str else ColorEnum.RGBA_DEC
-        return Convert.color(inp, input_format, ColorEnum.ASS_ABGR)
+        return Convert.color(inp, ColorModel.RGB_STR if type(inp) == str else ColorModel.RGB, ColorModel.ASS)
 
     @staticmethod
     def color_ass_to_hsv(inp: str, round_output: bool = True) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
-        input_format = ColorEnum.ASS_ABGR if len(inp) == len("&HAABBGGRR") else ColorEnum.ASS_BGR
-        return Convert.color(inp, input_format, ColorEnum.HSV_DEC, round_output)
+        return Convert.color(inp, ColorModel.ASS, ColorModel.HSV, round_output)
 
     @staticmethod
     def color_hsv_to_ass(inp: Tuple[Union[int, float], Union[int, float], Union[int, float]]) -> str:
-        return Convert.color(inp, ColorEnum.HSV_DEC, ColorEnum.ASS_BGR)
+        return Convert.color(inp, ColorModel.HSV, ColorModel.ASS)
 
     @staticmethod
     def color_hsv_to_rgb(inp: Tuple[
         Union[int, float], Union[int, float], Union[int, float]
     ], as_str: bool = False, round_output: bool = True) -> str:
-        return Convert.color(inp, ColorEnum.HSV_DEC, ColorEnum.RGB_STR if as_str else ColorEnum.RGB_DEC, round_output)
+        return Convert.color(inp, ColorModel.HSV, ColorModel.RGB_STR if as_str else ColorModel.RGB, round_output)
 
     @staticmethod
     def color_rgb_to_hsv(inp: Union[
         str,
         Tuple[Union[int, float], Union[int, float], Union[int, float]]
     ], round_output: bool = True) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
-        input_format = ColorEnum.RGB_STR if type(inp) == str else ColorEnum.RGB_DEC
-        return Convert.color(inp, input_format, ColorEnum.HSV_DEC, round_output)
+        return Convert.color(inp, ColorModel.RGB_STR if type(inp) == str else ColorModel.RGB, ColorModel.HSV, round_output)
 
     @staticmethod
     def text_to_shape(
