@@ -16,50 +16,80 @@ max_deviation = 3
 
 
 def test_coloralpha():
-    # Test alpha conversion
-    assert Convert.color_ass_to_alpha("&HFF&") == 255
-    assert Convert.color_alpha_to_ass(255) == "&HFF&"
+    # -- Test alpha conversion functions --
+    assert Convert.alpha_ass_to_int("&HFF&") == 255
+    assert Convert.alpha_int_to_ass(255) == "&HFF&"
 
+    # -- Test conversion from and to rgba --
+    assert Convert.color((0, 255, 0, 255), ColorModel.RGBA, ColorModel.RGBA) == (0, 255, 0, 255)
+    assert Convert.color("#00FF00FF", ColorModel.RGBA_STR, ColorModel.RGBA_STR) == "#00FF00FF"
+
+    # -- Test conversion to rgba --
+    # Test ass (bgr) -> rgba conversion
+    assert Convert.color("&H00FF00&", ColorModel.ASS, ColorModel.RGBA) == (0, 255, 0, 255)
+    assert Convert.color("&H00FF00&", ColorModel.ASS, ColorModel.RGBA_STR) == "#00FF00FF"
+
+    # Test ass (abgr) -> rgba conversion
+    assert Convert.color("&HFF00FF00", ColorModel.ASS_STYLE, ColorModel.RGBA) == (0, 255, 0, 255)
+    assert Convert.color("&HFF00FF00", ColorModel.ASS_STYLE, ColorModel.RGBA_STR) == "#00FF00FF"
+
+    # Test rgb -> rgba conversion
+    assert Convert.color((0, 255, 0), ColorModel.RGB, ColorModel.RGBA) == (0, 255, 0, 255)
+    assert Convert.color("#00FF00", ColorModel.RGB_STR, ColorModel.RGBA_STR) == "#00FF00FF"
+
+    # Test hsv -> rgba conversion
+    assert Convert.color((0, 100, 100), ColorModel.HSV, ColorModel.RGBA) == (255, 0, 0, 255)
+    assert Convert.color((0, 100, 100), ColorModel.HSV, ColorModel.RGBA_STR) == "#FF0000FF"
+    assert Convert.color((0, 50, 100), ColorModel.HSV, ColorModel.RGBA) == (255, 128, 128, 255)
+    assert Convert.color((0, 50, 100), ColorModel.HSV, ColorModel.RGBA_STR) == "#FF8080FF"
+    assert Convert.color((0, 50, 100), ColorModel.HSV, ColorModel.RGBA, round_output=False) == (255.0, 127.5, 127.5, 255.0)
+
+    # -- Test conversion from rgba --
+    # Test rgba -> ass (bgr) conversion
+    assert Convert.color((0, 255, 0, 255), ColorModel.RGBA, ColorModel.ASS) == "&H00FF00&"
+    assert Convert.color("#00FF00FF", ColorModel.RGBA_STR, ColorModel.ASS) == "&H00FF00&"
+
+    # Test rgba -> ass (abgr) conversion
+    assert Convert.color((0, 255, 0, 255), ColorModel.RGBA, ColorModel.ASS_STYLE) == "&HFF00FF00"
+    assert Convert.color("#00FF00FF", ColorModel.RGBA_STR, ColorModel.ASS_STYLE) == "&HFF00FF00"
+
+    # Test rgba -> rgba conversion
+    assert Convert.color((0, 255, 0, 255), ColorModel.RGBA, ColorModel.RGB) == (0, 255, 0)
+    assert Convert.color("#00FF00FF", ColorModel.RGBA_STR, ColorModel.RGB_STR) == "#00FF00"
+
+    # Test rgba -> hsv conversion
+    assert Convert.color((255, 0, 0, 255), ColorModel.RGBA, ColorModel.HSV) == (0, 100, 100)
+    assert Convert.color("#FF0000FF", ColorModel.RGBA_STR, ColorModel.HSV) == (0, 100, 100)
+    assert Convert.color((0, 255/64, 255/64, 255), ColorModel.RGBA, ColorModel.HSV) == (180, 100, 2)
+    assert Convert.color((0, 255/64, 255/64, 255), ColorModel.RGBA, ColorModel.HSV, round_output=False) == (180.0, 100.0, 1.5625)
+
+    # -- Test color helper functions --
     # Test ass (bgr) -> rgb conversion
     assert Convert.color_ass_to_rgb("&H0000FF&") == (255, 0, 0)
     assert Convert.color_ass_to_rgb("&H0000FF&", as_str=True) == "#FF0000"
 
-    # Test ass (abgr) -> rgb conversion
-    assert Convert.color_ass_to_rgb("&H550000FF") == (255, 0, 0)
-    assert Convert.color_ass_to_rgb("&H550000FF", as_str=True) == "#FF0000"
+    # Test ass (bgr) -> hsv conversion
+    assert Convert.color_ass_to_hsv("&H0000FF&") == (0, 100, 100)
 
     # Test rgb -> ass (bgr) conversion
     assert Convert.color_rgb_to_ass((255, 0, 0)) == "&H0000FF&"
     assert Convert.color_rgb_to_ass("#FF0000") == "&H0000FF&"
 
-    # Test ass (bgr) -> rgba conversion
-    assert Convert.color_ass_to_rgba("&H00FF00&") == (0, 255, 0, 255)
-    assert Convert.color_ass_to_rgba("&H00FF00&", as_str=True) == "#00FF00FF"
-
-    # Test ass (abgr) -> rgba conversion
-    assert Convert.color_ass_to_rgba("&HFF00FF00") == (0, 255, 0, 255)
-    assert Convert.color_ass_to_rgba("&HFF00FF00", as_str=True) == "#00FF00FF"
-
-    # Test rgba -> ass (abgr) conversion
-    assert Convert.color_rgba_to_ass((0, 255, 0, 255)) == "&HFF00FF00"
-    assert Convert.color_rgba_to_ass("#00FF00FF") == "&HFF00FF00"
-
-    # Test ass (bgr) -> hsv conversion
-    assert Convert.color_ass_to_hsv("&H0000FF&") == (0, 100, 100)
-
-    # Test ass (bgra) -> hsv conversion
-    assert Convert.color_ass_to_hsv("&H550000FF") == (0, 100, 100)
-
-    # Test hsv -> ass conversion
-    assert Convert.color_hsv_to_ass((0, 100, 100)) == "&H0000FF&"
-
     # Test rgb -> hsv conversion
     assert Convert.color_rgb_to_hsv((255, 0, 0)) == (0, 100, 100)
     assert Convert.color_rgb_to_hsv("#FF0000") == (0, 100, 100)
+    assert Convert.color_rgb_to_hsv((0, 255/64, 255/64)) == (180, 100, 2)
+    assert Convert.color_rgb_to_hsv((0, 255/64, 255/64), round_output=False) == (180.0, 100.0, 1.5625)
+
+    # Test hsv -> ass (bgr) conversion
+    assert Convert.color_hsv_to_ass((0, 100, 100)) == "&H0000FF&"
 
     # Test hsv -> rgb conversion
     assert Convert.color_hsv_to_rgb((0, 100, 100)) == (255, 0, 0)
     assert Convert.color_hsv_to_rgb((0, 100, 100), as_str=True) == "#FF0000"
+    assert Convert.color_hsv_to_rgb((0, 50, 100)) == (255, 128, 128)
+    assert Convert.color_hsv_to_rgb((0, 50, 100), as_str=True) == "#FF8080"
+    assert Convert.color_hsv_to_rgb((0, 50, 100), round_output=False) == (255.0, 127.5, 127.5)
 
 
 def test_text_to_shape():

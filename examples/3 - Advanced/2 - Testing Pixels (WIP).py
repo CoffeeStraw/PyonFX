@@ -72,7 +72,9 @@ def romaji(line, l):
         )
         x2, y2 = x + 10 * (-1) ** pi, y + 10 * (-1) ** pi
         alpha = (
-            "\\alpha" + Convert.color_alpha_to_ass(pixel.alpha) if pixel.alpha != 255 else ""
+            "\\alpha" + Convert.color_alpha_to_ass(pixel.alpha)
+            if pixel.alpha != 255
+            else ""
         )
 
         l.text = "{\\p1\\move(%d,%d,%d,%d)%s\\fad(0,%d)}%s" % (
