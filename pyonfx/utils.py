@@ -20,7 +20,7 @@ import math
 import re
 from typing import List, Union, TYPE_CHECKING
 
-from .convert import Convert
+from .convert import Convert, ColorModel
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
@@ -102,13 +102,14 @@ class Utils:
 
         # Interpolating
         if type(val1) is str and type(val2) is str:
+
             def color_values(inp):
                 if len(inp) == len("&HAA&"):
-                    return Convert.color_ass_to_alpha(inp)
+                    return Convert.alpha_ass_to_int(inp)
                 elif len(inp) == len("&HBBGGRR&"):
                     return Convert.color_ass_to_rgb(inp)
                 elif len(inp) == len("&HAABBGGRR"):
-                    return Convert.color_ass_to_rgba(inp)
+                    return Convert.color(inp, ColorModel.ASS, ColorModel.RGBA)
                 else:
                     raise ValueError("Invalid ASS string")
 
@@ -133,10 +134,10 @@ class Utils:
                     g = int(val1[1] + (val2[1] - val1[1]) * pct)
                     b = int(val1[2] + (val2[2] - val1[2]) * pct)
                     a = int(val1[3] + (val2[3] - val1[3]) * pct)
-                    return Convert.color_rgba_to_ass((r, g, b, a))
+                    return Convert.color((r, g, b, a), ColorModel.RGBA, ColorModel.ASS)
             elif type(val1) == int and type(val2) == int:  # Alpha
                 a = int(val1 + (val2 - val1) * pct)
-                return Convert.color_alpha_to_ass(a)
+                return Convert.alpha_int_to_ass(a)
         elif (
             (type(val1) is float and type(val2) is float)
             or (type(val1) is int and type(val2) is float)

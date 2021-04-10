@@ -504,21 +504,10 @@ class Ass:
                     tmp.fontname = style[1]
                     tmp.fontsize = float(style[2])
 
-                    r, g, b, a = Convert.color_ass_to_rgba(style[3])
-                    tmp.color1 = Convert.color_rgb_to_ass((r, g, b))
-                    tmp.alpha1 = Convert.color_alpha_to_ass(a)
-
-                    r, g, b, a = Convert.color_ass_to_rgba(style[4])
-                    tmp.color2 = Convert.color_rgb_to_ass((r, g, b))
-                    tmp.alpha2 = Convert.color_alpha_to_ass(a)
-
-                    r, g, b, a = Convert.color_ass_to_rgba(style[5])
-                    tmp.color3 = Convert.color_rgb_to_ass((r, g, b))
-                    tmp.alpha3 = Convert.color_alpha_to_ass(a)
-
-                    r, g, b, a = Convert.color_ass_to_rgba(style[6])
-                    tmp.color4 = Convert.color_rgb_to_ass((r, g, b))
-                    tmp.alpha4 = Convert.color_alpha_to_ass(a)
+                    tmp.color1, tmp.alpha1 = f"&H{style[3][4:]}&", f"{style[3][:4]}&"
+                    tmp.color2, tmp.alpha2 = f"&H{style[4][4:]}&", f"{style[4][:4]}&"
+                    tmp.color3, tmp.alpha3 = f"&H{style[5][4:]}&", f"{style[5][:4]}&"
+                    tmp.color4, tmp.alpha4 = f"&H{style[6][4:]}&", f"{style[6][:4]}&"
 
                     tmp.bold = style[7] == "-1"
                     tmp.italic = style[8] == "-1"
