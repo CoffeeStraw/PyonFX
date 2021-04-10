@@ -44,7 +44,7 @@ def romaji(line, l):
             x, y = math.floor(syl.left) + pixel.x, math.floor(syl.top) + pixel.y
             x2, y2 = x + random.uniform(-off, off), y + random.uniform(-off, off)
             alpha = (
-                "\\alpha" + Convert.color_alpha_to_ass(pixel.alpha)
+                "\\alpha" + Convert.alpha_int_to_ass(pixel.alpha)
                 if pixel.alpha != 255
                 else ""
             )
@@ -72,7 +72,7 @@ def romaji(line, l):
         )
         x2, y2 = x + 10 * (-1) ** pi, y + 10 * (-1) ** pi
         alpha = (
-            "\\alpha" + Convert.color_alpha_to_ass(pixel.alpha)
+            "\\alpha" + Convert.alpha_int_to_ass(pixel.alpha)
             if pixel.alpha != 255
             else ""
         )
