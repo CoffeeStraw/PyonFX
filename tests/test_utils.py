@@ -12,7 +12,7 @@ meta, styles, lines = io.get_data()
 
 def test_interpolation():
     res = Utils.interpolate(0.9, "&H000000&", "&HFFFFFF&")
-    assert res == "&HE5E5E5&"
+    assert res == "&HE6E6E6&"
 
 
 def test_frames():

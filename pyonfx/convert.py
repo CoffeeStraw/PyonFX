@@ -29,7 +29,7 @@ if TYPE_CHECKING:
     from .shape import Shape
 
 # A simple NamedTuple to represent pixels
-Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", float)])
+Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", int)])
 
 
 class ColorModel(Enum):
@@ -614,8 +614,8 @@ class Convert:
                 p_sh = Shape.rectangle()
                 for pixel in Convert.shape_to_pixels(Shape.heart(100)):
                     # Random circle to pixel effect just to show
-                    x, y = math.floor(line.left) + pixel['x'], math.floor(line.top) + pixel['y']
-                    alpha = "\\alpha" + Convert.color_alpha_to_ass(pixel['alpha']) if pixel['alpha'] != 255 else ""
+                    x, y = math.floor(line.left) + pixel.x, math.floor(line.top) + pixel.y
+                    alpha = "\\alpha" + Convert.color_alpha_to_ass(pixel.alpha) if pixel.alpha != 255 else ""
 
                     line.text = "{\\p1\\pos(%d,%d)%s\\fad(0,%d)}%s" % (x, y, alpha, l.dur/4, p_sh)
                     io.write_line(line)
@@ -753,7 +753,7 @@ class Convert:
                         Pixel(
                             x=(x - shift_x) * downscale,
                             y=(y - shift_y) * downscale,
-                            alpha=opacity * downscale ** 2,
+                            alpha=round(opacity * downscale ** 2),
                         )
                     )
 

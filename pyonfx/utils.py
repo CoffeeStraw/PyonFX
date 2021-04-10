@@ -100,54 +100,40 @@ class Utils:
         # Calculating acceleration (if requested)
         pct = Utils.accelerate(pct, acc) if acc != 1.0 else pct
 
+        def interpolate_numbers(val1, val2):
+            nonlocal pct
+            return round(val1 + (val2 - val1) * pct)
+
         # Interpolating
         if type(val1) is str and type(val2) is str:
-
-            def color_values(inp):
-                if len(inp) == len("&HAA&"):
-                    return Convert.alpha_ass_to_int(inp)
-                elif len(inp) == len("&HBBGGRR&"):
-                    return Convert.color_ass_to_rgb(inp)
-                elif len(inp) == len("&HAABBGGRR"):
-                    return Convert.color(inp, ColorModel.ASS, ColorModel.RGBA)
-                else:
-                    raise ValueError("Invalid ASS string")
-
-            val1 = color_values(val1)
-            val2 = color_values(val2)
-
-            if type(val1) == tuple and type(val2) == tuple:
-                len_v1 = len(val1)
-                len_v2 = len(val2)
-
-                if len_v1 != len_v2:
-                    raise TypeError(
-                        "ASS values must have the same type (either two alphas, two colors or two colors+alpha)"
-                    )
-                elif len_v1 == 3 and len_v2 == 3:  # Color
-                    r = int(val1[0] + (val2[0] - val1[0]) * pct)
-                    g = int(val1[1] + (val2[1] - val1[1]) * pct)
-                    b = int(val1[2] + (val2[2] - val1[2]) * pct)
-                    return Convert.color_rgb_to_ass((r, g, b))
-                else:  # Color+alpha
-                    r = int(val1[0] + (val2[0] - val1[0]) * pct)
-                    g = int(val1[1] + (val2[1] - val1[1]) * pct)
-                    b = int(val1[2] + (val2[2] - val1[2]) * pct)
-                    a = int(val1[3] + (val2[3] - val1[3]) * pct)
-                    return Convert.color((r, g, b, a), ColorModel.RGBA, ColorModel.ASS)
-            elif type(val1) == int and type(val2) == int:  # Alpha
-                a = int(val1 + (val2 - val1) * pct)
+            if len(val1) != len(val2):
+                raise ValueError(
+                    "ASS values must have the same type (either two alphas, two colors or two colors+alpha)."
+                )
+            if len(val1) == len("&HXX&"):
+                val1 = Convert.alpha_ass_to_int(val1)
+                val2 = Convert.alpha_ass_to_int(val2)
+                a = interpolate_numbers(val1, val2)
                 return Convert.alpha_int_to_ass(a)
-        elif (
-            (type(val1) is float and type(val2) is float)
-            or (type(val1) is int and type(val2) is float)
-            or (type(val1) is float and type(val2) is int)
-            or (type(val1) is int and type(val2) is int)
-        ):
-            return val1 + (val2 - val1) * pct
+            elif len(val1) == len("&HBBGGRR&"):
+                val1 = Convert.color_ass_to_rgb(val1)
+                val2 = Convert.color_ass_to_rgb(val2)
+                rgb = tuple(map(interpolate_numbers, val1, val2))
+                return Convert.color_rgb_to_ass(rgb)
+            elif len(val1) == len("&HAABBGGRR"):
+                val1 = Convert.color(val1, ColorModel.ASS, ColorModel.RGBA)
+                val2 = Convert.color(val2, ColorModel.ASS, ColorModel.RGBA)
+                rgba = tuple(map(interpolate_numbers, val1, val2))
+                return Convert.color_rgb_to_ass(rgba)
+            else:
+                raise ValueError(
+                    f"Provided inputs '{val1}' and '{val2}' are not valid ASS strings."
+                )
+        elif type(val1) in [int, float] and type(val2) in [int, float]:
+            return interpolate_numbers(val1, val2)
         else:
             raise TypeError(
-                "Invalid parameter(s) type, either pass two strings or two numbers"
+                "Invalid input(s) type, either pass two strings or two numbers."
             )
 
 
