@@ -87,6 +87,59 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
+    def alpha_ass_to_int(alpha_ass: str) -> int:
+        """Converts from ASS alpha string to corresponding integer value.
+
+        Parameters:
+            alpha_ass (str): A string in the format '&H..&'.
+
+        Returns:
+            An integer in [0, 255] representing `alpha_ass` converted.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.alpha_ass_to_int("&HFF&"))
+
+            >>> 255
+        """
+        try:
+            match = re.fullmatch(r"&H([0-9A-F]{2})&", alpha_ass)
+            return int(match.group(1), 16)
+        except TypeError as e:
+            raise TypeError(f"Provided ASS alpha was expected of type 'str', but you provided a '{type(alpha_ass)}'.") from e
+        except AttributeError as e:
+            raise ValueError(f"Provided ASS alpha string '{alpha_ass}' is not in the expected format '&H..&'.") from e
+        
+
+    @staticmethod
+    def alpha_int_to_ass(alpha_int: int) -> str:
+        """Converts from integer value to corresponding ASS alpha string.
+
+        Parameters:
+            alpha_int (int): Integer in [0, 255] representing an alpha value.
+
+        Returns:
+            A string in the format '&H..&' representing `alpha_int` converted.
+
+        Examples:
+            ..  code-block:: python3
+
+                print(Convert.alpha_int_to_ass(255))
+
+            >>> "&HFF&"
+        """
+        try:
+            if not 0 <= alpha_int <= 255:
+                raise ValueError(f"Provided alpha integer '{alpha_int}' is out of the range [0, 255].")
+        except TypeError as e:
+            raise TypeError(f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'.") from e
+        try:
+            return f"&H{alpha_int:02X}&"
+        except ValueError as e:
+            raise TypeError(f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'.") from e
+
+    @staticmethod
     def color(inp: ColorInputType, input_format: ColorModel, output_format: ColorModel, round_output: bool = True) -> Union[
         str,
         Tuple[int, int, int],
@@ -184,50 +237,6 @@ class Convert:
                     return float(h), float(s), float(v)
         except Exception:
             raise ValueError("Invalid input")
-
-    @staticmethod
-    def alpha_ass_to_dec(inp: str) -> int:
-        """Converts from ASS alpha to an alpha value.
-
-        Parameters:
-            inp (str): ASS alpha
-
-        Returns:
-            Alpha value
-
-        Examples:
-            ..  code-block:: python3
-
-                print(Convert.color_ass_to_alpha("&HFF&"))
-
-            >>> 255
-        """
-        try:
-            match = re.fullmatch(r"&H([0-9A-F]{2})&", inp)
-            return int(match.group(1), 16)
-        except Exception:
-            raise ValueError("Invalid input")
-
-    @staticmethod
-    def alpha_dec_to_ass(inp: Union[int, float]) -> str:
-        """Converts from ASS alpha to an alpha value.
-
-        Parameters:
-            inp (int or float): Alpha value
-
-        Returns:
-            ASS alpha
-
-        Examples:
-            ..  code-block:: python3
-
-                print(Convert.color_alpha_to_ass(255))
-
-            >>> "&HFF&"
-        """
-        if not 0 <= inp <= 255:
-            raise ValueError("Alpha value out of range")
-        return f"&H{round(inp):02X}&"
 
     @staticmethod
     def color_ass_to_rgb(color_ass: str, as_str: bool = False) -> Union[str, Tuple[int, int, int]]:
