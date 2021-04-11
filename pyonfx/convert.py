@@ -109,11 +109,11 @@ class Convert:
             ) from e
 
     @staticmethod
-    def alpha_int_to_ass(alpha_int: int) -> str:
+    def alpha_int_to_ass(alpha_int: Union[int, float]) -> str:
         """Converts from integer value to corresponding ASS alpha string.
 
         Parameters:
-            alpha_int (int): Integer in [0, 255] representing an alpha value.
+            alpha_int (int or float): Number in [0, 255] representing an alpha value.
 
         Returns:
             A string in the format '&HXX&' representing ``alpha_int`` converted.
@@ -135,7 +135,7 @@ class Convert:
                 f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'."
             ) from e
         try:
-            return f"&H{alpha_int:02X}&"
+            return f"&H{round(alpha_int):02X}&"
         except ValueError as e:
             raise TypeError(
                 f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'."

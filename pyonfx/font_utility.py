@@ -25,17 +25,17 @@ from typing import Tuple, TYPE_CHECKING
 from .shape import Shape
 
 if sys.platform == "win32":
-    import win32gui
-    import win32ui
-    import win32con
+    import win32gui  # pylint: disable=import-error
+    import win32ui  # pylint: disable=import-error
+    import win32con  # pylint: disable=import-error
 elif sys.platform in ["linux", "darwin"] and not "sphinx" in sys.modules:
-    import cairo
-    import gi
+    import cairo  # pylint: disable=import-error
+    import gi  # pylint: disable=import-error
 
     gi.require_version("Pango", "1.0")
     gi.require_version("PangoCairo", "1.0")
 
-    from gi.repository import Pango, PangoCairo
+    from gi.repository import Pango, PangoCairo  # pylint: disable=import-error
     import html
 
 if TYPE_CHECKING:

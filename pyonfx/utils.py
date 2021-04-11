@@ -102,7 +102,7 @@ class Utils:
 
         def interpolate_numbers(val1, val2):
             nonlocal pct
-            return round(val1 + (val2 - val1) * pct)
+            return val1 + (val2 - val1) * pct
 
         # Interpolating
         if type(val1) is str and type(val2) is str:
@@ -124,7 +124,7 @@ class Utils:
                 val1 = Convert.color(val1, ColorModel.ASS, ColorModel.RGBA)
                 val2 = Convert.color(val2, ColorModel.ASS, ColorModel.RGBA)
                 rgba = tuple(map(interpolate_numbers, val1, val2))
-                return Convert.color_rgb_to_ass(rgba)
+                return Convert.color(rgba, ColorModel.RGBA, ColorModel.ASS)
             else:
                 raise ValueError(
                     f"Provided inputs '{val1}' and '{val2}' are not valid ASS strings."

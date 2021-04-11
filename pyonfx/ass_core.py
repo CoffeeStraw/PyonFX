@@ -62,13 +62,13 @@ class Style:
         fontname (str): Font name
         fontsize (float): Font size in points
         color1 (str): Primary color (fill)
-        alpha1 (str): Trasparency of color1
+        alpha1 (str): Transparency of color1
         color2 (str): Secondary color (secondary fill, for karaoke effect)
-        alpha2 (str): Trasparency of color2
+        alpha2 (str): Transparency of color2
         color3 (str): Outline (border) color
-        alpha3 (str): Trasparency of color3
+        alpha3 (str): Transparency of color3
         color4 (str): Shadow color
-        alpha4 (str): Trasparency of color4
+        alpha4 (str): Transparency of color4
         bold (bool): Font with bold
         italic (bool): Font with italic
         underline (bool): Font with underline
