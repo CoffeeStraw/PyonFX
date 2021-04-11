@@ -1,91 +1,50 @@
-# Contributing
+# Contributing to PyonFX
+Welcome to **PyonFX**!
 
-When contributing to PyonFX, please discuss any changes you wish to make via creating an issue with the owner of this repository before making a change.
+If you intend to contribute to this project, please read following text carefully to avoid bad misunderstandings and wasted work. Contributions are appreciated but just under correct terms.
 
-Please ensure you follow the code of conduct in all your interactions with the project.
+## Table of contents
+1) [Introduction](#introduction)
+2) [Expectations](#expectations)
+3) [Style guideline](#style-guideline)
+4) [What we're looking for](#what-were-looking-for)
+5) [How to contribute](#how-to-contribute)
+6) [Community](#community)
 
-## Pull Request Checklist
+## Introduction
+Please start by reading our [license](https://github.com/CoffeeStraw/PyonFX/blob/master/LICENSE) and [code-of-conduct](https://github.com/CoffeeStraw/PyonFX/blob/master/CODE_OF_CONDUCT.md). If you don't agree with them, this isn't your project.
 
-Before sending your pull requests, make sure you have done the following:
+For further questions, visit our [discord chat](https://discord.gg/Xxy3YAv).
 
-- Read the General Contribution Guidelines in the section right below this.
-- Checked if your changes are consistent with the guidelines.
-- Ran Unit Tests (and created new ones if applicable) using pytest.
-- Increased the version number in the __init__.py file. It follows the following setup: MainVersion.NewFeature.BugFixes. This means that if your commit contains bux fixes, you must increment the final number. If you've added a new feature, increase the second number. You should never have to touch the first number, as 0 stands for "beta stage" and 1 for "release stage".
+## Expectations
+* We're **mentoring** but just to a certain degree. An initial effort should have been done, training in programming basics or computer science isn't part of the offer. We want to speed up development, not slowing it down.
+* **Quality** has priority, not getting fastly done. Faults by unnecessary hurry or sentences like "at least it works" are the opposite of "being welcome" here. Putting experiments on users is disrespectful for their time investment.
+* Don't get emotional, act logical. **Personal taste** has to back off if there's no explanation why _xy_ makes more sense for others too. Let's combine the best of all!
+* Contributing should happen as **teamwork**, not as competition. Join discussions, look through PRs and issues, merge compatible forks. Ignoring the progress of others leads to lost time (and motivation).
 
-#### General Contribution Guidelines and philosophy for contribution
+## Style guideline
+* Continue present **conventions** and follow **best practices**. Don't break our pattern, code needs no multi-culture.
+* **Comment &amp; document** your changes. Keep in mind others may work on same project parts too and don't want to spend much time understanding what you've done. 10 seconds you saved costs another contributor 10 minutes.
+* **Include unit tests** when you contribute *new features*, as they help to a) prove that your code works correctly, and b) guard against future breaking changes to lower the maintenance cost.
+* *Bug fixes* also generally require unit tests, because the presence of bugs usually indicates insufficient test coverage.
+* **Format your code** using [black](https://github.com/psf/black).
+* **Include a license** at the top of new files ([Python license example](https://github.com/CoffeeStraw/PyonFX/blob/master/pyonfx/ass_core.py#L1-L16)).
 
-* Include unit tests when you contribute new features, as they help to
-  a) prove that your code works correctly, and b) guard against future breaking
-  changes to lower the maintenance cost.
-* Bug fixes also generally require unit tests, because the presence of bugs
-  usually indicates insufficient test coverage.
-* Keep API compatibility in mind when you change code. Reviewers of your
-  pull request will comment on any API compatibility issues.
-* Include a license at the top of new files ([Python license example](https://github.com/CoffeeStraw/PyonFX/blob/master/pyonfx/ass_utility.py)).
+## What we're looking for
+* Bugfixes
+* Feature ideas
+* Examples or tutorials
+* Tests
 
-## Code of Conduct
+## How to contribute
+Main contribution ways are to [open issues](https://github.com/CoffeeStraw/PyonFX/issues) and [fork with later pull requests](https://github.com/CoffeeStraw/PyonFX/network/members). Furthermore you can discuss issues, review PRs or mention this project in public/chat with the community about your experience.
 
-### Our Pledge
+If you want to contribute with a pull request, please remember to:
+* Install the PyonFX package in development mode with the command ``pip install -e .[dev]``. Packages included in ``dev`` allows you to run tests, format your code and generate documentation.
+* Check if your changes are consistent with the [Style guideline](#style-guideline).
+* Increase the version number in the [``__init__.py``](https://github.com/CoffeeStraw/PyonFX/blob/master/pyonfx/__init__.py) file. It follows the following setup: ``MainVersion.NewFeature.BugFixes``. This means that if your PR contains bux fixes, you must increment the final number. If you've added a new feature, increase the second number. You should never have to touch the first number, as 0 stands for "beta stage" and 1 for "release stage".
 
-In the interest of fostering an open and welcoming environment, we as contributors and maintainers pledge to making participation in our project and our community a harassment-free experience for everyone, regardless of age, body size, disability, ethnicity, gender identity and expression, level of experience, nationality, personal appearance, race, religion, or sexual identity and orientation.
+## Community
+The community has a high value for this project!
 
-### Our Standards
-
-Examples of behavior that contributes to creating a positive environment
-include:
-
-* Using welcoming and inclusive language
-* Being respectful of differing viewpoints and experiences
-* Gracefully accepting constructive criticism
-* Focusing on what is best for the community
-* Showing empathy towards other community members
-
-Examples of unacceptable behavior by participants include:
-
-* The use of sexualized language or imagery and unwelcome sexual attention or
-advances
-* Trolling, insulting/derogatory comments, and personal or political attacks
-* Public or private harassment
-* Publishing others' private information, such as a physical or electronic
-  address, without explicit permission
-* Other conduct which could reasonably be considered inappropriate in a
-  professional setting
-
-### Our Responsibilities
-
-Project maintainers are responsible for clarifying the standards of acceptable
-behavior and are expected to take appropriate and fair corrective action in
-response to any instances of unacceptable behavior.
-
-Project maintainers have the right and responsibility to remove, edit, or
-reject comments, commits, code, wiki edits, issues, and other contributions
-that are not aligned to this Code of Conduct, or to ban temporarily or
-permanently any contributor for other behaviors that they deem inappropriate,
-threatening, offensive, or harmful.
-
-### Scope
-
-This Code of Conduct applies both within project spaces and in public spaces
-when an individual is representing the project or its community. Examples of
-representing a project or community include using an official project e-mail
-address, posting via an official social media account, or acting as an appointed
-representative at an online or offline event. Representation of a project may be
-further defined and clarified by project maintainers.
-
-### Enforcement
-
-Instances of abusive, harassing, or otherwise unacceptable behavior may be
-reported by contacting the project team. All
-complaints will be reviewed and investigated and will result in a response that
-is deemed necessary and appropriate to the circumstances. The project team is
-obligated to maintain confidentiality with regard to the reporter of an incident.
-Further details of specific enforcement policies may be posted separately.
-
-Project maintainers who do not follow or enforce the Code of Conduct in good
-faith may face temporary or permanent repercussions as determined by other
-members of the project's leadership.
-
-### Attribution
-
-This Code of Conduct is adapted from the Contributor Covenant, version 1.4, available at https://contributor-covenant.org/version/1/4.
+As much as possible should be discussed in public, important decisions made by multiple individuals and people not getting excluded just because of a little dispute.
