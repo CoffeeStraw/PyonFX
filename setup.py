@@ -35,14 +35,20 @@ def get_requirements():
 
 setuptools.setup(
     name="pyonfx",
-    url="https://github.com/CoffeeStraw/PyonFX",
+    url="https://github.com/CoffeeStraw/PyonFX/",
+    project_urls={
+        "Documentation": "http://pyonfx.rtfd.io/",
+        "Source": "https://github.com/CoffeeStraw/PyonFX/",
+        "Tracker": "https://github.com/CoffeeStraw/PyonFX/issues/",
+    },
     author="Antonio Strippoli",
     author_email="clarantonio98@gmail.com",
-    version=find_version("pyonfx", "__init__.py"),
-    license="GNU LGPL 3.0 or later",
-    description="An easy way to do KFX and complex typesetting based on subtitle format ASS (Advanced Substation Alpha).",
+    description="An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).",
     long_description=open("README.md", encoding="utf-8").read(),
+    long_description_content_type="text/markdown",
+    version=find_version("pyonfx", "__init__.py"),
     packages=["pyonfx"],
+    python_requires=">=3.7",
     install_requires=get_requirements(),
     extras_require={
         "dev": [
@@ -53,10 +59,16 @@ setuptools.setup(
             "sphinxcontrib-napoleon",
         ]
     },
+    keywords="typesetting ass subtitle aegisub karaoke kfx advanced-substation-alpha karaoke-effect",
     classifiers=[
-        "Development Status :: 2 - Pre-Alpha",
+        "Development Status :: 4 - Beta",
+        "Intended Audience :: Developers",
         "Programming Language :: Python",
         "Programming Language :: Python :: 3",
-        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
     ],
+    license="GNU LGPL 3.0 or later",
 )
