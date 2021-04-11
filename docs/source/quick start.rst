@@ -12,86 +12,88 @@ To use PyonFX, you'll have to write a Python3 script. Within it you will fully d
 
 If you don't know how to install Python3, there are resources online that can help you out, like https://realpython.com/installing-python/ for example.
 
-Windows
-+++++++
+Installation
+++++++++++++
 
-If you haven't installed it yet, make sure to **install** Python3.
-You can **download** it from the `official website <https://www.python.org/downloads/>`_.
-Make sure you check the box that says "Add Python 3.x to PATH". This is very important to avoid some extra steps that would make Python callable in every directory from the command prompt.
+.. dropdown:: Windows
+   :title: font-weight-bold
 
+   If you haven't installed it yet, make sure to **install** Python3.
+   You can **download** it from the `official website <https://www.python.org/downloads/>`_.
+   Make sure you check the box that says "Add Python 3.x to PATH". This is very important to avoid some extra steps that would make Python callable in every directory from the command prompt.
 
-Run the following command below. It will use pip to install and update the library:
+   Run the following command below. It will use pip to install and update the library:
 
-.. code-block:: sh
-   :emphasize-lines: 1
+   .. code-block:: sh
+      :emphasize-lines: 1
 
-   pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+      pip install --upgrade pyonfx
 
-That's all you need to do for now. If you need to update this library at a later date, run that same command again.
+   That's all you need to do for now. If you need to update this library at a later date, run that same command again.
 
-Ubuntu/Debian
-+++++++++++++
+.. dropdown:: Ubuntu/Debian
+   :title: font-weight-bold
 
-Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
+   ⚠️Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
 
-.. code-block:: sh
-   :emphasize-lines: 1,2
+   .. code-block:: sh
+      :emphasize-lines: 1,2
 
-   sudo apt install python3 python3-pip libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
-   python3 -m pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+      sudo apt install python3 python3-pip libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
+      python3 -m pip install --upgrade pyonfx
 
-Fedora
-++++++
+.. dropdown:: Fedora
+   :title: font-weight-bold
 
-Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
+   ⚠️Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
 
-.. code-block:: sh
-   :emphasize-lines: 1,2
+   .. code-block:: sh
+      :emphasize-lines: 1,2
 
-   sudo dnf install python3 python3-pip gcc gobject-introspection-devel cairo-devel pkg-config python3-devel python3-gobject gtk3
-   python3 -m pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+      sudo dnf install python3 python3-pip gcc gobject-introspection-devel cairo-devel pkg-config python3-devel python3-gobject gtk3
+      python3 -m pip install --upgrade pyonfx
 
-Arch Linux
-++++++++++
+.. dropdown:: Arch Linux
+   :title: font-weight-bold
 
-Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
+   ⚠️Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
 
-.. code-block:: sh
-   :emphasize-lines: 1,2
+   .. code-block:: sh
+      :emphasize-lines: 1,2
 
-   sudo pacman -S python python-pip cairo pkgconf gobject-introspection python-gobject gtk3
-   python3 -m pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+      sudo pacman -S python python-pip cairo pkgconf gobject-introspection python-gobject gtk3
+      python3 -m pip install --upgrade pyonfx
 
-openSUSE
-++++++++
+.. dropdown:: OpenSUSE
+   :title: font-weight-bold
 
-Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
+   ⚠️Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
 
-.. code-block:: sh
-   :emphasize-lines: 1,2
+   .. code-block:: sh
+      :emphasize-lines: 1,2
 
-   sudo zypper install python3 python3-pip cairo-devel pkg-config python3-devel gcc gobject-introspection-devel python3-gobject python3-gobject-Gdk typelib-1_0-Gtk-3_0 libgtk-3-0
-   python3 -m pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+      sudo zypper install python3 python3-pip cairo-devel pkg-config python3-devel gcc gobject-introspection-devel python3-gobject python3-gobject-Gdk typelib-1_0-Gtk-3_0 libgtk-3-0
+      python3 -m pip install --upgrade pyonfx
 
-macOS
-+++++
+.. dropdown:: macOS
+   :title: font-weight-bold
 
-You may need to install `Homebrew <https://brew.sh/>`_ first.
+   You may need to install `Homebrew <https://brew.sh/>`_ first.
 
-Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
+   ⚠️Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
 
-.. code-block:: sh
-   :emphasize-lines: 1,2
+   .. code-block:: sh
+      :emphasize-lines: 1,2
 
-   brew install pygobject3 gtk+3 cairo py3cairo pkg-config
-   python3 -m pip install --upgrade https://github.com/CoffeeStraw/PyonFX/zipball/master
+      brew install pygobject3 gtk+3 cairo py3cairo pkg-config
+      python3 -m pip install --upgrade pyonfx
 
-Warning: If you experience output not rendered correctly, you might need to change the PangoCairo backend to fontconfig.
+   ⚠️Warning: If you experience output not rendered correctly, you might need to change the PangoCairo backend to fontconfig.
 
-.. code-block:: sh
-   :emphasize-lines: 1
+   .. code-block:: sh
+      :emphasize-lines: 1
 
-   PANGOCAIRO_BACKEND=fc python3 namefile.py
+      PANGOCAIRO_BACKEND=fc python3 namefile.py
 
 
 Installation - Extra Step
@@ -103,7 +105,7 @@ That's why PyonFX integrates an additional way to reproduce your works in softsu
 
 If you're on Windows, you will need to add it to PATH after downloading it so the library will be able to utilize it. There are several guides for that, `like this one <https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/>`_.
 
-You need to add the folder that contains the .exe of mpv, generally C:\\Program Files\\mpv.
+You need to add the folder that contains the .exe of mpv, generally '*C:\\Program Files\\mpv*'.
 
 
 Starting out

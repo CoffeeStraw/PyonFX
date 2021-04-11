@@ -55,6 +55,7 @@ setuptools.setup(
             "black",
             "pytest",
             "pytest-check",
+            "sphinx_panels",
             "sphinx_rtd_theme",
             "sphinxcontrib-napoleon",
         ]
