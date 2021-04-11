@@ -111,10 +111,10 @@ class Utils:
                     "ASS values must have the same type (either two alphas, two colors or two colors+alpha)."
                 )
             if len(val1) == len("&HXX&"):
-                val1 = Convert.alpha_ass_to_int(val1)
-                val2 = Convert.alpha_ass_to_int(val2)
+                val1 = Convert.alpha_ass_to_dec(val1)
+                val2 = Convert.alpha_ass_to_dec(val2)
                 a = interpolate_numbers(val1, val2)
-                return Convert.alpha_int_to_ass(a)
+                return Convert.alpha_dec_to_ass(a)
             elif len(val1) == len("&HBBGGRR&"):
                 val1 = Convert.color_ass_to_rgb(val1)
                 val2 = Convert.color_ass_to_rgb(val2)

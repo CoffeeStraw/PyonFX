@@ -46,7 +46,7 @@ def romaji(line, l):
 
             alpha = 0
             alpha += FU.add(syl.duration / 2, syl.duration, 255)
-            alpha = Convert.alpha_int_to_ass(int(alpha))
+            alpha = Convert.alpha_dec_to_ass(int(alpha))
 
             l.text = "{\\an9\\pos(%.3f,%.3f)\\fscx%.3f\\fscy%.3f}%s" % (
                 syl.right,

@@ -17,8 +17,8 @@ max_deviation = 3
 
 def test_coloralpha():
     # -- Test alpha conversion functions --
-    assert Convert.alpha_ass_to_int("&HFF&") == 255
-    assert Convert.alpha_int_to_ass(255) == "&HFF&"
+    assert Convert.alpha_ass_to_dec("&HFF&") == 255
+    assert Convert.alpha_dec_to_ass(255) == "&HFF&"
 
     # -- Test conversion from and to rgba --
     assert Convert.color((0, 255, 0, 255), ColorModel.RGBA, ColorModel.RGBA) == (
