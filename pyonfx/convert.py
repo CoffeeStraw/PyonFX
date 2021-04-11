@@ -80,19 +80,19 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def alpha_ass_to_int(alpha_ass: str) -> int:
-        """Converts from ASS alpha string to corresponding integer value.
+    def alpha_ass_to_dec(alpha_ass: str) -> int:
+        """Converts from ASS alpha string to corresponding decimal value.
 
         Parameters:
             alpha_ass (str): A string in the format '&HXX&'.
 
         Returns:
-            An integer in [0, 255] representing ``alpha_ass`` converted.
+            A decimal in [0, 255] representing ``alpha_ass`` converted.
 
         Examples:
             ..  code-block:: python3
 
-                print(Convert.alpha_ass_to_int("&HFF&"))
+                print(Convert.alpha_ass_to_dec("&HFF&"))
 
             >>> 255
         """
@@ -105,41 +105,38 @@ class Convert:
             ) from e
         except AttributeError as e:
             raise ValueError(
-                f"Provided ASS alpha string '{alpha_ass}' is not in the expected format '&H..&'."
+                f"Provided ASS alpha string '{alpha_ass}' is not in the expected format '&HXX&'."
             ) from e
 
     @staticmethod
-    def alpha_int_to_ass(alpha_int: Union[int, float]) -> str:
-        """Converts from integer value to corresponding ASS alpha string.
+    def alpha_dec_to_ass(alpha_dec: Union[int, float]) -> str:
+        """Converts from decimal value to corresponding ASS alpha string.
 
         Parameters:
-            alpha_int (int or float): Number in [0, 255] representing an alpha value.
+            alpha_dec (int or float): Decimal in [0, 255] representing an alpha value.
 
         Returns:
-            A string in the format '&HXX&' representing ``alpha_int`` converted.
+            A string in the format '&HXX&' representing ``alpha_dec`` converted.
 
         Examples:
             ..  code-block:: python3
 
-                print(Convert.alpha_int_to_ass(255))
+                print(Convert.alpha_dec_to_ass(255))
+                print(Convert.alpha_dec_to_ass(255.0))
 
+            >>> "&HFF&"
             >>> "&HFF&"
         """
         try:
-            if not 0 <= alpha_int <= 255:
+            if not 0 <= alpha_dec <= 255:
                 raise ValueError(
-                    f"Provided alpha integer '{alpha_int}' is out of the range [0, 255]."
+                    f"Provided alpha decimal '{alpha_dec}' is out of the range [0, 255]."
                 )
         except TypeError as e:
             raise TypeError(
-                f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'."
+                f"Provided alpha decimal was expected of type 'int' or 'float', but you provided a '{type(alpha_dec)}'."
             ) from e
-        try:
-            return f"&H{round(alpha_int):02X}&"
-        except ValueError as e:
-            raise TypeError(
-                f"Provided alpha integer was expected of type 'int', but you provided a '{type(alpha_int)}'."
-            ) from e
+        return f"&H{round(alpha_dec):02X}&"
 
     @staticmethod
     def color(
