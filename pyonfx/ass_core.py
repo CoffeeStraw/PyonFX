@@ -406,7 +406,7 @@ class Ass:
         path_output: str = "Output.ass",
         keep_original: bool = True,
         extended: bool = True,
-        vertical_kanji: bool = True,
+        vertical_kanji: bool = False,
     ):
         # Starting to take process time
         self.__saved = False
@@ -1029,7 +1029,11 @@ class Ass:
 
                 # Calculate character positions with all characters data already available
                 if line.chars and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
-                    if line.styleref.alignment > 6 or line.styleref.alignment < 4:
+                    if (
+                        line.styleref.alignment > 6
+                        or line.styleref.alignment < 4
+                        or not vertical_kanji
+                    ):
                         cur_x = line.left
                         for char in line.chars:
                             # Horizontal position

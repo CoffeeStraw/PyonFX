@@ -8,7 +8,7 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 path_ass = os.path.join(dir_path, "Ass", "ass_core.ass")
 
 # Extract infos from ass file
-io = Ass(path_ass)
+io = Ass(path_ass, vertical_kanji=True)
 meta, styles, lines = io.get_data()
 
 # Config
