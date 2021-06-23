@@ -386,7 +386,7 @@ class Ass:
             Additionally, ``line`` fields will be re-calculated based on the re-positioned ``line.chars``.
 
     Attributes:
-        path_input (str): Path for input file (absolute).
+        path_input (str): Path for input file (absolute). If none create default from scratch like in aegisub Untitled.ass
         path_output (str): Path for output file (absolute).
         meta (:class:`Meta`): Contains informations about the ASS given.
         styles (list of :class:`Style`): Contains all the styles in the ASS given.
@@ -396,11 +396,72 @@ class Ass:
     Example:
         ..  code-block:: python3
 
-            io = Ass("in.ass")
+            io = Ass ("in.ass")
             meta, styles, lines = io.get_data()
     """
 
-    def __init__(
+    def __init__( self,
+        path_input: str = "",
+        path_output: str = "Output.ass",
+        keep_original: bool = True,
+        extended: bool = True,
+        vertical_kanji: bool = False,):
+        # Starting to take process time
+            self.__saved = False
+            self.__plines = 0
+            self.__ptime = time.time()
+            self.meta, self.styles, self.lines = Meta(), {}, []
+
+            #if(path_input != ""):
+            #    print("Warning path input is ignored, please use input() or load()")
+            #self.input(path_input)
+
+            self.__output = []
+            self.__output_extradata = []
+
+            self.load(path_input, path_output, True, True, False)
+     
+
+    def input(self, path_input)   :
+        """
+           Allow to set the input file
+           Args:
+             path_input (str): Path for the input file (either relative to your .py file or absolute).
+         """
+        if(path_input == ""):
+                #Use aesisub default template
+                path_input=os.path.join(os.path.dirname(os.path.abspath(__file__)),"Untitled.ass")
+        else:
+                # Getting absolute sub file path
+                dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
+                if not os.path.isabs(path_input):
+                    path_input = os.path.join(dirname, path_input)
+
+                # Checking sub file validity (does it exists?)
+                if not os.path.isfile(path_input):
+                    raise FileNotFoundError(
+                        "Invalid path for the Subtitle file: %s" % path_input
+                    )
+            
+        self.path_input = path_input
+  
+    def output(self, path_output)   :
+        """
+             Allow to set the output file
+             Args:
+                     path_output (str): Path for the output file (either relative to your .py file or absolute)
+         """
+        # Getting absolute sub file path
+        dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
+        # Getting absolute output file path
+        if path_output == "Output.ass":
+            path_output = os.path.join(dirname, path_output)
+        elif not os.path.isabs(path_output):
+            path_output = os.path.join(dirname, path_output)
+
+        self.path_output = path_output
+    
+    def load(
         self,
         path_input: str = "",
         path_output: str = "Output.ass",
@@ -408,31 +469,42 @@ class Ass:
         extended: bool = True,
         vertical_kanji: bool = False,
     ):
+        """
+             Load an input file using its path
+        Args:
+            path_input (str): Path for the input file (either relative to your .py file or absolute).
+            path_output (str): Path for the output file (either relative to your .py file or absolute) (DEFAULT: "Output.ass").
+            keep_original (bool): If True, you will find all the lines of the input file commented before the new lines generated.
+            extended (bool): Calculate more informations from lines (usually you will not have to touch this).
+            vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically.
+                Additionally, ``line`` fields will be re-calculated based on the re-positioned ``line.chars``.
+
+        Attributes:
+            path_input (str): Path for input file (absolute). If none create default from scratch like in aegisub Untitled.ass
+            path_output (str): Path for output file (absolute).
+            meta (:class:`Meta`): Contains informations about the ASS given.
+            styles (list of :class:`Style`): Contains all the styles in the ASS given.
+            lines (list of :class:`Line`): Contains all the lines (events) in the ASS given.
+
+        .. _example:
+        Example:
+            ..  code-block:: python3
+
+                io = Ass ("in.ass")
+                meta, styles, lines = io.get_data()
+        """
+
         # Starting to take process time
         self.__saved = False
         self.__plines = 0
         self.__ptime = time.time()
 
         self.meta, self.styles, self.lines = Meta(), {}, []
-        # Getting absolute sub file path
-        dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
-        if not os.path.isabs(path_input):
-            path_input = os.path.join(dirname, path_input)
 
-        # Checking sub file validity (does it exists?)
-        if not os.path.isfile(path_input):
-            raise FileNotFoundError(
-                "Invalid path for the Subtitle file: %s" % path_input
-            )
+        self.input(path_input)
 
-        # Getting absolute output file path
-        if path_output == "Output.ass":
-            path_output = os.path.join(dirname, path_output)
-        elif not os.path.isabs(path_output):
-            path_output = os.path.join(dirname, path_output)
+        self.output(path_input)
 
-        self.path_input = path_input
-        self.path_output = path_output
         self.__output = []
         self.__output_extradata = []
 
@@ -584,7 +656,18 @@ class Ass:
         # Adding informations to lines and meta?
         if not extended:
             return None
+        else:
+            return self.add_pyonfx_extension()
 
+    def add_pyonfx_extension(self):
+        """
+        Calculate more informations from lines ( this affects the lines only if play_res_x and play_res_y are provided in the Script info section).
+        Args: None
+        return None
+        """
+        #security check if no video provided, abort calculations
+        if (not hasattr(self.meta,"play_res_x") or not hasattr(self.meta,"play_res_y")):
+            return None
         lines_by_styles = {}
         # Let the fun begin (Pyon!)
         for li, line in enumerate(self.lines):
@@ -1123,8 +1206,8 @@ class Ass:
     def get_data(self) -> Tuple[Meta, Style, List[Line]]:
         """Utility function to retrieve easily meta styles and lines.
 
-        Returns:
-            :attr:`meta`, :attr:`styles` and :attr:`lines`
+            Returns:
+                :attr:`meta`, :attr:`styles` and :attr:`lines`
         """
         return self.meta, self.styles, self.lines
 
