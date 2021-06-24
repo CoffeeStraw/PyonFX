@@ -21,9 +21,24 @@ https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html
 """
 from pyonfx import *
 
-io = Ass()
-meta, styles, lines = io.get_data()
+io = Ass() #With no args and no load after...
 
+#...io.path_input will be set so...
+stream = open(io.path_input, "r", encoding="utf-8-sig")
+content=stream.read()
+stream.close()
+#....we will have default Aegisub  Untitled.ass content file
+print(content)
+
+print("▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀")
+#Let's have some fun, content end matches with first line sub as no CR so..
+content=content+"PyonFX reloaded rocks!"
+print(content)
+io.load(content)
+
+print("▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀")
+
+meta, styles, lines = io.get_data(
 print(meta)
 print("▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀")
 print(styles)

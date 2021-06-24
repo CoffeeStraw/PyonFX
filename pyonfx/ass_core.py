@@ -419,8 +419,7 @@ class Ass:
             self.__output = []
             self.__output_extradata = []
 
-            self.load(path_input, path_output, True, True, False)
-     
+            self.load(path_input, path_output,  keep_original, extended, vertical_kanji)
 
     def input(self, path_input)   :
         """
@@ -431,20 +430,39 @@ class Ass:
         if(path_input == ""):
                 #Use aesisub default template
                 path_input=os.path.join(os.path.dirname(os.path.abspath(__file__)),"Untitled.ass")
+        elif self.validate(path_input):
+                #path input is an ass valid content
+                 pass
         else:
                 # Getting absolute sub file path
                 dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
-                if not os.path.isabs(path_input):
-                    path_input = os.path.join(dirname, path_input)
 
-                # Checking sub file validity (does it exists?)
-                if not os.path.isfile(path_input):
+                if(re.search("\.(ass|ssa|jass|jsos)$",path_input)):
+                    if not os.path.isabs(path_input):
+                        path_input = os.path.join(dirname, path_input)
+
+                    # Checking sub file validity (does it exists?)
+                    if not os.path.isfile(path_input):
+                        raise FileNotFoundError(
+                            "Invalid path for the Subtitle file: %s" % path_input
+                        )
+                else:
                     raise FileNotFoundError(
-                        "Invalid path for the Subtitle file: %s" % path_input
+                        "Invalid input for the Subtitle file"
                     )
-            
         self.path_input = path_input
-  
+
+    def validate(self,content):
+        """
+             Minimal validation check if the content is an ass file
+             Args:
+                     content (str): the content to check
+            :Return:
+                    True if valid, else False
+         """
+        section_pattern = re.compile(r"^\[Script Info\]")
+        return section_pattern.match(content)
+
     def output(self, path_output)   :
         """
              Allow to set the output file
@@ -454,7 +472,7 @@ class Ass:
         # Getting absolute sub file path
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
         # Getting absolute output file path
-        if path_output == "Output.ass":
+        if path_output == "Output.ass" or path_output == "Untitled.ass":
             path_output = os.path.join(dirname, path_output)
         elif not os.path.isabs(path_output):
             path_output = os.path.join(dirname, path_output)
@@ -492,8 +510,7 @@ class Ass:
 
                 io = Ass ("in.ass")
                 meta, styles, lines = io.get_data()
-        """
-
+         """
         # Starting to take process time
         self.__saved = False
         self.__plines = 0
@@ -501,7 +518,15 @@ class Ass:
 
         self.meta, self.styles, self.lines = Meta(), {}, []
 
-        self.input(path_input)
+        content=""
+        if(self.validate(path_input)):
+            # input is a content
+            content = path_input
+            self.path_input = "Untitled.ass"
+        else:
+            # input is a path file
+            self.input(path_input)
+            path_input =self.path_input
 
         self.output(path_input)
 
@@ -510,7 +535,20 @@ class Ass:
 
         section = ""
         li = 0
-        for line in open(self.path_input, "r", encoding="utf-8-sig"):
+
+        #Get the stream of content or file content
+        if(self.validate(content)):
+            from io import StringIO
+            stream = StringIO(content)
+        else:
+            stream = open(path_input, "r", encoding="utf-8-sig")
+            if (not self.validate(stream.read())):
+                raise FileNotFoundError(
+                    "Unsupported or broken subtitle file: %s" % path_input
+                )
+            #previous read set the cursor at the end, put it back at the start
+            stream.seek(0,0)
+        for line in stream:
             # Getting section
             section_pattern = re.compile(r"^\[([^\]]*)")
             if section_pattern.match(line):

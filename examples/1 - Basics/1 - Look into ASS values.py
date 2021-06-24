@@ -21,7 +21,7 @@ https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html
 """
 from pyonfx import *
 
-io = Ass("in.ass")
+io = Ass("in.ass") #equivalent to  io = Ass(); io.load("in.ass")
 meta, styles, lines = io.get_data()
 
 print(meta)
