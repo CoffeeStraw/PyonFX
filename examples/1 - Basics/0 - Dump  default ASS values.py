@@ -29,7 +29,6 @@ content=stream.read()
 stream.close()
 #....we will have default Aegisub  Untitled.ass content file
 print(content)
-
 print("▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀")
 #Let's have some fun, content end matches with first line sub as no CR so..
 content=content+"PyonFX reloaded rocks!"
@@ -38,7 +37,7 @@ io.load(content)
 
 print("▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀")
 
-meta, styles, lines = io.get_data(
+meta, styles, lines = io.get_data()
 print(meta)
 print("▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀")
 print(styles)
