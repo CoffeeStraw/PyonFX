@@ -184,7 +184,7 @@ class Shape:
             while i < n:
                 try:
                     # Applying transformation
-                    x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i + 1]))
+                    x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i + 1]), None)
                 except TypeError:
                     # Values weren't returned, so we don't need to modify them
                     i += 2
@@ -296,7 +296,7 @@ class Shape:
             y = 0
 
         # Update shape
-        self.map(lambda cx, cy: (cx + x, cy + y))
+        self.map(lambda cx, cy, typ: (cx + x, cy + y))
         return self
 
     def flatten(self, tolerance: float = 1.0) -> Shape:
@@ -845,12 +845,12 @@ class Shape:
         # Build shape from template
         shape = Shape(
             "m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30"
-        ).map(lambda x, y: (x * mult, y * mult))
+        ).map(lambda x, y, typ: (x * mult, y * mult))
 
         # Shift mid point of heart vertically
         count = 0
 
-        def shift_mid_point(x, y):
+        def shift_mid_point(x: float, y: float, _: Any) -> Tuple[float, float]:
             nonlocal count
             count += 1
 
