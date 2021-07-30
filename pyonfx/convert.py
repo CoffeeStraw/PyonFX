@@ -28,8 +28,12 @@ if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
     from .shape import Shape
 
-# A simple NamedTuple to represent pixels
-Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", int)])
+
+class Pixel(NamedTuple):
+    """A simple NamedTuple to represent pixels"""
+    x: float
+    y: float
+    alpha: int
 
 
 class ColorModel(Enum):
