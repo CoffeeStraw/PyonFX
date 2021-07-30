@@ -138,6 +138,10 @@ class Char:
         postspace (int): Char free space after text.
         width (float): Char text width.
         height (float): Char text height.
+        ascent (float): Line font ascent (*).
+        descent (float): Line font descent (*).
+        internal_leading (float): Line font internal lead (*).
+        external_leading (float): Line font external lead (*).
         x (float): Char text position horizontal (depends on alignment).
         y (float): Char text position vertical (depends on alignment).
         left (float): Char text position left.
@@ -162,6 +166,10 @@ class Char:
     postspace: int
     width: float
     height: float
+    ascent: float
+    descent: float
+    internal_leading: float
+    external_leading: float
     x: float
     y: float
     left: float
@@ -195,6 +203,10 @@ class Syllable:
         postspace (int): Syllable free space after text.
         width (float): Syllable text width.
         height (float): Syllable text height.
+        ascent (float): Line font ascent (*).
+        descent (float): Line font descent (*).
+        internal_leading (float): Line font internal lead (*).
+        external_leading (float): Line font external lead (*).
         x (float): Syllable text position horizontal (depends on alignment).
         y (float): Syllable text position vertical (depends on alignment).
         left (float): Syllable text position left.
@@ -218,6 +230,10 @@ class Syllable:
     postspace: int
     width: float
     height: float
+    ascent: float
+    descent: float
+    internal_leading: float
+    external_leading: float
     x: float
     y: float
     left: float
@@ -248,6 +264,10 @@ class Word:
         postspace (int): Word free space after text.
         width (float): Word text width.
         height (float): Word text height.
+        ascent (float): Line font ascent (*).
+        descent (float): Line font descent (*).
+        internal_leading (float): Line font internal lead (*).
+        external_leading (float): Line font external lead (*).
         x (float): Word text position horizontal (depends on alignment).
         y (float): Word text position vertical (depends on alignment).
         left (float): Word text position left.
@@ -268,6 +288,10 @@ class Word:
     postspace: int
     width: float
     height: float
+    ascent: float
+    descent: float
+    internal_leading: float
+    external_leading: float
     x: float
     y: float
     left: float
