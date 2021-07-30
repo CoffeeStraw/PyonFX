@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 import math
-from typing import Callable, Optional, List, Tuple, Union
+from typing import Any, Callable, Optional, Tuple, Union
 from pyquaternion import Quaternion
 from inspect import signature
 
@@ -39,7 +39,7 @@ class Shape:
             )
         self.drawing_cmds = drawing_cmds
 
-    def __repr__(self):
+    def __str__(self):
         # We return drawing commands as a string rapresentation of the object
         return self.drawing_cmds
 
