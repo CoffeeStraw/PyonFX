@@ -912,8 +912,8 @@ class Shape:
         # Return result centered
         return shape.move()
 
-    @staticmethod
-    def star(edges: int, inner_size: float, outer_size: float) -> Shape:
+    @classmethod
+    def star(cls, edges: int, inner_size: float, outer_size: float) -> Shape:
         """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
@@ -926,10 +926,10 @@ class Shape:
         Returns:
             A shape object as a string representing a star.
         """
-        return Shape.__glance_or_star(edges, inner_size, outer_size, "l")
+        return cls.__glance_or_star(edges, inner_size, outer_size, "l")
 
-    @staticmethod
-    def glance(edges: int, inner_size: float, outer_size: float) -> Shape:
+    @classmethod
+    def glance(cls, edges: int, inner_size: float, outer_size: float) -> Shape:
         """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
@@ -942,10 +942,10 @@ class Shape:
         Returns:
             A shape object as a string representing a glance.
         """
-        return Shape.__glance_or_star(edges, inner_size, outer_size, "b")
+        return cls.__glance_or_star(edges, inner_size, outer_size, "b")
 
-    @staticmethod
-    def rectangle(w: float = 1.0, h: float = 1.0) -> Shape:
+    @classmethod
+    def rectangle(cls, w: float = 1.0, h: float = 1.0) -> Shape:
         """Returns a shape object of a rectangle with given width and height, centered around (0,0).
 
         **Tips:** *A rectangle with width=1 and height=1 is a pixel.*
@@ -958,13 +958,13 @@ class Shape:
             A shape object representing an rectangle.
         """
         try:
-            f = Shape.format_value
+            f = cls.format_value
             return Shape("m 0 0 l %s 0 %s %s 0 %s 0 0" % (f(w), f(w), f(h), f(h)))
         except TypeError:
             raise TypeError("Number(s) expected")
 
-    @staticmethod
-    def triangle(size: float) -> Shape:
+    @classmethod
+    def triangle(cls, size: float) -> Shape:
         """Returns a shape object of an equilateral triangle with given side length, centered around (0,0).
 
         Parameters:
@@ -979,7 +979,7 @@ class Shape:
         except TypeError:
             raise TypeError("Number expected")
 
-        f = Shape.format_value
+        f = cls.format_value
         return Shape(
             "m %s %s l %s %s 0 %s %s %s"
             % (
