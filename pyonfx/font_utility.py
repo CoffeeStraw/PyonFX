@@ -93,7 +93,7 @@ class Font:
             win32gui.SelectObject(self.dc, self.pycfont.GetSafeHandle())
             # Calculate metrics
             self.metrics = win32gui.GetTextMetrics(self.dc)
-        elif sys.platform == "linux" or sys.platform == "darwin":
+        elif sys.platform in {"linux", "darwin"}:
             surface = cairo.ImageSurface(cairo.Format.A8, 1, 1)
 
             self.context = cairo.Context(surface)
@@ -140,7 +140,7 @@ class Font:
                 self.metrics["InternalLeading"] * const,
                 self.metrics["ExternalLeading"] * const,
             )
-        elif sys.platform == "linux" or sys.platform == "darwin":
+        elif sys.platform in {"linux", "darwin"}:
             const = self.downscale * self.yscale * self.fonthack_scale / PANGO_SCALE
             return (
                 # 'height': (self.metrics.get_ascent() + self.metrics.get_descent()) * const,
@@ -160,7 +160,7 @@ class Font:
                 (cx * self.downscale + self.hspace * (len(text) - 1)) * self.xscale,
                 cy * self.downscale * self.yscale,
             )
-        elif sys.platform == "linux" or sys.platform == "darwin":
+        elif sys.platform in {"linux", "darwin"}:
             if not text:
                 return 0.0, 0.0
 
@@ -271,7 +271,7 @@ class Font:
             win32gui.AbortPath(self.dc)
 
             return Shape(" ".join(shape))
-        elif sys.platform == "linux" or sys.platform == "darwin":
+        elif sys.platform in {"linux", "darwin"}:
             # Defining variables
             shape, last_type = [], None
 
