@@ -1237,7 +1237,8 @@ class Ass:
         self, video_path: str = "", video_start: str = "", full_screen: bool = False
     ) -> int:
         """Open the output (specified in self.path_output) in softsub with the MPV player.
-        To utilize this function, MPV player is required. Additionally if you're on Windows, MPV must be in the PATH (check https://pyonfx.readthedocs.io/en/latest/quick%20start.html#installation-extra-step).
+        To utilize this function, MPV player is required. Additionally if you're on Windows,
+        MPV must be in the PATH (check https://pyonfx.readthedocs.io/en/latest/quick%20start.html#installation-extra-step).
 
         This is one of the fastest way to reproduce your output in a comfortable way.
 
