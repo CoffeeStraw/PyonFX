@@ -49,7 +49,7 @@ class Meta:
     audio: str
     video: str
 
-    def __repr__(self):
+    def __str__(self):
         return pretty_print(self)
 
 
@@ -114,7 +114,7 @@ class Style:
     margin_v: int
     encoding: int
 
-    def __repr__(self):
+    def __str__(self):
         return pretty_print(self)
 
 
@@ -171,7 +171,7 @@ class Char:
     middle: float
     bottom: float
 
-    def __repr__(self):
+    def __str__(self):
         return pretty_print(self)
 
 
@@ -227,7 +227,7 @@ class Syllable:
     middle: float
     bottom: float
 
-    def __repr__(self):
+    def __str__(self):
         return pretty_print(self)
 
 
@@ -277,7 +277,7 @@ class Word:
     middle: float
     bottom: float
 
-    def __repr__(self):
+    def __str__(self):
         return pretty_print(self)
 
 
@@ -359,7 +359,7 @@ class Line:
     syls: List[Syllable]
     chars: List[Char]
 
-    def __repr__(self):
+    def __str__(self):
         return pretty_print(self)
 
     def copy(self) -> Line:
