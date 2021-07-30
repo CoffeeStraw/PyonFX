@@ -22,7 +22,7 @@ import sys
 import time
 import copy
 import subprocess
-from typing import List, Tuple, Union, Optional
+from typing import Dict, List, Tuple, Union, Optional
 
 from .font_utility import Font
 from .convert import Convert
@@ -437,7 +437,9 @@ class Ass:
         self.__plines = 0
         self.__ptime = time.time()
 
-        self.meta, self.styles, self.lines = Meta(), {}, []
+        self.meta: Meta = Meta()
+        self.styles: Dict[str, Style] = {}
+        self.lines: List[Line] = []
         # Getting absolute sub file path
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
         if not os.path.isabs(path_input):
@@ -1144,7 +1146,7 @@ class Ass:
                     else lines_by_styles[style][li + 1].start_time - line.end_time
                 )
 
-    def get_data(self) -> Tuple[Meta, Style, List[Line]]:
+    def get_data(self) -> Tuple[Meta, Dict[str, Style], List[Line]]:
         """Utility function to retrieve easily meta styles and lines.
 
         Returns:
