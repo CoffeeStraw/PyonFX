@@ -33,8 +33,8 @@ class Utils:
 
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: List[Union[Line, Word, Syllable, Char]]
-    ) -> List[Union[Line, Word, Syllable, Char]]:
+        lines_words_syls_or_chars: Union[List[Line], List[Word], List[Syllable], List[Char]],
+    ) -> Union[List[Line], List[Word], List[Syllable], List[Char]]:
         """
         Helps to not check everytime for text containing only spaces or object's duration equals to zero.
 
@@ -45,10 +45,11 @@ class Utils:
             A list containing lines_chars_syls_or_words without objects with duration equals to zero or blank text (no text or only spaces).
         """
         out = []
-        for obj in lines_chars_syls_or_words:
+        for obj in lines_words_syls_or_chars:
             if obj.text.strip() and obj.duration > 0:
                 out.append(obj)
         return out
+        # return [obj for obj in lines_words_syls_or_chars if obj.text.strip() and obj.duration > 0]
 
     @staticmethod
     def clean_tags(text: str) -> str:
