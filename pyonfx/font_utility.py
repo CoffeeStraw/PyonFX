@@ -28,7 +28,7 @@ if sys.platform == "win32":
     import win32gui  # pylint: disable=import-error
     import win32ui  # pylint: disable=import-error
     import win32con  # pylint: disable=import-error
-elif sys.platform in ["linux", "darwin"] and not "sphinx" in sys.modules:
+elif sys.platform in ["linux", "darwin"] and "sphinx" not in sys.modules:
     import cairo  # pylint: disable=import-error
     import gi  # pylint: disable=import-error
 
