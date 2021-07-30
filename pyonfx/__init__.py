@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# flake8: noqa
 
 from .font_utility import Font
 from .ass_core import Ass, Meta, Style, Line, Word, Syllable, Char
