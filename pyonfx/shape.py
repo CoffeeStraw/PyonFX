@@ -158,7 +158,8 @@ class Shape:
         **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
 
         Parameters:
-            fun (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
+            fun (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed.
+            The first two parameters represent the x and y coordinates of each point. The third optional one represents the type of each point (move, line, bezier...).
 
         Returns:
             A pointer to the current object.
@@ -525,8 +526,12 @@ class Shape:
         **Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
 
         Parameters:
-            max_len (int or float): The max length that you want all the lines to be
-            tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
+            max_len (int or float):
+                The max length that you want all the lines to be
+
+            tolerance (float):
+                Angle in degree to define a bezier curve as flat. Currently not implemented.
+                (increasing it will boost performance during reproduction, but lower accuracy)
 
         Returns:
             A pointer to the current object.
