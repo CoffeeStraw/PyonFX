@@ -854,7 +854,7 @@ class Shape:
         # Shift mid point of heart vertically
         count = 0
 
-        def shift_mid_point(x: float, y: float, _: Any) -> Tuple[float, float]:
+        def shift_mid_point(x, y, _):
             nonlocal count
             count += 1
 
