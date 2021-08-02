@@ -530,8 +530,7 @@ class Shape:
                 The max length that you want all the lines to be
 
             tolerance (float):
-                Angle in degree to define a bezier curve as flat. Currently not implemented.
-                (increasing it will boost performance during reproduction, but lower accuracy)
+                Angle in degree to define a bezier curve as flat. (Increasing it will boost performance during reproduction, but lower accuracy)
 
         Returns:
             A pointer to the current object.
@@ -576,7 +575,7 @@ class Shape:
                 return f"{x1} {y1}", [x1, y1]
 
         # Getting all points and commands in a list
-        cmds_and_points = self.flatten().drawing_cmds.split()
+        cmds_and_points = self.flatten(tolerance).drawing_cmds.split()
         i = 0
         n = len(cmds_and_points)
 
