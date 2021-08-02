@@ -75,6 +75,14 @@ class Convert:
 
     @staticmethod
     def timems_to_assts(ms: int) -> str:
+        """Converts milliseconds to ASS timestamp.
+
+        Parameters:
+            ms (int): Milliseconds.
+
+        Returns:
+            str: ASS timestamp
+        """
         if ms >= 0:
             assts = "{:d}:{:02d}:{:02d}.{:02d}".format(
                 math.floor(ms / 3600000) % 10,
@@ -88,6 +96,14 @@ class Convert:
 
     @staticmethod
     def assts_to_timems(assts: str) -> int:
+        """Converts ASS timestamp to milliseconds.
+
+        Parameters:
+            ms (str): ASS timestamp.
+
+        Returns:
+            int: Milliseconds
+        """
         if re.match(r"^\d:\d+:\d+\.\d+$", assts):
             ms = int(assts[0]) * 3600000 + int(assts[2:4]) * 60000 \
                 + int(assts[5:7]) * 1000 + int(assts[8:10]) * 10
