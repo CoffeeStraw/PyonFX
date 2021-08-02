@@ -440,6 +440,7 @@ class Ass:
         self.meta: Meta = Meta()
         self.styles: Dict[str, Style] = {}
         self.lines: List[Line] = []
+
         # Getting absolute sub file path
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
         if not os.path.isabs(path_input):
