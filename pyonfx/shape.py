@@ -297,7 +297,7 @@ class Shape:
             y = 0
 
         # Update shape
-        self.map(lambda cx, cy, typ: (cx + x, cy + y))
+        self.map(lambda cx, cy, _: (cx + x, cy + y))
         return self
 
     def flatten(self, tolerance: float = 1.0) -> Shape:
