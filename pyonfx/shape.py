@@ -252,13 +252,13 @@ class Shape:
         """
 
         # Bounding data
-        x0: float = None
-        y0: float = None
-        x1: float = None
-        y1: float = None
+        x0: Optional[float] = None
+        y0: Optional[float] = None
+        x1: Optional[float] = None
+        y1: Optional[float] = None
 
         # Calculate minimal and maximal coordinates
-        def compute_edges(x, y):
+        def compute_edges(x, y, _):
             nonlocal x0, y0, x1, y1
             if x0 is not None:
                 x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
