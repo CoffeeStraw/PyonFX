@@ -44,12 +44,7 @@ class Utils:
         Returns:
             A list containing lines_chars_syls_or_words without objects with duration equals to zero or blank text (no text or only spaces).
         """
-        out = []
-        for obj in lines_words_syls_or_chars:
-            if obj.text.strip() and obj.duration > 0:
-                out.append(obj)
-        return out
-        # return [obj for obj in lines_words_syls_or_chars if obj.text.strip() and obj.duration > 0]
+        return [obj for obj in lines_words_syls_or_chars if obj.text.strip() and obj.duration > 0]
 
     @staticmethod
     def clean_tags(text: str) -> str:
