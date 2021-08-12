@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 # PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
 # Copyright (C) 2019 Antonio Strippoli (CoffeeStraw/YellowFlash)
+# Copyright (C) 2021 SoSie-js (sos-productions.com) 
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -419,18 +420,19 @@ class Ass:
             self.__output = []
             self.__output_extradata = []
 
-            self.load(path_input, path_output,  keep_original, extended, vertical_kanji)
+            self.parse_ass(path_input, path_output,  keep_original, extended, vertical_kanji)
 
-    def input(self, path_input)   :
+    def set_input(self, path_input)   :
         """
            Allow to set the input file
            Args:
              path_input (str): Path for the input file (either relative to your .py file or absolute).
          """
+        section_pattern = re.compile(r"^\[Script Info\]")
         if(path_input == ""):
                 #Use aesisub default template
                 path_input=os.path.join(os.path.dirname(os.path.abspath(__file__)),"Untitled.ass")
-        elif self.validate(path_input):
+        elif section_pattern.match(path_input):
                 #path input is an ass valid content
                  pass
         else:
@@ -452,18 +454,7 @@ class Ass:
                     )
         self.path_input = path_input
 
-    def validate(self,content):
-        """
-             Minimal validation check if the content is an ass file
-             Args:
-                     content (str): the content to check
-            :Return:
-                    True if valid, else False
-         """
-        section_pattern = re.compile(r"^\[Script Info\]")
-        return section_pattern.match(content)
-
-    def output(self, path_output)   :
+    def set_output(self, path_output)   :
         """
              Allow to set the output file
              Args:
@@ -479,7 +470,7 @@ class Ass:
 
         self.path_output = path_output
     
-    def load(
+    def parse_ass(
         self,
         path_input: str = "",
         path_output: str = "Output.ass",
@@ -488,7 +479,7 @@ class Ass:
         vertical_kanji: bool = False,
     ):
         """
-             Load an input file using its path
+             Parse an input ASS file using its path
         Args:
             path_input (str): Path for the input file (either relative to your .py file or absolute).
             path_output (str): Path for the output file (either relative to your .py file or absolute) (DEFAULT: "Output.ass").
@@ -519,16 +510,19 @@ class Ass:
         self.meta, self.styles, self.lines = Meta(), {}, []
 
         content=""
-        if(self.validate(path_input)):
+        section_pattern = re.compile(r"^\[Script Info\]")
+        if(section_pattern.match(path_input)):
             # input is a content
             content = path_input
-            self.path_input = "Untitled.ass"
+        elif(path_input ==""):
+            dirname = os.path.dirname(__file__)
+            path_input  = os.path.join(dirname, "Untitled.ass")
         else:
             # input is a path file
-            self.input(path_input)
+            self.set_input(path_input)
             path_input =self.path_input
 
-        self.output(path_input)
+        self.set_output(path_output)
 
         self.__output = []
         self.__output_extradata = []
@@ -537,14 +531,15 @@ class Ass:
         li = 0
 
         #Get the stream of content or file content
-        if(self.validate(content)):
+        if(content):
             from io import StringIO
             stream = StringIO(content)
         else:
-            stream = open(path_input, "r", encoding="utf-8-sig")
-            if (not self.validate(stream.read())):
+            try:
+                stream = open(path_input, "r", encoding="utf-8-sig")
+            except FileNotFoundError:
                 raise FileNotFoundError(
-                    "Unsupported or broken subtitle file: %s" % path_input
+                    "Unsupported or broken subtitle file: '%s'" % path_input
                 )
             #previous read set the cursor at the end, put it back at the start
             stream.seek(0,0)
@@ -1248,6 +1243,24 @@ class Ass:
                 :attr:`meta`, :attr:`styles` and :attr:`lines`
         """
         return self.meta, self.styles, self.lines
+        
+    def del_line(self,no):
+        """Delete a line of the output list (which is private) """
+        nb=-1
+        
+        # Retrieve the index of the first line, this is ugly having to do so
+        #as is if we could'nt rectify self.lines instead and generate self.__output on save()
+        # in lua this is what has been done when you get the aegisub object
+        for li, line in enumerate(self.__output):
+            if  re.match(r"\n?(Dialogue|Comment): (.+?)$", line):
+                nb=li-1
+                break;
+    
+        if (nb >=0) and isinstance(self.__output[no+nb], str):
+            del self.__output[no+nb]
+            self.__plines -= 1
+        else:
+            raise TypeError("No Line %d exists"  % no)
 
     def write_line(self, line: Line) -> Optional[TypeError]:
         """Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
