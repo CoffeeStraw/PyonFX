@@ -335,7 +335,7 @@ class Convert:
             >>> (30, 28, 94)
             >>> (30.000000000000014, 28.451882845188294, 93.72549019607843)
         """
-        return cls.color(color_ass, ColorModel.ASS, ColorModel.HSV, round_output)
+        return Convert.color(color_ass, ColorModel.ASS, ColorModel.HSV, round_output)
 
     @staticmethod
     def color_rgb_to_ass(
