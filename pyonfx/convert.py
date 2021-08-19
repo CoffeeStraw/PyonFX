@@ -109,10 +109,10 @@ class Convert:
         """Converts ASS timestamp to milliseconds.
 
         Parameters:
-            ms (str): ASS timestamp.
+            assts (str): ASS timestamp.
 
         Returns:
-            int: Milliseconds
+            int: Milliseconds.
         """
         if re.match(r"^\d:\d+:\d+\.\d+$", assts):
             ms = int(assts[0]) * 3600000 + int(assts[2:4]) * 60000 \
