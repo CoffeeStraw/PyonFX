@@ -76,20 +76,10 @@ class Convert:
         """
         # Milliseconds?
         if type(ass_ms) is int and ass_ms >= 0:
-            return "{:d}:{:02d}:{:02d}.{:02d}".format(
-                math.floor(ass_ms / 3600000) % 10,
-                math.floor(ass_ms % 3600000 / 60000),
-                math.floor(ass_ms % 60000 / 1000),
-                math.floor(ass_ms % 1000 / 10),
-            )
+            return Convert.timems_to_assts(ass_ms)
         # ASS timestamp?
         elif type(ass_ms) is str and re.match(r"^\d:\d+:\d+\.\d+$", ass_ms):
-            return (
-                int(ass_ms[0]) * 3600000
-                + int(ass_ms[2:4]) * 60000
-                + int(ass_ms[5:7]) * 1000
-                + int(ass_ms[8:10]) * 10
-            )
+            return Convert.assts_to_timems(ass_ms)
         else:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
