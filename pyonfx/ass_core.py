@@ -138,10 +138,10 @@ class Char:
         postspace (int): Char free space after text.
         width (float): Char text width.
         height (float): Char text height.
-        ascent (float): Line font ascent (*).
-        descent (float): Line font descent (*).
-        internal_leading (float): Line font internal lead (*).
-        external_leading (float): Line font external lead (*).
+        ascent (float): Font ascent (*).
+        descent (float): Font descent (*).
+        internal_leading (float): Font internal lead (*).
+        external_leading (float): Font external lead (*).
         x (float): Char text position horizontal (depends on alignment).
         y (float): Char text position vertical (depends on alignment).
         left (float): Char text position left.
