@@ -52,8 +52,8 @@ class Convert:
     the user to convert everything needed to the ASS format.
     """
 
-    @classmethod
-    def time(cls, ass_ms: Union[int, str]) -> Union[str, int]:
+    @staticmethod
+    def time(ass_ms: Union[int, str]) -> Union[str, int]:
         """Converts between milliseconds and ASS timestamp.
 
         You can probably ignore that function, you will not make use of it for KFX or typesetting generation.
@@ -66,10 +66,10 @@ class Convert:
         """
         # Milliseconds?
         if isinstance(ass_ms, int) and ass_ms >= 0:
-            return cls.timems_to_assts(ass_ms)
+            return Convert.timems_to_assts(ass_ms)
         # ASS timestamp?
         elif isinstance(ass_ms, str) and re.match(r"^\d:\d+:\d+\.\d+$", ass_ms):
-            return cls.assts_to_timems(ass_ms)
+            return Convert.assts_to_timems(ass_ms)
         else:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
@@ -275,9 +275,8 @@ class Convert:
         except NameError as e:
             raise ValueError(f"Unsupported input_format ('{input_format}').") from e
 
-    @classmethod
+    @staticmethod
     def color_ass_to_rgb(
-        cls,
         color_ass: str, as_str: bool = False
     ) -> Union[str, Tuple[int, int, int]]:
         """Converts from ASS color string to corresponding RGB color.
@@ -299,13 +298,12 @@ class Convert:
             >>> (239, 205, 171)
             >>> "#EFCDAB"
         """
-        return cls.color(
+        return Convert.color(
             color_ass, ColorModel.ASS, ColorModel.RGB_STR if as_str else ColorModel.RGB
         )
 
-    @classmethod
+    @staticmethod
     def color_ass_to_hsv(
-        cls,
         color_ass: str, round_output: bool = True
     ) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
         """Converts from ASS color string to corresponding HSV color.
@@ -329,9 +327,8 @@ class Convert:
         """
         return cls.color(color_ass, ColorModel.ASS, ColorModel.HSV, round_output)
 
-    @classmethod
+    @staticmethod
     def color_rgb_to_ass(
-        cls,
         color_rgb: Union[
             str, Tuple[float, float, float]
         ]
@@ -351,15 +348,14 @@ class Convert:
 
             >>> "&HEFCDAB&"
         """
-        return cls.color(
+        return Convert.color(
             color_rgb,
             ColorModel.RGB_STR if type(color_rgb) is str else ColorModel.RGB,
             ColorModel.ASS,
         )
 
-    @classmethod
+    @staticmethod
     def color_rgb_to_hsv(
-        cls,
         color_rgb: Union[
             str, Tuple[float, float, float]
         ],
@@ -384,16 +380,15 @@ class Convert:
             >>> (210, 28, 94)
             >>> (210.0, 28.451882845188294, 93.72549019607843)
         """
-        return cls.color(
+        return Convert.color(
             color_rgb,
             ColorModel.RGB_STR if type(color_rgb) is str else ColorModel.RGB,
             ColorModel.HSV,
             round_output,
         )
 
-    @classmethod
+    @staticmethod
     def color_hsv_to_ass(
-        cls,
         color_hsv: Tuple[float, float, float]
     ) -> str:
         """Converts from HSV color string to corresponding ASS color.
@@ -411,11 +406,10 @@ class Convert:
 
             >>> "&H00FF55&"
         """
-        return cls.color(color_hsv, ColorModel.HSV, ColorModel.ASS)
+        return Convert.color(color_hsv, ColorModel.HSV, ColorModel.ASS)
 
-    @classmethod
+    @staticmethod
     def color_hsv_to_rgb(
-        cls,
         color_hsv: Tuple[float, float, float],
         as_str: bool = False,
         round_output: bool = True,
@@ -443,7 +437,7 @@ class Convert:
             >>> "#55FF00"
             >>> (84.99999999999999, 255.0, 0.0)
         """
-        return cls.color(
+        return Convert.color(
             color_hsv,
             ColorModel.HSV,
             ColorModel.RGB_STR if as_str else ColorModel.RGB,
