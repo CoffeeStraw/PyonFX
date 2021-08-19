@@ -24,7 +24,7 @@ from typing import List, TypeVar, Union
 from .ass_core import Char, Line, Syllable, Word
 from .convert import ColorModel, Convert
 
-AssTextT = TypeVar('AssTextT', bound=Union[Line, Word, Syllable, Char])
+AssTextT = TypeVar("AssTextT", bound=Union[Line, Word, Syllable, Char])
 
 
 class Utils:
@@ -43,7 +43,11 @@ class Utils:
         Returns:
             A list containing lines_chars_syls_or_words without objects with duration equals to zero or blank text (no text or only spaces).
         """
-        return [obj for obj in lines_words_syls_or_chars if obj.text.strip() and obj.duration > 0]
+        return [
+            obj
+            for obj in lines_words_syls_or_chars
+            if obj.text.strip() and obj.duration > 0
+        ]
 
     @staticmethod
     def clean_tags(text: str) -> str:

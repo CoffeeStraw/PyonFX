@@ -20,7 +20,16 @@ import re
 import math
 import colorsys
 from enum import Enum
-from typing import Any, List, NamedTuple, NoReturn, Optional, Tuple, Union, TYPE_CHECKING
+from typing import (
+    Any,
+    List,
+    NamedTuple,
+    NoReturn,
+    Optional,
+    Tuple,
+    Union,
+    TYPE_CHECKING,
+)
 
 from .font_utility import Font
 
@@ -31,6 +40,7 @@ if TYPE_CHECKING:
 
 class Pixel(NamedTuple):
     """A simple NamedTuple to represent pixels"""
+
     x: float
     y: float
     alpha: int
@@ -101,7 +111,7 @@ class Convert:
                 math.floor(ms % 1000 / 10),
             )
         else:
-            raise ValueError('milliseconds must be >= 0')
+            raise ValueError("milliseconds must be >= 0")
         return assts
 
     @staticmethod
@@ -115,12 +125,15 @@ class Convert:
             int: Milliseconds.
         """
         if re.match(r"^\d:\d+:\d+\.\d+$", assts):
-            ms = int(assts[0]) * 3600000 + int(assts[2:4]) * 60000 \
-                + int(assts[5:7]) * 1000 + int(assts[8:10]) * 10
+            ms = (
+                int(assts[0]) * 3600000
+                + int(assts[2:4]) * 60000
+                + int(assts[5:7]) * 1000
+                + int(assts[8:10]) * 10
+            )
         else:
-            raise ValueError('ASS timestamp expected')
+            raise ValueError("ASS timestamp expected")
         return ms
-
 
     @staticmethod
     def alpha_ass_to_dec(alpha_ass: str) -> int:
@@ -468,7 +481,8 @@ class Convert:
     @staticmethod
     def text_to_shape(
         obj: Union[Line, Word, Syllable, Char],
-        fscx: Optional[float] = None, fscy: Optional[float] = None
+        fscx: Optional[float] = None,
+        fscy: Optional[float] = None,
     ) -> Shape:
         """Converts text with given style information to an ASS shape.
 

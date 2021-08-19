@@ -151,7 +151,11 @@ class Shape:
         return False
 
     def map(
-        self, fun: Union[Callable[[float, float], Tuple[float, float]], Callable[[float, float, str], Tuple[float, float]]]
+        self,
+        fun: Union[
+            Callable[[float, float], Tuple[float, float]],
+            Callable[[float, float, str], Tuple[float, float]],
+        ],
     ) -> Shape:
         """Sends every point of a shape through given transformation function to change them.
 
