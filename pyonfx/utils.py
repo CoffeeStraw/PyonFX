@@ -16,14 +16,15 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
+
 import math
 import re
-from typing import List, Union, TYPE_CHECKING
+from typing import List, TypeVar, Union
 
-from .convert import Convert, ColorModel
+from .ass_core import Char, Line, Syllable, Word
+from .convert import ColorModel, Convert
 
-if TYPE_CHECKING:
-    from .ass_core import Line, Word, Syllable, Char
+AssTextT = TypeVar('AssTextT', bound=Union[Line, Word, Syllable, Char])
 
 
 class Utils:
@@ -32,9 +33,7 @@ class Utils:
     """
 
     @staticmethod
-    def all_non_empty(
-        lines_words_syls_or_chars: Union[List[Line], List[Word], List[Syllable], List[Char]],
-    ) -> Union[List[Line], List[Word], List[Syllable], List[Char]]:
+    def all_non_empty(lines_words_syls_or_chars: List[AssTextT]) -> List[AssTextT]:
         """
         Helps to not check everytime for text containing only spaces or object's duration equals to zero.
 
