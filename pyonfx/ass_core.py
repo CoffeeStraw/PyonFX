@@ -203,10 +203,10 @@ class Syllable:
         postspace (int): Syllable free space after text.
         width (float): Syllable text width.
         height (float): Syllable text height.
-        ascent (float): Line font ascent (*).
-        descent (float): Line font descent (*).
-        internal_leading (float): Line font internal lead (*).
-        external_leading (float): Line font external lead (*).
+        ascent (float): Font ascent (*).
+        descent (float): Font descent (*).
+        internal_leading (float): Font internal lead (*).
+        external_leading (float): Font external lead (*).
         x (float): Syllable text position horizontal (depends on alignment).
         y (float): Syllable text position vertical (depends on alignment).
         left (float): Syllable text position left.
@@ -264,10 +264,10 @@ class Word:
         postspace (int): Word free space after text.
         width (float): Word text width.
         height (float): Word text height.
-        ascent (float): Line font ascent (*).
-        descent (float): Line font descent (*).
-        internal_leading (float): Line font internal lead (*).
-        external_leading (float): Line font external lead (*).
+        ascent (float): Font ascent (*).
+        descent (float): Font descent (*).
+        internal_leading (float): Font internal lead (*).
+        external_leading (float): Font external lead (*).
         x (float): Word text position horizontal (depends on alignment).
         y (float): Word text position vertical (depends on alignment).
         left (float): Word text position left.
@@ -331,10 +331,10 @@ class Line:
         text (str): Line stripped text (no tags).
         width (float): Line text width (*).
         height (float): Line text height (*).
-        ascent (float): Line font ascent (*).
-        descent (float): Line font descent (*).
-        internal_leading (float): Line font internal lead (*).
-        external_leading (float): Line font external lead (*).
+        ascent (float): Font ascent (*).
+        descent (float): Font descent (*).
+        internal_leading (float): Font internal lead (*).
+        external_leading (float): Font external lead (*).
         x (float): Line text position horizontal (depends on alignment) (*).
         y (float): Line text position vertical (depends on alignment) (*).
         left (float): Line text position left (*).
