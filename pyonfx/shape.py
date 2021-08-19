@@ -151,7 +151,7 @@ class Shape:
         return False
 
     def map(
-        self, fun: Callable[[float, float, Optional[str]], Tuple[float, float]]
+        self, fun: Union[Callable[[float, float], Tuple[float, float]], Callable[[float, float, str], Tuple[float, float]]]
     ) -> Shape:
         """Sends every point of a shape through given transformation function to change them.
 
@@ -185,7 +185,7 @@ class Shape:
             while i < n:
                 try:
                     # Applying transformation
-                    x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i + 1]), None)
+                    x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i + 1]))
                 except TypeError:
                     # Values weren't returned, so we don't need to modify them
                     i += 2
