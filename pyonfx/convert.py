@@ -549,7 +549,7 @@ class Convert:
         It is highly suggested to create a dedicated style for pixels,
         because you will write less tags for line in your pixels, which means less size for your .ass file.
 
-        | The style suggested is:
+        | The style suggested (named "p" in the example) is:
         | - **an=7 (very important!);**
         | - bord=0;
         | - shad=0;
@@ -567,15 +567,14 @@ class Convert:
         Examples:
             ..  code-block:: python3
 
-                line = lines[2].copy()
-                line.style = "p"
+                l.style = "p"
                 p_sh = Shape.rectangle()
-                for pixel in Convert.text_to_pixels(line):
-                    x, y = math.floor(line.left) + pixel['x'], math.floor(line.top) + pixel['y']
-                    alpha = "\\alpha" + Convert.color_alpha_to_ass(pixel['alpha']) if pixel['alpha'] != 255 else ""
+                for pixel in Convert.text_to_pixels(l):
+                    x, y = math.floor(l.left) + pixel.x, math.floor(l.top) + pixel.y
+                    alpha = "\\alpha" + Convert.alpha_dec_to_ass(pixel.alpha) if pixel.alpha != 0 else ""
 
-                    line.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, p_sh)
-                    io.write_line(line)
+                    l.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, p_sh)
+                    io.write_line(l)
         """
         shape = Convert.text_to_shape(obj).move(obj.left % 1, obj.top % 1)
         return Convert.shape_to_pixels(shape, supersampling)
@@ -588,7 +587,7 @@ class Convert:
         It is highly suggested to create a dedicated style for pixels,
         because you will write less tags for line in your pixels, which means less size for your .ass file.
 
-        | The style suggested is:
+        | The style suggested (named "p" in the example) is:
         | - **an=7 (very important!);**
         | - bord=0;
         | - shad=0;
@@ -606,16 +605,14 @@ class Convert:
         Examples:
             ..  code-block:: python3
 
-                line = lines[2].copy()
-                line.style = "p"
+                l.style = "p"
                 p_sh = Shape.rectangle()
                 for pixel in Convert.shape_to_pixels(Shape.heart(100)):
-                    # Random circle to pixel effect just to show
-                    x, y = math.floor(line.left) + pixel.x, math.floor(line.top) + pixel.y
-                    alpha = "\\alpha" + Convert.color_alpha_to_ass(pixel.alpha) if pixel.alpha != 255 else ""
+                    x, y = math.floor(l.left) + pixel.x, math.floor(l.top) + pixel.y
+                    alpha = "\\alpha" + Convert.alpha_dec_to_ass(pixel.alpha) if pixel.alpha != 0 else ""
 
-                    line.text = "{\\p1\\pos(%d,%d)%s\\fad(0,%d)}%s" % (x, y, alpha, l.dur/4, p_sh)
-                    io.write_line(line)
+                    l.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, p_sh)
+                    io.write_line(l)
         """
         # Scale values for supersampled rendering
         upscale = supersampling
@@ -743,14 +740,14 @@ class Convert:
                 for yy in range(0, upscale):
                     for xx in range(0, upscale):
                         if image[(y + yy) * width + (x + xx)]:
-                            opacity = opacity + 255
+                            opacity += 255
 
                 if opacity > 0:
                     pixels.append(
                         Pixel(
                             x=(x - shift_x) * downscale,
                             y=(y - shift_y) * downscale,
-                            alpha=round(opacity * downscale ** 2),
+                            alpha=255 - round(opacity * downscale ** 2),
                         )
                     )
 
