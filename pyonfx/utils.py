@@ -168,33 +168,38 @@ class FrameUtility:
         if start_time < 0 or end_time < 0 or fr <= 0 or end_time < start_time:
             raise ValueError("Positive values and/or end_time > start_time expected.")
 
+        self.start_time = self.current_time = start_time
+        self.end_time = end_time
+        self.fr = self.fr_time = fr
+
         # Calculating number of frames
         self.n = math.ceil((end_time - start_time) / fr)
 
-        # Defining fields
-        self.start_time = start_time
-        self.end_time = end_time
-        self.current_time = fr
-        self.fr = fr
-
     def __iter__(self):
-        # For loop for the first n-1 frames
+        # Compute values for the first n-1 frames
         for i in range(1, self.n):
             yield (
-                round(self.start_time, 2),
-                round(self.start_time + self.fr, 2),
+                round(self.current_time, 2),
+                round(self.current_time + self.fr, 2),
                 i,
                 self.n,
             )
-            self.start_time += self.fr
             self.current_time += self.fr
+            self.fr_time += self.fr
 
-        # Last frame, with end value clamped at end_time
-        yield (round(self.start_time, 2), round(self.end_time, 2), self.n, self.n)
+        # Compute values for the last frame, clamping the end_time of the frame at self.end_time
+        yield (round(self.current_time, 2), round(self.end_time, 2), self.n, self.n)
 
-        # Resetting to make this object usable again
-        self.start_time = self.start_time - self.fr * max(self.n - 1, 0)
-        self.current_time = self.fr
+        # Reset the object to make it usable again
+        self.reset()
+
+    def reset(self):
+        """
+        Resets the FrameUtility object to its starting values.
+        It is a necessary operation if you want to reuse the same object.
+        """
+        self.current_time = self.start_time
+        self.fr_time = self.fr
 
     def add(
         self,
@@ -230,12 +235,12 @@ class FrameUtility:
             >>> Frame 3/3: 80 - 105; fsc: 100
         """
 
-        if self.current_time < start_time:
+        if self.fr_time < start_time:
             return 0
-        elif self.current_time > end_time:
+        elif self.fr_time > end_time:
             return end_value
 
-        pstart = self.current_time - start_time
+        pstart = self.fr_time - start_time
         pend = end_time - start_time
         return Utils.interpolate(pstart / pend, 0, end_value, accelerator)
 
