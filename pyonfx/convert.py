@@ -61,10 +61,10 @@ class Convert:
         """        
 
         if timeType == "start" or timeType == "end":
-            return Convert.frame2ms(Convert.ms2frame(ms, fps, type), fps, type)
+            return Convert.frame2ms(Convert.ms2frame(ms, fps, timeType), fps, timeType)
 
         else:
-            raise TypeError("Expected type to be \"start\" or \"end\", got %s." % type)
+            raise TypeError("Expected type to be \"start\" or \"end\", got %s." % timeType)
 
 
     @staticmethod
