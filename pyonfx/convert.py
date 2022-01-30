@@ -47,20 +47,20 @@ class ColorModel(Enum):
 
 class Convert:
 
-    """
-    Parameters:
-        ms (positive int): time
-        fps (positive Fraction): Frame by second
-        type (Need to be equal to "start" or "end")
-
-    Returns:
-        Return: This fonction will return the ms when the frame start or end (it depend of the type)
-                It is the equivalent to ctrl + 3 and ctrl + 4 aegisub shortcut
-    """
     @staticmethod
-    def bound2frame(ms: int, fps: Fraction, type: string) -> int:
+    def bound2frame(ms: int, fps: Fraction, timeType: str) -> int:
+        """
+        Parameters:
+            ms (positive int): time
+            fps (positive Fraction): Frame by second
+            timeType (Need to be equal to "start" or "end")
 
-        if (type == "start" or type == "end"):
+        Returns:
+            Return: This fonction will return the ms when the frame start or end (it depend of the type)
+                    It is the equivalent to ctrl + 3 and ctrl + 4 aegisub shortcut
+        """        
+
+        if timeType == "start" or timeType == "end":
             return Convert.frame2ms(Convert.ms2frame(ms, fps, type), fps, type)
 
         else:
@@ -68,13 +68,13 @@ class Convert:
 
 
     @staticmethod
-    def ms2frame(ms:int, fps: Fraction, type: string = "none") -> int:
+    def ms2frame(ms:int, fps: Fraction, timeType: str = "none") -> int:
 
         # Same logic that is there: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L219
-        if(type == "start"):
+        if timeType == "start":
             return Convert.ms2frame(ms - 1, fps) + 1
 
-        if(type == "end") :
+        if timeType == "end":
             return Convert.ms2frame(ms - 1, fps)
 
         # I don't know why, but if x = 1000.989, aegisub will considered it like 1002.This is the reason why we add 0.011
@@ -83,14 +83,15 @@ class Convert:
         return image - 1
 
     @staticmethod
-    def frame2ms(frame:int, fps: Fraction, type: string = "none") -> int:
+    def frame2ms(frame:int, fps: Fraction, timeType: str = "none") -> int:
 
         # Same logic that is there: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L234
-        if(type == "start"):
+        if timeType == "start":
             prev = Convert.frame2ms(frame - 1, fps)
             cur = Convert.frame2ms(frame, fps)
             return math.floor(prev + (cur - prev + 1) / 2)
-        if(type == "end") :
+
+        if timeType == "end":
             cur = Convert.frame2ms(frame, fps)
             next = Convert.frame2ms(frame + 1, fps)
             return math.floor(cur + (next - cur + 1) / 2)

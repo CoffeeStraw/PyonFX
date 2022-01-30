@@ -144,8 +144,8 @@ class FrameUtility:
     This class helps in the stressful calculation of frames per frame.
 
     Parameters:
-        start_time (positive float): Initial time
-        end_time (positive float): Final time
+        start_time_image (positive float): Initial time
+        end_time_image (positive float): Final time
         fps (positive Fraction, optional): Frame by second
 
     Returns:
@@ -165,7 +165,7 @@ class FrameUtility:
 
     """
 
-    def __init__(self, start_time: float, end_time: float, fps: Fraction = Fraction(24000, 1001)):
+    def __init__(self, start_time: int, end_time: int, fps: Fraction = Fraction(24000, 1001)):
         # Checking for invalid values
         if start_time < 0 or end_time < 0 or fps <= 0 or end_time < start_time:
             raise ValueError("Positive values and/or end_time > start_time expected.")
