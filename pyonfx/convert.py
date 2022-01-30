@@ -16,11 +16,14 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
+from fractions import Fraction
 import re
 import math
 import colorsys
 from enum import Enum
+import string
 from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
+
 
 from .font_utility import Font
 
@@ -43,6 +46,60 @@ class ColorModel(Enum):
 
 
 class Convert:
+
+    """
+    Parameters:
+        ms (positive int): time
+        fps (positive Fraction): Frame by second
+        type (Need to be equal to "start" or "end")
+
+    Returns:
+        Return: This fonction will return the ms when the frame start or end (it depend of the type)
+                It is the equivalent to ctrl + 3 and ctrl + 4 aegisub shortcut
+    """
+    @staticmethod
+    def bound2frame(ms: int, fps: Fraction, type: string) -> int:
+
+        if (type == "start" or type == "end"):
+            return Convert.frame2ms(Convert.ms2frame(ms, fps, type), fps, type)
+
+        else:
+            raise TypeError("Expected type to be \"start\" or \"end\", got %s." % type)
+
+
+    @staticmethod
+    def ms2frame(ms:int, fps: Fraction, type: string = "none") -> int:
+
+        # Same logic that is there: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L219
+        if(type == "start"):
+            return Convert.ms2frame(ms - 1, fps) + 1
+
+        if(type == "end") :
+            return Convert.ms2frame(ms - 1, fps)
+
+        # I don't know why, but if x = 1000.989, aegisub will considered it like 1002.This is the reason why we add 0.011
+        image = math.ceil((float(ms)/1000) * fps + 0.011)
+
+        return image - 1
+
+    @staticmethod
+    def frame2ms(frame:int, fps: Fraction, type: string = "none") -> int:
+
+        # Same logic that is there: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L234
+        if(type == "start"):
+            prev = Convert.frame2ms(frame - 1, fps)
+            cur = Convert.frame2ms(frame, fps)
+            return math.floor(prev + (cur - prev + 1) / 2)
+        if(type == "end") :
+            cur = Convert.frame2ms(frame, fps)
+            next = Convert.frame2ms(frame + 1, fps)
+            return math.floor(cur + (next - cur + 1) / 2)
+
+        ms = math.floor((frame / fps) * 1000)
+
+        return ms
+
+
     """
     This class is a collection of static methods that will help
     the user to convert everything needed to the ASS format.
@@ -60,15 +117,16 @@ class Convert:
         Returns:
             If milliseconds -> ASS timestamp, else if ASS timestamp -> milliseconds, else ValueError will be raised.
         """
-        # Milliseconds?
+        # Milliseconds? Equivalent to https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/ass/time.cpp#L29
         if type(ass_ms) is int and ass_ms >= 0:
+
             return "{:d}:{:02d}:{:02d}.{:02d}".format(
                 math.floor(ass_ms / 3600000) % 10,
                 math.floor(ass_ms % 3600000 / 60000),
                 math.floor(ass_ms % 60000 / 1000),
                 math.floor(ass_ms % 1000 / 10),
             )
-        # ASS timestamp?
+        # ASS timestamp? Equivalent to https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/ass/time.cpp#L62
         elif type(ass_ms) is str and re.match(r"^\d:\d+:\d+\.\d+$", ass_ms):
             return (
                 int(ass_ms[0]) * 3600000

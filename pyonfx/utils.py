@@ -22,6 +22,8 @@ from typing import List, Union, TYPE_CHECKING
 
 from .convert import Convert, ColorModel
 
+from fractions import Fraction
+
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
 
@@ -144,7 +146,7 @@ class FrameUtility:
     Parameters:
         start_time (positive float): Initial time
         end_time (positive float): Final time
-        fr (positive float, optional): Frame Duration
+        fps (positive Fraction, optional): Frame by second
 
     Returns:
         Returns a Generator containing start_time, end_time, index and total number of frames for each step.
@@ -163,32 +165,32 @@ class FrameUtility:
 
     """
 
-    def __init__(self, start_time: float, end_time: float, fr: float = 41.71):
+    def __init__(self, start_time: float, end_time: float, fps: Fraction = Fraction(24000, 1001)):
         # Checking for invalid values
-        if start_time < 0 or end_time < 0 or fr <= 0 or end_time < start_time:
+        if start_time < 0 or end_time < 0 or fps <= 0 or end_time < start_time:
             raise ValueError("Positive values and/or end_time > start_time expected.")
 
-        self.start_time = self.current_time = start_time
-        self.end_time = end_time
-        self.fr = self.fr_time = fr
+        self.fps = fps
 
-        # Calculating number of frames
-        self.n = math.ceil((end_time - start_time) / fr)
+        self.start_time_image = self.current_time = Convert.ms2frame(start_time, self.fps, "start")
+        self.end_time_image = Convert.ms2frame(end_time, self.fps, "end")
+
+        self.n = self.end_time_image - self.start_time_image + 1
+
+
 
     def __iter__(self):
-        # Compute values for the first n-1 frames
-        for i in range(1, self.n):
+        for i in range(self.n):
+
             yield (
-                round(self.current_time, 2),
-                round(self.current_time + self.fr, 2),
-                i,
+                Convert.frame2ms(self.current_time, self.fps, "start"),
+                Convert.frame2ms(self.current_time, self.fps, "end"),
+                i + 1,
                 self.n,
             )
-            self.current_time += self.fr
-            self.fr_time += self.fr
 
-        # Compute values for the last frame, clamping the end_time of the frame at self.end_time
-        yield (round(self.current_time, 2), round(self.end_time, 2), self.n, self.n)
+            self.current_time = self.current_time + 1
+
 
         # Reset the object to make it usable again
         self.reset()
@@ -198,8 +200,7 @@ class FrameUtility:
         Resets the FrameUtility object to its starting values.
         It is a necessary operation if you want to reuse the same object.
         """
-        self.current_time = self.start_time
-        self.fr_time = self.fr
+        self.current_time = self.start_time_image
 
     def add(
         self,
