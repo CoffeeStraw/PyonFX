@@ -42,14 +42,14 @@ def romaji(line, l):
         io.write_line(l)
 
         # Main Effect
-        # Let's create a FrameUtility object and set up an interval for the random positions
+        # Let's create a FrameUtility object and set up a radius for the random positions
         FU = FrameUtility(
             line.start_time + syl.start_time, line.start_time + syl.end_time
         )
-        interval = 2
+        radius = 2
 
         # Starting to iterate over the frames
-        for s, e, i, n in FU:
+        for s, e, _, _ in FU:
             l.layer = 1
 
             l.start_time = s
@@ -62,8 +62,8 @@ def romaji(line, l):
             fsc += FU.add(syl.duration / 3, syl.duration, -40)
 
             l.text = "{\\an5\\pos(%.3f,%.3f)\\fscx%.3f\\fscy%.3f}%s" % (
-                syl.center + random.uniform(-interval, interval),
-                syl.middle + random.uniform(-interval, interval),
+                syl.center + random.uniform(-radius, radius),
+                syl.middle + random.uniform(-radius, radius),
                 fsc,
                 fsc,
                 syl.text,
