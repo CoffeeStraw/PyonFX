@@ -16,13 +16,11 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
-import math
 import re
+from fractions import Fraction
 from typing import List, Union, TYPE_CHECKING
 
 from .convert import Convert, ColorModel
-
-from fractions import Fraction
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
@@ -140,13 +138,15 @@ class Utils:
 
 
 class FrameUtility:
-    """
-    This class helps in the stressful calculation of frames per frame.
+    """This class allows to accurately work in a frame per frame environment.
+
+    You can use it to iterate over the frames going from ``start_time``
+    to ``end_time`` and perform operations easily over multiple frames.
 
     Parameters:
-        start_time_image (positive float): Initial time
-        end_time_image (positive float): Final time
-        fps (positive Fraction, optional): Frame by second
+        start_time (positive float): Initial time.
+        end_time (positive float): Final time.
+        fps (positive Fraction, optional): Frames per second.
 
     Returns:
         Returns a Generator containing start_time, end_time, index and total number of frames for each step.
@@ -165,32 +165,32 @@ class FrameUtility:
 
     """
 
-    def __init__(self, start_time: int, end_time: int, fps: Fraction = Fraction(24000, 1001)):
-        # Checking for invalid values
-        if start_time < 0 or end_time < 0 or fps <= 0 or end_time < start_time:
-            raise ValueError("Positive values and/or end_time > start_time expected.")
+    def __init__(
+        self, start_time: int, end_time: int, fps: Fraction = Fraction(24000, 1001)
+    ):
+        # Check for invalid values
+        if start_time < 0 or end_time < 0 or end_time < start_time or fps <= 0:
+            raise ValueError("Positive values and/or end_time >= start_time expected.")
 
         self.fps = fps
+        self.start_fr = self.curr_fr = Convert.ms_to_frames(
+            start_time, self.fps, is_start=True
+        )
+        self.end_fr = Convert.ms_to_frames(end_time, self.fps, is_start=False)
 
-        self.start_time_image = self.current_time = Convert.ms2frame(start_time, self.fps, "start")
-        self.end_time_image = Convert.ms2frame(end_time, self.fps, "end")
-
-        self.n = self.end_time_image - self.start_time_image + 1
-
-
+        self.i = 0
+        self.n = self.end_fr - self.start_fr + 1
 
     def __iter__(self):
-        for i in range(self.n):
-
+        # Generate values for the frames on demand
+        for self.i in range(self.n):
             yield (
-                Convert.frame2ms(self.current_time, self.fps, "start"),
-                Convert.frame2ms(self.current_time, self.fps, "end"),
-                i + 1,
+                Convert.frames_to_ms(self.curr_fr, self.fps, is_start=True),
+                Convert.frames_to_ms(self.curr_fr, self.fps, is_start=False),
+                self.i + 1,
                 self.n,
             )
-
-            self.current_time = self.current_time + 1
-
+            self.curr_fr += 1
 
         # Reset the object to make it usable again
         self.reset()
@@ -198,9 +198,9 @@ class FrameUtility:
     def reset(self):
         """
         Resets the FrameUtility object to its starting values.
-        It is a necessary operation if you want to reuse the same object.
+        It is a mandatory operation if you want to reuse the same object.
         """
-        self.current_time = self.start_time_image
+        self.curr_fr = self.start_fr
 
     def add(
         self,
@@ -210,15 +210,14 @@ class FrameUtility:
         accelerator: float = 1.0,
     ) -> float:
         """
-        This function makes a lot easier the calculation of tags value.
-        You can see this as a \"\\t\" tag usable in frame per frame operations.
-        Use it in a for loop which iterates a FrameUtility object, as you can see in the example.
+        You can see this function as a \"\\t\" tag usable in frame per frame operations.
+        It must be used inside a for loop which iterates a FrameUtility object.
 
         Parameters:
-            start_time (int): Initial time
-            end_time (int): Final time
-            end_value (int or float): Value reached at end_time
-            accelerator (float): Accelerator value
+            start_time (int): Initial time.
+            end_time (int): Final time.
+            end_value (int or float): Value reached at end_time.
+            accelerator (float): Accelerator value.
 
         Examples:
             ..  code-block:: python3
@@ -235,15 +234,16 @@ class FrameUtility:
             >>> Frame 2/3: 40 - 80; fsc: 120.0
             >>> Frame 3/3: 80 - 105; fsc: 100
         """
+        curr_ms = Convert.frames_to_ms(self.i, self.fps, is_start=False)
 
-        if self.fr_time < start_time:
+        if curr_ms <= start_time:
             return 0
-        elif self.fr_time > end_time:
+        elif curr_ms >= end_time:
             return end_value
 
-        pstart = self.fr_time - start_time
-        pend = end_time - start_time
-        return Utils.interpolate(pstart / pend, 0, end_value, accelerator)
+        curr = curr_ms - start_time
+        total = end_time - start_time
+        return Utils.interpolate(curr / total, 0, end_value, accelerator)
 
 
 class ColorUtility:

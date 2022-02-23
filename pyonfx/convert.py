@@ -16,14 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
-from fractions import Fraction
 import re
 import math
 import colorsys
 from enum import Enum
-import string
+from fractions import Fraction
 from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
-
 
 from .font_utility import Font
 
@@ -46,61 +44,6 @@ class ColorModel(Enum):
 
 
 class Convert:
-
-    @staticmethod
-    def bound2frame(ms: int, fps: Fraction, timeType: str) -> int:
-        """
-        Parameters:
-            ms (positive int): time
-            fps (positive Fraction): Frame by second
-            timeType (Need to be equal to "start" or "end")
-
-        Returns:
-            Return: This fonction will return the ms when the frame start or end (it depend of the type)
-                    It is the equivalent to ctrl + 3 and ctrl + 4 aegisub shortcut
-        """        
-
-        if timeType == "start" or timeType == "end":
-            return Convert.frame2ms(Convert.ms2frame(ms, fps, timeType), fps, timeType)
-
-        else:
-            raise TypeError("Expected type to be \"start\" or \"end\", got %s." % timeType)
-
-
-    @staticmethod
-    def ms2frame(ms:int, fps: Fraction, timeType: str = "none") -> int:
-
-        # Same logic that is there: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L219
-        if timeType == "start":
-            return Convert.ms2frame(ms - 1, fps) + 1
-
-        if timeType == "end":
-            return Convert.ms2frame(ms - 1, fps)
-
-        # I don't know why, but if x = 1000.989, aegisub will considered it like 1002.This is the reason why we add 0.011
-        image = math.ceil((float(ms)/1000) * fps + 0.011)
-
-        return image - 1
-
-    @staticmethod
-    def frame2ms(frame:int, fps: Fraction, timeType: str = "none") -> int:
-
-        # Same logic that is there: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L234
-        if timeType == "start":
-            prev = Convert.frame2ms(frame - 1, fps)
-            cur = Convert.frame2ms(frame, fps)
-            return math.floor(prev + (cur - prev + 1) / 2)
-
-        if timeType == "end":
-            cur = Convert.frame2ms(frame, fps)
-            next = Convert.frame2ms(frame + 1, fps)
-            return math.floor(cur + (next - cur + 1) / 2)
-
-        ms = math.floor((frame / fps) * 1000)
-
-        return ms
-
-
     """
     This class is a collection of static methods that will help
     the user to convert everything needed to the ASS format.
@@ -118,7 +61,7 @@ class Convert:
         Returns:
             If milliseconds -> ASS timestamp, else if ASS timestamp -> milliseconds, else ValueError will be raised.
         """
-        # Milliseconds? Equivalent to https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/ass/time.cpp#L29
+        # Milliseconds?
         if type(ass_ms) is int and ass_ms >= 0:
 
             return "{:d}:{:02d}:{:02d}.{:02d}".format(
@@ -127,8 +70,8 @@ class Convert:
                 math.floor(ass_ms % 60000 / 1000),
                 math.floor(ass_ms % 1000 / 10),
             )
-        # ASS timestamp? Equivalent to https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/ass/time.cpp#L62
-        elif type(ass_ms) is str and re.match(r"^\d:\d+:\d+\.\d+$", ass_ms):
+        # ASS timestamp?
+        elif type(ass_ms) is str and re.fullmatch(r"\d:\d+:\d+\.\d+", ass_ms):
             return (
                 int(ass_ms[0]) * 3600000
                 + int(ass_ms[2:4]) * 60000
@@ -137,6 +80,61 @@ class Convert:
             )
         else:
             raise ValueError("Milliseconds or ASS timestamp expected")
+
+    @staticmethod
+    def ms_to_frames(ms: int, fps: Fraction, is_start: bool) -> int:
+        """Converts from milliseconds to frames.
+
+        Parameters:
+            ms (int): Milliseconds.
+            fps (Fraction): Frames per second.
+            is_start (bool): True if this time will be used for a start_time of a line, else False.
+
+        Returns:
+            The output represents ``ms`` converted.
+        """
+        # Logic taken from: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L219
+        # TODO: we still need to investigate on the correctness of this formula
+        return math.ceil((ms - 0.5) / 1000 * fps) - (0 if is_start else 1)
+
+    @staticmethod
+    def frames_to_ms(frames: int, fps: Fraction, is_start: bool) -> int:
+        """Converts from frames to milliseconds.
+
+        Parameters:
+            frames (int): Frames.
+            fps (Fraction): Frames per second.
+            is_start (bool): True if this time will be used for a start_time of a line, else False.
+
+        Returns:
+            The output represents ``frames`` converted.
+        """
+        # Logic taken from: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L234
+        curr_ms = math.floor(frames * 1000 / fps)
+        if is_start:
+            prev_ms = math.floor((frames - 1) * 1000 / fps)
+            return math.floor(prev_ms + (curr_ms - prev_ms + 1) / 2)
+        else:
+            next_ms = math.floor((frames + 1) * 1000 / fps)
+            return math.floor(curr_ms + (next_ms - curr_ms + 1) / 2)
+
+    @staticmethod
+    def move_ms_to_frame(ms: int, fps: Fraction, is_start: bool) -> int:
+        """
+        Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
+        It is something close to "CTRL + 3" and "CTRL + 4" Aegisub's shortcuts.
+
+        Parameters:
+            ms (int): Milliseconds.
+            fps (Fraction): Frames per second.
+            is_start (bool): True if this time will be used for a start_time of a line, else False.
+
+        Returns:
+            The output represents ``ms`` converted.
+        """
+        return Convert.frames_to_ms(
+            Convert.ms_to_frames(ms, fps, is_start), fps, is_start
+        )
 
     @staticmethod
     def alpha_ass_to_dec(alpha_ass: str) -> int:
@@ -252,25 +250,21 @@ class Convert:
                 match = re.fullmatch(r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})&", c)
                 (b, g, r), a = map(lambda x: int(x, 16), match.groups()), 255
             elif input_format == ColorModel.ASS_STYLE:
-                match = re.fullmatch(
-                    r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", c
-                )
+                match = re.fullmatch("&H" + r"([0-9A-F]{2})" * 4, c)
                 a, b, g, r = map(lambda x: int(x, 16), match.groups())
             elif input_format == ColorModel.RGB:
                 if not all(0 <= n <= 255 for n in c):
                     raise ValueError(input_range_e + "[0, 255].")
                 (r, g, b), a = c, 255
             elif input_format == ColorModel.RGB_STR:
-                match = re.fullmatch(r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", c)
+                match = re.fullmatch("#" + r"([0-9A-F]{2})" * 3, c)
                 (r, g, b), a = map(lambda x: int(x, 16), match.groups()), 255
             elif input_format == ColorModel.RGBA:
                 if not all(0 <= n <= 255 for n in c):
                     raise ValueError(input_range_e + "[0, 255].")
                 r, g, b, a = c
             elif input_format == ColorModel.RGBA_STR:
-                match = re.fullmatch(
-                    r"#([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})", c
-                )
+                match = re.fullmatch("#" + r"([0-9A-F]{2})" * 4, c)
                 r, g, b, a = map(lambda x: int(x, 16), match.groups())
             elif input_format == ColorModel.HSV:
                 if not (0 <= c[0] < 360 and 0 <= c[1] <= 100 and 0 <= c[2] <= 100):
