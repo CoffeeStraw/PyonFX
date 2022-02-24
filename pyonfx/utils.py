@@ -146,7 +146,8 @@ class FrameUtility:
     Parameters:
         start_time (positive float): Initial time.
         end_time (positive float): Final time.
-        fps (positive Fraction, optional): Frames per second.
+        fps (positive int, float or Fraction, optional): Frames per second.
+        n_fr (integer, optional): Number of frames covered by each iteration.
 
     Returns:
         Returns a Generator containing start_time, end_time, index and total number of frames for each step.
@@ -166,31 +167,45 @@ class FrameUtility:
     """
 
     def __init__(
-        self, start_time: int, end_time: int, fps: Fraction = Fraction(24000, 1001)
+        self,
+        start_time: int,
+        end_time: int,
+        fps: Union[int, float, Fraction] = Fraction(24000, 1001),
+        n_fr: int = 1,
     ):
         # Check for invalid values
         if start_time < 0 or end_time < 0 or end_time < start_time or fps <= 0:
             raise ValueError("Positive values and/or end_time >= start_time expected.")
 
+        self.start_ms = start_time
+        self.end_ms = end_time
         self.fps = fps
-        self.start_fr = self.curr_fr = Convert.ms_to_frames(
-            start_time, self.fps, is_start=True
-        )
-        self.end_fr = Convert.ms_to_frames(end_time, self.fps, is_start=False)
 
+        self.start_fr = self.curr_fr = Convert.ms_to_frames(start_time, fps, True)
+        self.end_fr = Convert.ms_to_frames(end_time, fps, False)
+        self.n_fr = n_fr
         self.i = 0
         self.n = self.end_fr - self.start_fr + 1
 
     def __iter__(self):
         # Generate values for the frames on demand
-        for self.i in range(self.n):
+        for self.i in range(0, self.n - 1, self.n_fr):
             yield (
-                Convert.frames_to_ms(self.curr_fr, self.fps, is_start=True),
-                Convert.frames_to_ms(self.curr_fr, self.fps, is_start=False),
+                Convert.frames_to_ms(self.curr_fr, self.fps, True),
+                Convert.frames_to_ms(self.curr_fr + self.n_fr - 1, self.fps, False),
                 self.i + 1,
                 self.n,
             )
-            self.curr_fr += 1
+            self.curr_fr += self.n_fr
+
+        # Compute values for the last frame, clamping the end_time of the frame at self.end_ms
+        self.i += self.n_fr
+        yield (
+            Convert.frames_to_ms(self.curr_fr, self.fps, True),
+            self.end_ms,
+            self.i,
+            self.n,
+        )
 
         # Reset the object to make it usable again
         self.reset()
@@ -200,6 +215,7 @@ class FrameUtility:
         Resets the FrameUtility object to its starting values.
         It is a mandatory operation if you want to reuse the same object.
         """
+        self.i = 0
         self.curr_fr = self.start_fr
 
     def add(
@@ -234,7 +250,7 @@ class FrameUtility:
             >>> Frame 2/3: 40 - 80; fsc: 120.0
             >>> Frame 3/3: 80 - 105; fsc: 100
         """
-        curr_ms = Convert.frames_to_ms(self.i, self.fps, is_start=False)
+        curr_ms = Convert.frames_to_ms(self.i, self.fps, False)
 
         if curr_ms <= start_time:
             return 0

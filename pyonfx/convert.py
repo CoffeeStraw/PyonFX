@@ -88,7 +88,7 @@ class Convert:
         Parameters:
             ms (int): Milliseconds.
             fps (Fraction): Frames per second.
-            is_start (bool): True if this time will be used for a start_time of a line, else False.
+            is_start (bool): True if this time will be used for the start_time of a line, else False.
 
         Returns:
             The output represents ``ms`` converted.
@@ -104,7 +104,7 @@ class Convert:
         Parameters:
             frames (int): Frames.
             fps (Fraction): Frames per second.
-            is_start (bool): True if this time will be used for a start_time of a line, else False.
+            is_start (bool): True if this time will be used for the start_time of a line, else False.
 
         Returns:
             The output represents ``frames`` converted.
@@ -127,7 +127,7 @@ class Convert:
         Parameters:
             ms (int): Milliseconds.
             fps (Fraction): Frames per second.
-            is_start (bool): True if this time will be used for a start_time of a line, else False.
+            is_start (bool): True if this time will be used for the start_time of a line, else False.
 
         Returns:
             The output represents ``ms`` converted.
