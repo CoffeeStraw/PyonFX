@@ -128,9 +128,7 @@ docs/build/
 
 # Example & test outputs
 examples/Output.ass
-examples/1 - Basics/Output.ass
-examples/2 - Beginner/Output.ass
-examples/3 - Advanced/Output.ass
+examples/*/Output.ass
 tests/Output.ass
 
 # Misc
