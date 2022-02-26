@@ -110,12 +110,12 @@ class Convert:
             The output represents ``frames`` converted.
         """
         # Logic taken from: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L234
-        curr_ms = math.floor(frames * 1000 / fps)
+        curr_ms = frames * 1000 / fps
         if is_start:
-            prev_ms = math.floor((frames - 1) * 1000 / fps)
+            prev_ms = (frames - 1) * 1000 / fps
             return math.floor(prev_ms + (curr_ms - prev_ms + 1) / 2)
         else:
-            next_ms = math.floor((frames + 1) * 1000 / fps)
+            next_ms = (frames + 1) * 1000 / fps
             return math.floor(curr_ms + (next_ms - curr_ms + 1) / 2)
 
     @staticmethod

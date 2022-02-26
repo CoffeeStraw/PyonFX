@@ -144,10 +144,10 @@ class FrameUtility:
     to ``end_time`` and perform operations easily over multiple frames.
 
     Parameters:
-        start_time (positive float): Initial time.
-        end_time (positive float): Final time.
+        start_time (positive int): Initial time.
+        end_time (positive int): Final time.
         fps (positive int, float or Fraction, optional): Frames per second.
-        n_fr (integer, optional): Number of frames covered by each iteration.
+        n_fr (positive int, optional): Number of frames covered by each iteration.
 
     Returns:
         Returns a Generator containing start_time, end_time, index and total number of frames for each step.
@@ -174,7 +174,7 @@ class FrameUtility:
         n_fr: int = 1,
     ):
         # Check for invalid values
-        if start_time < 0 or end_time < 0 or end_time < start_time or fps <= 0:
+        if start_time < 0 or end_time < 0 or end_time < start_time or fps <= 0 or n_fr <= 0:
             raise ValueError("Positive values and/or end_time >= start_time expected.")
 
         self.start_ms = start_time
@@ -185,11 +185,14 @@ class FrameUtility:
         self.end_fr = Convert.ms_to_frames(end_time, fps, False)
         self.n_fr = n_fr
         self.i = 0
-        self.n = self.end_fr - self.start_fr + 1
+        
+        nbrTotalFrame = self.end_fr - self.start_fr + 1
+        self.remainder = nbrTotalFrame % self.n_fr
+        self.n = int((nbrTotalFrame - self.remainder) / self.n_fr + (0 if self.remainder == 0 else 1))
 
     def __iter__(self):
         # Generate values for the frames on demand
-        for self.i in range(0, self.n - 1, self.n_fr):
+        for self.i in range(self.n - self.remainder):
             yield (
                 Convert.frames_to_ms(self.curr_fr, self.fps, True),
                 Convert.frames_to_ms(self.curr_fr + self.n_fr - 1, self.fps, False),
@@ -197,15 +200,15 @@ class FrameUtility:
                 self.n,
             )
             self.curr_fr += self.n_fr
+        
 
-        # Compute values for the last frame, clamping the end_time of the frame at self.end_ms
-        self.i += self.n_fr
-        yield (
-            Convert.frames_to_ms(self.curr_fr, self.fps, True),
-            self.end_ms,
-            self.i,
-            self.n,
-        )
+        if self.remainder != 0:
+            yield (
+                Convert.frames_to_ms(self.curr_fr, self.fps, True),
+                Convert.frames_to_ms(self.curr_fr + self.remainder - 1, self.fps, False),
+                self.i + 2,
+                self.n,
+            )
 
         # Reset the object to make it usable again
         self.reset()
