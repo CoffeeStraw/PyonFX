@@ -369,9 +369,9 @@ class Shape:
         Examples:
             ..  code-block:: python3
 
-                print("Left-top: %d %d\\nRight-bottom: %d %d" % (Shape("m 10 5 l 25 5 25 42 10 42").bounding()))
-                print(Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding())
-                print(Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding(exact=False))
+                print( "Left-top: %d %d\\nRight-bottom: %d %d" % ( Shape("m 10 5 l 25 5 25 42 10 42").bounding() ) )
+                print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding() )
+                print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding(exact=False) )
 
             >>> Left-top: 10 5
             >>> Right-bottom: 25 42
@@ -486,11 +486,10 @@ class Shape:
 
         return x_min, y_min, x_max, y_max
 
-    def move(self, x: float | None = None, y: float | None = None) -> Shape:
+    def move(self, x: float, y: float) -> Shape:
         """Moves shape coordinates in given direction.
 
-        | If neither x and y are passed, it will automatically center the shape to the origin (0,0).
-        | This function is an high level function, it just uses Shape.map, which is more advanced. Additionally, it is an easy way to center a shape.
+        | This function is a high level function, it just uses Shape.map, which is more advanced.
 
         Parameters:
             x (int or float): Displacement along the x-axis.
@@ -506,15 +505,90 @@ class Shape:
 
             >>> m -5 10 l 25 10 25 30 -5 30
         """
-        if x is None and y is None:
-            x, y = (-1 * el for el in self.bounding()[0:2])
-        if x is None:
-            x = 0
-        if y is None:
-            y = 0
+
+        return self.map(lambda cx, cy: (cx + x, cy + y))
+
+    def align(self, anchor: int = 5, an: int = 5) -> Shape:
+        """Aligns the shape.
+
+        | If no argument for anchor is passed, it will automatically center the shape.
+
+        Parameters:
+            anchor (int): The shape's position relative to the position anchor. If anchor=7, the position anchor would be at the top left of the shape's bounding box. If anchor=5, it would be in the center. If anchor=3, it would be at the bottom right.
+            an (int): Alignment used for the shape (e.g. for {\\\\an8} you would use an=8).
+
+        Returns:
+            A pointer to the current object.
+
+        Examples:
+            ..  code-block:: python3
+
+                print( Shape("m 10 10 l 30 10 30 20 10 20").align() )
+
+            >>> m 0 0 l 20 0 20 10 0 10
+        """
+
+        y_axis_anchor, x_axis_anchor = divmod(anchor - 1, 3)
+        y_axis_an, x_axis_an = divmod(an - 1, 3)
+        x_min, y_min, x_max, y_max = self.bounding()
+        libass_boundings = self.bounding(exact=False)
+        x_min_libass, y_min_libass, x_max_libass, y_max_libass = libass_boundings
+        x_move = -x_min
+        y_move = -y_min
+
+        # Center shape along x-axis
+        if x_axis_an == 0:  # left
+            # center shape
+            x_move -= (x_max - x_min) / 2
+        elif x_axis_an == 1:  # center
+            # adjust for imprecise calculation from libass (when using bezier curves)
+            x_move -= (x_max - x_min) / 2 - (x_max_libass - x_min_libass) / 2
+        elif x_axis_an == 2:  # right
+            # center shape
+            x_move += (x_max - x_min) / 2
+            # adjust for imprecise calculation from libass (when using bezier curves)
+            x_move -= (x_max - x_min) - (x_max_libass - x_min_libass)
+        else:
+            raise ValueError("an must be an integer from 1 to 9")
+
+        # Center shape along y-axis
+        if y_axis_an == 0:  # bottom
+            # center shape
+            y_move += (y_max - y_min) / 2
+            # adjust for imprecise calculation from libass (when using bezier curves)
+            y_move -= (y_max - y_min) - (y_max_libass - y_min_libass)
+        elif y_axis_an == 1:  # middle
+            # adjust for imprecise calculation from libass (when using bezier curves)
+            y_move -= (y_max - y_min) / 2 - (y_max_libass - y_min_libass) / 2
+        elif y_axis_an == 2:  # top
+            # center shape
+            y_move -= (y_max - y_min) / 2
+        else:
+            raise ValueError("an must be an integer from 1 to 9")
+
+        # Set anchor along x-axis
+        if x_axis_anchor == 0:  # left
+            x_move += (x_max - x_min) / 2
+        elif x_axis_anchor == 1:  # center
+            pass
+        elif x_axis_anchor == 2:  # right
+            x_move -= (x_max - x_min) / 2
+        else:
+            raise ValueError("anchor must be an integer from 1 to 9")
+
+        # Set anchor along y-axis
+        if y_axis_anchor == 0:  # bottom
+            y_move -= (y_max - y_min) / 2
+        elif y_axis_anchor == 1:  # middle
+            pass
+        elif y_axis_anchor == 2:  # top
+            y_move += (y_max - y_min) / 2
+        else:
+            raise ValueError("anchor must be an integer from 1 to 9")
 
         # Update shape
-        return self.map(lambda cx, cy: (cx + x, cy + y))
+        self.map(lambda cx, cy: (cx + x_move, cy + y_move))
+        return self
 
     def flatten(self, tolerance: float = 1.0) -> Shape:
         """Splits shape's bezier curves into lines.
@@ -993,7 +1067,7 @@ class Shape:
         shape = Shape(" ".join(shape))
 
         # Return result centered
-        return shape.move()
+        return shape.align()
 
     @staticmethod
     def star(edges: int, inner_size: float, outer_size: float) -> Shape:
