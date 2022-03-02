@@ -163,7 +163,6 @@ class FrameUtility:
         >>> Frame 1/3: 0 - 41.71
         >>> Frame 2/3: 41.71 - 83.42
         >>> Frame 3/3: 83.42 - 100
-
     """
 
     def __init__(
@@ -174,41 +173,42 @@ class FrameUtility:
         n_fr: int = 1,
     ):
         # Check for invalid values
-        if start_time < 0 or end_time < 0 or end_time < start_time or fps <= 0 or n_fr <= 0:
-            raise ValueError("Positive values and/or end_time >= start_time expected.")
+        if start_time < 0 or end_time < 0:
+            raise ValueError("Parameters 'start_time' and 'start_time' must be >= 0.")
+        if end_time < start_time:
+            raise ValueError("Parameter 'start_time' is expected to be <= 'end_time'.")
+        if fps <= 0 or n_fr <= 0:
+            raise ValueError("Parameters 'fps' and 'n_fr' must be > 0.")
 
         self.start_ms = start_time
         self.end_ms = end_time
+        self.end_ms_snapped = Convert.move_ms_to_frame(end_time, fps, False)
         self.fps = fps
 
         self.start_fr = self.curr_fr = Convert.ms_to_frames(start_time, fps, True)
         self.end_fr = Convert.ms_to_frames(end_time, fps, False)
         self.n_fr = n_fr
         self.i = 0
-        
-        nbrTotalFrame = self.end_fr - self.start_fr + 1
-        self.remainder = nbrTotalFrame % self.n_fr
-        self.n = int((nbrTotalFrame - self.remainder) / self.n_fr + (0 if self.remainder == 0 else 1))
+        self.n = self.end_fr - self.start_fr + 1
+
+        if n_fr > self.n:
+            raise ValueError(
+                "Parameter 'n_fr' can't be larger than the total number of frames from 'start_time' to 'end_time'."
+            )
 
     def __iter__(self):
-        # Generate values for the frames on demand
-        for self.i in range(self.n - self.remainder):
+        # Generate values for the frames on demand. The end time is always clamped to the end_ms value.
+        for self.i in range(0, self.n, self.n_fr):
             yield (
                 Convert.frames_to_ms(self.curr_fr, self.fps, True),
-                Convert.frames_to_ms(self.curr_fr + self.n_fr - 1, self.fps, False),
+                min(
+                    Convert.frames_to_ms(self.curr_fr + self.n_fr - 1, self.fps, False),
+                    self.end_ms_snapped,
+                ),
                 self.i + 1,
                 self.n,
             )
             self.curr_fr += self.n_fr
-        
-
-        if self.remainder != 0:
-            yield (
-                Convert.frames_to_ms(self.curr_fr, self.fps, True),
-                Convert.frames_to_ms(self.curr_fr + self.remainder - 1, self.fps, False),
-                self.i + 2,
-                self.n,
-            )
 
         # Reset the object to make it usable again
         self.reset()

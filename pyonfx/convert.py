@@ -82,34 +82,45 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def ms_to_frames(ms: int, fps: Fraction, is_start: bool) -> int:
+    def ms_to_frames(ms: int, fps: Union[int, float, Fraction], is_start: bool) -> int:
         """Converts from milliseconds to frames.
 
         Parameters:
             ms (int): Milliseconds.
-            fps (Fraction): Frames per second.
+            fps (positive int, float or Fraction): Frames per second.
             is_start (bool): True if this time will be used for the start_time of a line, else False.
 
         Returns:
             The output represents ``ms`` converted.
         """
         # Logic taken from: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L219
-        # TODO: we still need to investigate on the correctness of this formula
+        if ms < 0:
+            raise ValueError("Parameter 'ms' must be an integer >= 0.")
+        if fps <= 0:
+            raise ValueError("Parameter 'fps' must be an integer > 0.")
+        if ms == 0:
+            return 0
         return math.ceil((ms - 0.5) / 1000 * fps) - (0 if is_start else 1)
 
     @staticmethod
-    def frames_to_ms(frames: int, fps: Fraction, is_start: bool) -> int:
+    def frames_to_ms(frames: int, fps: Union[int, float, Fraction], is_start: bool) -> int:
         """Converts from frames to milliseconds.
 
         Parameters:
             frames (int): Frames.
-            fps (Fraction): Frames per second.
+            fps (positive int, float or Fraction): Frames per second.
             is_start (bool): True if this time will be used for the start_time of a line, else False.
 
         Returns:
             The output represents ``frames`` converted.
         """
         # Logic taken from: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L234
+        if frames < 0:
+            raise ValueError("Parameter 'frames' must be an integer >= 0.")
+        if fps <= 0:
+            raise ValueError("Parameter 'fps' must be an integer > 0.")
+        if frames == 0:
+            return 0
         curr_ms = frames * 1000 / fps
         if is_start:
             prev_ms = (frames - 1) * 1000 / fps
@@ -119,14 +130,14 @@ class Convert:
             return math.floor(curr_ms + (next_ms - curr_ms + 1) / 2)
 
     @staticmethod
-    def move_ms_to_frame(ms: int, fps: Fraction, is_start: bool) -> int:
+    def move_ms_to_frame(ms: int, fps: Union[int, float, Fraction], is_start: bool) -> int:
         """
         Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
         It is something close to "CTRL + 3" and "CTRL + 4" Aegisub's shortcuts.
 
         Parameters:
             ms (int): Milliseconds.
-            fps (Fraction): Frames per second.
+            fps (positive int, float or Fraction): Frames per second.
             is_start (bool): True if this time will be used for the start_time of a line, else False.
 
         Returns:
