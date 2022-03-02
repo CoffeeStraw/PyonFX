@@ -133,15 +133,12 @@ def test_coloralpha():
     assert Convert.color(
         (0, 255 / 64, 255 / 64, 255), ColorModel.RGBA, ColorModel.HSV
     ) == (180, 100, 2)
-    assert (
-        Convert.color(
-            (0, 255 / 64, 255 / 64, 255),
-            ColorModel.RGBA,
-            ColorModel.HSV,
-            round_output=False,
-        )
-        == (180.0, 100.0, 1.5625)
-    )
+    assert Convert.color(
+        (0, 255 / 64, 255 / 64, 255),
+        ColorModel.RGBA,
+        ColorModel.HSV,
+        round_output=False,
+    ) == (180.0, 100.0, 1.5625)
 
     # -- Test color helper functions --
     # Test ass (bgr) -> rgb conversion

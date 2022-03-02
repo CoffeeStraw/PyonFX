@@ -58,14 +58,17 @@ def romaji(line, l):
 
             io.write_line(l)
 
-            l.text = "{\\an5\\pos(%.3f,%.3f)\\fscx%.3f\\fscy%.3f\\1c&H0000FF&\\bord0\\shad0\\blur2\\alpha%s\\clip(%s)\\p1}%s" % (
-                syl.center + rand,
-                syl.middle + rand,
-                fsc,
-                fsc,
-                alpha,
-                Convert.text_to_clip(syl, an=9, fscx=fsc, fscy=fsc),
-                circle,
+            l.text = (
+                "{\\an5\\pos(%.3f,%.3f)\\fscx%.3f\\fscy%.3f\\1c&H0000FF&\\bord0\\shad0\\blur2\\alpha%s\\clip(%s)\\p1}%s"
+                % (
+                    syl.center + rand,
+                    syl.middle + rand,
+                    fsc,
+                    fsc,
+                    alpha,
+                    Convert.text_to_clip(syl, an=9, fscx=fsc, fscy=fsc),
+                    circle,
+                )
             )
 
             io.write_line(l)

@@ -103,7 +103,9 @@ class Convert:
         return math.ceil((ms - 0.5) / 1000 * fps) - (0 if is_start else 1)
 
     @staticmethod
-    def frames_to_ms(frames: int, fps: Union[int, float, Fraction], is_start: bool) -> int:
+    def frames_to_ms(
+        frames: int, fps: Union[int, float, Fraction], is_start: bool
+    ) -> int:
         """Converts from frames to milliseconds.
 
         Parameters:
@@ -130,7 +132,9 @@ class Convert:
             return math.floor(curr_ms + (next_ms - curr_ms + 1) / 2)
 
     @staticmethod
-    def move_ms_to_frame(ms: int, fps: Union[int, float, Fraction], is_start: bool) -> int:
+    def move_ms_to_frame(
+        ms: int, fps: Union[int, float, Fraction], is_start: bool
+    ) -> int:
         """
         Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
         It is something close to "CTRL + 3" and "CTRL + 4" Aegisub's shortcuts.
@@ -811,7 +815,7 @@ class Convert:
                         Pixel(
                             x=(x - shift_x) * downscale,
                             y=(y - shift_y) * downscale,
-                            alpha=255 - round(opacity * downscale ** 2),
+                            alpha=255 - round(opacity * downscale**2),
                         )
                     )
 

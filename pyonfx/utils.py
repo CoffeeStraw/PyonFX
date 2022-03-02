@@ -59,7 +59,7 @@ class Utils:
     def accelerate(pct: float, accelerator: float) -> float:
         # Modifies pct according to the acceleration provided.
         # TODO: Implement acceleration based on bezier's curve
-        return pct ** accelerator
+        return pct**accelerator
 
     @staticmethod
     def interpolate(
