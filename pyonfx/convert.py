@@ -93,13 +93,12 @@ class Convert:
         Returns:
             The output represents ``ms`` converted.
         """
-        # Logic taken from: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L219
+        # Logic taken from: https://github.com/Aegisub/Aegisub/blob/master/libaegisub/common/vfr.cpp#L205
         if ms < 0:
             raise ValueError("Parameter 'ms' must be an integer >= 0.")
         if fps <= 0:
             raise ValueError("Parameter 'fps' must be an integer > 0.")
-        if ms == 0:
-            return 0
+        # NOTE: a frame can be negative in Aegisub, so here we allow this possibility
         return math.ceil((ms - 0.5) / 1000 * fps) - (0 if is_start else 1)
 
     @staticmethod
@@ -116,12 +115,13 @@ class Convert:
         Returns:
             The output represents ``frames`` converted.
         """
-        # Logic taken from: https://github.com/Ristellise/AegisubDC/blob/d4e6c9afef17953c2d62b874665a1bfb62949b32/libaegisub/common/vfr.cpp#L234
+        # Logic taken from: https://github.com/Aegisub/Aegisub/blob/master/libaegisub/common/vfr.cpp#L233
         if frames < 0:
             raise ValueError("Parameter 'frames' must be an integer >= 0.")
         if fps <= 0:
             raise ValueError("Parameter 'fps' must be an integer > 0.")
-        if frames == 0:
+        # Since ms can't be negative, we have to handle frame 0 when converting frame value for a start time
+        if is_start and frames == 0:
             return 0
         curr_ms = frames * 1000 / fps
         if is_start:
@@ -137,7 +137,7 @@ class Convert:
     ) -> int:
         """
         Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
-        It is something close to "CTRL + 3" and "CTRL + 4" Aegisub's shortcuts.
+        It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
 
         Parameters:
             ms (int): Milliseconds.
@@ -147,6 +147,9 @@ class Convert:
         Returns:
             The output represents ``ms`` converted.
         """
+        # Since ms can't be negative, we have to handle frame 0 when converting frame value for a start time
+        if ms == 0:
+            return 0
         return Convert.frames_to_ms(
             Convert.ms_to_frames(ms, fps, is_start), fps, is_start
         )

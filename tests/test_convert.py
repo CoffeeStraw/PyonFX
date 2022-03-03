@@ -1,5 +1,6 @@
 import os
 import sys
+from fractions import Fraction
 import pytest_check as check
 from pyonfx import *
 
@@ -12,7 +13,63 @@ io = Ass(path_ass)
 meta, styles, lines = io.get_data()
 
 # Config
+anime_fps = Fraction(24000, 1001)
 max_deviation = 3
+
+
+def test_ms_to_frames():
+    # All the outputs were checked with Aegisub DC 9214
+    # Test with dummy video
+    assert Convert.ms_to_frames(0, 1, True) == 0
+    assert Convert.ms_to_frames(0, 1, False) == -1
+    assert Convert.ms_to_frames(1, 1, True) == 1
+    assert Convert.ms_to_frames(1, 1, False) == 0
+
+    assert Convert.ms_to_frames(1000, 1, True) == 1
+    assert Convert.ms_to_frames(1001, 1, True) == 2
+    assert Convert.ms_to_frames(1000, 1, False) == 0
+    assert Convert.ms_to_frames(1001, 1, False) == 1
+
+    # Test with an anime video at 23.976 fps
+    assert Convert.ms_to_frames(0, anime_fps, True) == 0
+    assert Convert.ms_to_frames(0, anime_fps, False) == -1
+    assert Convert.ms_to_frames(20, anime_fps, True) == 1
+    assert Convert.ms_to_frames(60, anime_fps, False) == 1
+    assert Convert.ms_to_frames(41690, anime_fps, True) == 1000
+    assert Convert.ms_to_frames(41730, anime_fps, False) == 1000
+
+
+def test_frames_to_ms():
+    # All the outputs were checked with Aegisub DC 9214
+    # Test with dummy video
+    assert (
+        Convert.frames_to_ms(0, 1, True) == 0
+    )  # Should be -500, but negative ms don't exist
+    assert Convert.frames_to_ms(0, 1, False) == 500
+    assert Convert.frames_to_ms(1, 1, True) == 500
+    assert Convert.frames_to_ms(1, 1, False) == 1500
+
+    # Test with an anime video at 23.976 fps
+    assert Convert.frames_to_ms(0, anime_fps, True) == 0
+    assert Convert.frames_to_ms(0, anime_fps, False) == 21
+    assert Convert.frames_to_ms(1, anime_fps, True) == 21
+    assert Convert.frames_to_ms(1, anime_fps, False) == 63
+    assert Convert.frames_to_ms(1000, anime_fps, True) == 41687
+    assert Convert.frames_to_ms(1000, anime_fps, False) == 41729
+
+
+def test_move_ms_to_frame():
+    # All the outputs were checked with Aegisub DC 9214
+    # Test with dummy video
+    assert Convert.move_ms_to_frame(0, 1, True) == 0
+    assert Convert.move_ms_to_frame(96, 1, True) == 500
+    assert Convert.move_ms_to_frame(590, 1, True) == 500
+    assert Convert.move_ms_to_frame(1001, 1, True) == 1500
+
+    assert Convert.move_ms_to_frame(0, 1, False) == 0
+    assert Convert.move_ms_to_frame(96, 1, False) == 500
+    assert Convert.move_ms_to_frame(590, 1, False) == 500
+    assert Convert.move_ms_to_frame(1001, 1, False) == 1500
 
 
 def test_coloralpha():

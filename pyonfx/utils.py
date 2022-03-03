@@ -140,61 +140,74 @@ class Utils:
 class FrameUtility:
     """This class allows to accurately work in a frame per frame environment.
 
-    You can use it to iterate over the frames going from ``start_time``
-    to ``end_time`` and perform operations easily over multiple frames.
+    You can use it to iterate over the frames going from ``start_ms``
+    to ``end_ms`` and perform operations easily over multiple frames.
+
+    BACKGROUND KNOWLEDGE:
+
+    When reproducing a video+sub in a player, a line is rendered on the current frame
+    if the current time of the player is in between the line's start and end time.
+
+    The frame's duration can be determined by the fps value.
+
+    Let's now walk through an example: fps = 20 -> frame_duration = 50 ms.
+
+    The player will then seek for frames at the following times: 0, 50, 100, 150, ...
+
+    To accomodate this fact, frames' start and end times are positioned as follows:
+    - Frame 0: 0-25
+    - Frame 1: 25-75
+    - Frame 2: 75-125
+    - Frame 3: 125-175
+    - ...
+
+    This way, the frames' mid time will always be one of the player's seek times.
+    The only exception is the first frame, since we can't have negative times.
 
     Parameters:
-        start_time (positive int): Initial time.
-        end_time (positive int): Final time.
+        start_ms (positive int): Initial time in ms.
+        end_ms (positive int): Final time in ms.
         fps (positive int, float or Fraction, optional): Frames per second.
         n_fr (positive int, optional): Number of frames covered by each iteration.
 
     Returns:
-        Returns a Generator containing start_time, end_time, index and total number of frames for each step.
+        Returns a Generator yielding start_ms, end_ms, current frame index and total number of frames at each step.
 
-    Examples:
-        ..  code-block:: python3
-            :emphasize-lines: 1
-
-            FU = FrameUtility(0, 100)
-            for s, e, i, n in FU:
-                print(f"Frame {i}/{n}: {s} - {e}")
-
-        >>> Frame 1/3: 0 - 41.71
-        >>> Frame 2/3: 41.71 - 83.42
-        >>> Frame 3/3: 83.42 - 100
+    Example:
+        >>> FU = FrameUtility(0, 110, 20)
+        >>> for s, e, i, n in FU:
+        >>>     print(f"Frame {i}/{n}: {s} - {e}")
+        >>>
+        >>> Frame 1/3: 0 - 25
+        >>> Frame 2/3: 25 - 75
+        >>> Frame 3/3: 75 - 125
     """
 
     def __init__(
         self,
-        start_time: int,
-        end_time: int,
+        start_ms: int,
+        end_ms: int,
         fps: Union[int, float, Fraction] = Fraction(24000, 1001),
         n_fr: int = 1,
     ):
         # Check for invalid values
-        if start_time < 0 or end_time < 0:
-            raise ValueError("Parameters 'start_time' and 'start_time' must be >= 0.")
-        if end_time < start_time:
-            raise ValueError("Parameter 'start_time' is expected to be <= 'end_time'.")
+        if start_ms < 0 or end_ms < 0:
+            raise ValueError("Parameters 'start_ms' and 'start_ms' must be >= 0.")
+        if end_ms < start_ms:
+            raise ValueError("Parameter 'start_ms' is expected to be <= 'end_ms'.")
         if fps <= 0 or n_fr <= 0:
             raise ValueError("Parameters 'fps' and 'n_fr' must be > 0.")
 
-        self.start_ms = start_time
-        self.end_ms = end_time
-        self.end_ms_snapped = Convert.move_ms_to_frame(end_time, fps, False)
+        self.start_ms = start_ms
+        self.end_ms = end_ms
+        self.end_ms_snapped = Convert.move_ms_to_frame(end_ms, fps, False)
         self.fps = fps
 
-        self.start_fr = self.curr_fr = Convert.ms_to_frames(start_time, fps, True)
-        self.end_fr = Convert.ms_to_frames(end_time, fps, False)
+        self.start_fr = self.curr_fr = Convert.ms_to_frames(start_ms, fps, True)
+        self.end_fr = Convert.ms_to_frames(end_ms, fps, False)
         self.n_fr = n_fr
         self.i = 0
         self.n = self.end_fr - self.start_fr + 1
-
-        if n_fr > self.n:
-            raise ValueError(
-                "Parameter 'n_fr' can't be larger than the total number of frames from 'start_time' to 'end_time'."
-            )
 
     def __iter__(self):
         # Generate values for the frames on demand. The end time is always clamped to the end_ms value.
@@ -239,21 +252,19 @@ class FrameUtility:
             accelerator (float): Accelerator value.
 
         Examples:
-            ..  code-block:: python3
-                :emphasize-lines: 4,5
-
-                FU = FrameUtility(0, 105, 40)
-                for s, e, i, n in FU:
-                    fsc = 100
-                    fsc += FU.add(0, 50, 50)
-                    fsc += FU.add(50, 100, -50)
-                    print(f"Frame {i}/{n}: {s} - {e}; fsc: {fsc}")
-
-            >>> Frame 1/3: 0 - 40; fsc: 140.0
-            >>> Frame 2/3: 40 - 80; fsc: 120.0
-            >>> Frame 3/3: 80 - 105; fsc: 100
+            >>> FU = FrameUtility(25, 225, 20)
+            >>> for s, e, i, n in FU:
+            >>>     fsc = 100
+            >>>     fsc += FU.add(0, 100, 50)
+            >>>     fsc += FU.add(100, 200, -50)
+            >>>     print(f"Frame {i}/{n}: {s} - {e}; fsc: {fsc}")
+            >>> 
+            >>> Frame 1/4: 25 - 75; fsc: 112.5
+            >>> Frame 2/4: 75 - 125; fsc: 137.5
+            >>> Frame 3/4: 125 - 175; fsc: 137.5
+            >>> Frame 4/4: 175 - 225; fsc: 112.5
         """
-        curr_ms = Convert.frames_to_ms(self.i, self.fps, False)
+        curr_ms = Convert.frames_to_ms(self.i + (self.n_fr - 1) // 2, self.fps, False)
 
         if curr_ms <= start_time:
             return 0
