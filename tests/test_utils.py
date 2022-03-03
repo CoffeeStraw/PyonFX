@@ -47,5 +47,5 @@ def test_frame_utility():
         fsc += FU.add(0, 100, 50)
         fsc += FU.add(100, 200, -50)
         fsc_values.append(fsc)
-    
+
     assert fsc_values == [112.5, 137.5, 137.5, 112.5]

@@ -258,7 +258,7 @@ class FrameUtility:
             >>>     fsc += FU.add(0, 100, 50)
             >>>     fsc += FU.add(100, 200, -50)
             >>>     print(f"Frame {i}/{n}: {s} - {e}; fsc: {fsc}")
-            >>> 
+            >>>
             >>> Frame 1/4: 25 - 75; fsc: 112.5
             >>> Frame 2/4: 75 - 125; fsc: 137.5
             >>> Frame 3/4: 125 - 175; fsc: 137.5
