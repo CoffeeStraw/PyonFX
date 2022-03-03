@@ -63,7 +63,9 @@ jobs:
 
       - name: Install platform-specific requirements (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
+        run: |
+          sudo apt-get update
+          sudo apt-get install libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
       - name: Install platform-specific requirements (macOS) # Note: brew is very slow sometimes. TODO: speedup brew by using caching.
         if: matrix.os == 'macos-latest'
         run: brew install pygobject3 gtk+3 cairo py3cairo pkg-config
