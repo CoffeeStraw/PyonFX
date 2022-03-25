@@ -56,13 +56,20 @@ Installation
 .. dropdown:: Arch Linux
    :title: font-weight-bold
 
-   ⚠️Warning: The first of the following commands is not well tested. If you run into any problems, please create an issue or refer to the `official installation guide <https://pygobject.readthedocs.io/en/latest/getting_started.html>`_.
+   `AUR package <https://aur.archlinux.org/packages/python-pyonfx>`_
+
+   .. code-block:: sh
+      :emphasize-lines: 1
+
+      paru -S python-pyonfx
+
+   Manual installation
 
    .. code-block:: sh
       :emphasize-lines: 1,2
 
-      sudo pacman -S python python-pip cairo pkgconf gobject-introspection python-gobject gtk3
-      python3 -m pip install --upgrade pyonfx
+      sudo pacman -S --needed python python-pip python-cairo python-gobject pango
+      python -m pip install --upgrade pyonfx
 
 .. dropdown:: OpenSUSE
    :title: font-weight-bold
