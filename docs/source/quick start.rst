@@ -92,7 +92,7 @@ Installation
    .. code-block:: sh
       :emphasize-lines: 1,2
 
-      brew install pygobject3 gtk+3 cairo py3cairo pkg-config
+      brew install python py3cairo pygobject3 pango
       python3 -m pip install --upgrade pyonfx
 
    ⚠️Warning: If you experience output not rendered correctly, you might need to change the PangoCairo backend to fontconfig.
