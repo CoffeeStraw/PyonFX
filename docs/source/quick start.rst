@@ -56,14 +56,14 @@ Installation
 .. dropdown:: Arch Linux
    :title: font-weight-bold
 
-   `AUR package <https://aur.archlinux.org/packages/python-pyonfx>`_
+   `AUR package: <https://aur.archlinux.org/packages/python-pyonfx>`_
 
    .. code-block:: sh
       :emphasize-lines: 1
 
       paru -S python-pyonfx
 
-   Manual installation
+   Manual installation:
 
    .. code-block:: sh
       :emphasize-lines: 1,2
