@@ -233,10 +233,13 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def bounding(self) -> Tuple[float, float, float, float]:
-        """Calculates shape bounding box.
+    def bounding(self, exact: bool = True) -> Tuple[float, float, float, float]:
+        """Calculates the shape's bounding box.
 
         **Tips:** *Using this you can get more precise information about a shape (width, height, position).*
+
+        Parameters:
+            exact (bool): Whether the calculation of the bounding box should be exact, which is more precise for bezier curves.
 
         Returns:
             A tuple (x0, y0, x1, y1) containing coordinates of the bounding box.
@@ -244,11 +247,18 @@ class Shape:
         Examples:
             ..  code-block:: python3
 
-                print("Left-top: %d %d\\nRight-bottom: %d %d" % ( Shape("m 10 5 l 25 5 25 42 10 42").bounding() ) )
+                print( "Left-top: %d %d\\nRight-bottom: %d %d" % ( Shape("m 10 5 l 25 5 25 42 10 42").bounding() ) )
+                print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding() )
+                print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding(exact=False) )
 
             >>> Left-top: 10 5
             >>> Right-bottom: 25 42
+            >>> (260.0, 150.67823683425252, 436.0, 544.871772934194)
+            >>> (254.0, 38.0, 482.0, 671.0)
         """
+
+        if exact:
+            return self.__bounding_exact()
 
         # Bounding data
         x0: float = None
@@ -268,11 +278,129 @@ class Shape:
         self.map(compute_edges)
         return x0, y0, x1, y1
 
-    def move(self, x: float = None, y: float = None) -> Shape:
+    def __bounding_exact(self) -> Tuple[float, float, float, float]:
+        # From: https://stackoverflow.com/a/14429749
+        def get_bounds_of_curve(x0, y0, x1, y1, x2, y2, x3, y3):
+            tvalues = []
+
+            for i in range(2):
+                if i == 0:
+                    b = 6 * x0 - 12 * x1 + 6 * x2
+                    a = -3 * x0 + 9 * x1 - 9 * x2 + 3 * x3
+                    c = 3 * x1 - 3 * x0
+                else:
+                    b = 6 * y0 - 12 * y1 + 6 * y2
+                    a = -3 * y0 + 9 * y1 - 9 * y2 + 3 * y3
+                    c = 3 * y1 - 3 * y0
+
+                if abs(a) < 1e-12:  # Numerical robustness
+                    if abs(b) < 1e-12:  # Numerical robustness
+                        continue
+                    t = -c / b
+                    if 0 < t < 1:
+                        tvalues.append(t)
+                    continue
+                b2ac = b * b - 4 * c * a
+                if b2ac < 0:
+                    continue
+                sqrtb2ac = math.sqrt(b2ac)
+                t1 = (-b + sqrtb2ac) / (2 * a)
+                if 0 < t1 < 1:
+                    tvalues.append(t1)
+                t2 = (-b - sqrtb2ac) / (2 * a)
+                if 0 < t2 < 1:
+                    tvalues.append(t2)
+
+            x_min, y_min, x_max, y_max = math.inf, math.inf, -math.inf, -math.inf
+
+            for t in tvalues:
+                mt = 1 - t
+                x = (
+                    (mt * mt * mt * x0)
+                    + (3 * mt * mt * t * x1)
+                    + (3 * mt * t * t * x2)
+                    + (t * t * t * x3)
+                )
+                x_min, x_max = min(x_min, x), max(x_max, x)
+                y = (
+                    (mt * mt * mt * y0)
+                    + (3 * mt * mt * t * y1)
+                    + (3 * mt * t * t * y2)
+                    + (t * t * t * y3)
+                )
+                y_min, y_max = min(y_min, y), max(y_max, y)
+
+            x_min, x_max = min(x_min, x0), max(x_max, x0)
+            y_min, y_max = min(y_min, y0), max(y_max, y0)
+            x_min, x_max = min(x_min, x3), max(x_max, x3)
+            y_min, y_max = min(y_min, y3), max(y_max, y3)
+
+            if math.inf in (x_min, y_min) or -math.inf in (x_max, y_max):
+                raise ValueError("Invalid bezier curve")
+
+            return x_min, y_min, x_max, y_max
+
+        x_min, y_min, x_max, y_max = math.inf, math.inf, -math.inf, -math.inf
+
+        def update_min_max(x, y):
+            nonlocal x_min, y_min, x_max, y_max
+            x_min = min(x_min, x)
+            y_min = min(y_min, y)
+            x_max = max(x_max, x)
+            y_max = max(y_max, y)
+
+        instructions = self.drawing_cmds.split()
+        curr_identifier, curr_values = None, []
+        cursor = (0, 0)
+
+        for instruction in instructions:
+            is_identifier = instruction.isalpha()
+
+            if is_identifier:
+                if curr_values:
+                    raise ValueError("Unexpected end of the shape")
+                curr_identifier = instruction
+                continue
+
+            if curr_identifier is None:
+                raise ValueError("No shape instruction found")
+
+            curr_values.append(float(instruction))
+
+            if curr_identifier == "m":
+                if len(curr_values) == 2:
+                    cursor = tuple(curr_values)
+                    curr_values = []
+            elif curr_identifier == "l":
+                if len(curr_values) == 2:
+                    update_min_max(*cursor)
+                    cursor = tuple(curr_values)
+                    update_min_max(*cursor)
+                    curr_values = []
+            elif curr_identifier == "b":
+                if len(curr_values) == 6:
+                    bounds = get_bounds_of_curve(*cursor, *curr_values)
+                    update_min_max(*bounds[:2])
+                    update_min_max(*bounds[2:])
+                    cursor = tuple(curr_values[-2:])
+                    curr_values = []
+            else:
+                raise NotImplementedError(
+                    f"Drawing command '{curr_identifier}' not implemented"
+                )
+
+        if curr_values:
+            raise ValueError("Unexpected end of the shape")
+
+        if math.inf in (x_min, y_min) or -math.inf in (x_max, y_max):
+            raise ValueError("Invalid or empty shape")
+
+        return x_min, y_min, x_max, y_max
+
+    def move(self, x: float, y: float) -> Shape:
         """Moves shape coordinates in given direction.
 
-        | If neither x and y are passed, it will automatically center the shape to the origin (0,0).
-        | This function is an high level function, it just uses Shape.map, which is more advanced. Additionally, it is an easy way to center a shape.
+        | This function is a high level function, it just uses Shape.map, which is more advanced.
 
         Parameters:
             x (int or float): Displacement along the x-axis.
@@ -288,15 +416,90 @@ class Shape:
 
             >>> m -5 10 l 25 10 25 30 -5 30
         """
-        if x is None and y is None:
-            x, y = [-1 * el for el in self.bounding()[0:2]]
-        elif x is None:
-            x = 0
-        elif y is None:
-            y = 0
+
+        self.map(lambda cx, cy: (cx + x, cy + y))
+        return self
+
+    def align(self, anchor: int = 5, an: int = 5) -> Shape:
+        """Aligns the shape.
+
+        | If no argument for anchor is passed, it will automatically center the shape.
+
+        Parameters:
+            anchor (int): The shape's position relative to the position anchor. If anchor=7, the position anchor would be at the top left of the shape's bounding box. If anchor=5, it would be in the center. If anchor=3, it would be at the bottom right.
+            an (int): Alignment used for the shape (e.g. for {\\\\an8} you would use an=8).
+
+        Returns:
+            A pointer to the current object.
+
+        Examples:
+            ..  code-block:: python3
+
+                print( Shape("m 10 10 l 30 10 30 20 10 20").align() )
+
+            >>> m 0 0 l 20 0 20 10 0 10
+        """
+
+        y_axis_anchor, x_axis_anchor = divmod(anchor - 1, 3)
+        y_axis_an, x_axis_an = divmod(an - 1, 3)
+        x_min, y_min, x_max, y_max = self.bounding()
+        libass_boundings = self.bounding(exact=False)
+        x_min_libass, y_min_libass, x_max_libass, y_max_libass = libass_boundings
+        x_move = -x_min
+        y_move = -y_min
+
+        # Center shape along x-axis
+        if x_axis_an == 0:  # left
+            # center shape
+            x_move -= (x_max - x_min) / 2
+        elif x_axis_an == 1:  # center
+            # adjust for imprecise calculation from libass (when using bezier curves)
+            x_move -= (x_max - x_min) / 2 - (x_max_libass - x_min_libass) / 2
+        elif x_axis_an == 2:  # right
+            # center shape
+            x_move += (x_max - x_min) / 2
+            # adjust for imprecise calculation from libass (when using bezier curves)
+            x_move -= (x_max - x_min) - (x_max_libass - x_min_libass)
+        else:
+            raise ValueError("an must be an integer from 1 to 9")
+
+        # Center shape along y-axis
+        if y_axis_an == 0:  # bottom
+            # center shape
+            y_move += (y_max - y_min) / 2
+            # adjust for imprecise calculation from libass (when using bezier curves)
+            y_move -= (y_max - y_min) - (y_max_libass - y_min_libass)
+        elif y_axis_an == 1:  # middle
+            # adjust for imprecise calculation from libass (when using bezier curves)
+            y_move -= (y_max - y_min) / 2 - (y_max_libass - y_min_libass) / 2
+        elif y_axis_an == 2:  # top
+            # center shape
+            y_move -= (y_max - y_min) / 2
+        else:
+            raise ValueError("an must be an integer from 1 to 9")
+
+        # Set anchor along x-axis
+        if x_axis_anchor == 0:  # left
+            x_move += (x_max - x_min) / 2
+        elif x_axis_anchor == 1:  # center
+            pass
+        elif x_axis_anchor == 2:  # right
+            x_move -= (x_max - x_min) / 2
+        else:
+            raise ValueError("anchor must be an integer from 1 to 9")
+
+        # Set anchor along y-axis
+        if y_axis_anchor == 0:  # bottom
+            y_move -= (y_max - y_min) / 2
+        elif y_axis_anchor == 1:  # middle
+            pass
+        elif y_axis_anchor == 2:  # top
+            y_move += (y_max - y_min) / 2
+        else:
+            raise ValueError("anchor must be an integer from 1 to 9")
 
         # Update shape
-        self.map(lambda cx, cy: (cx + x, cy + y))
+        self.map(lambda cx, cy: (cx + x_move, cy + y_move))
         return self
 
     def flatten(self, tolerance: float = 1.0) -> Shape:
@@ -910,7 +1113,7 @@ class Shape:
         shape = Shape(" ".join(shape))
 
         # Return result centered
-        return shape.move()
+        return shape.align()
 
     @staticmethod
     def star(edges: int, inner_size: float, outer_size: float) -> Shape:
