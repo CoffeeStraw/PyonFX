@@ -873,17 +873,11 @@ class Timecode(object):
         Inspired By: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L233-L256
         """
         if type == Time.START:
-            # First frame
-            if frame == 0:
-                return self.__timecodes[frame]
             previousFrame = self.frames_to_ms(frame - 1)
             currentFrame = self.frames_to_ms(frame)
             return previousFrame + (currentFrame - previousFrame + 1) // 2
 
         if type == Time.END:
-            if frame == (len(self.__timecodes) - 1):
-                # Last frame (the end time doesn't matter. It just need to be over the last timecode)
-                return self.__timecodes[frame] + 20
             currentFrame = self.frames_to_ms(frame)
             nextFrame = self.frames_to_ms(frame + 1)
             return currentFrame + (nextFrame - currentFrame + 1) // 2
