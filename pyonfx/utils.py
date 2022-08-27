@@ -20,7 +20,7 @@ import re
 from fractions import Fraction
 from typing import List, Union, TYPE_CHECKING
 
-from .convert import Convert, ColorModel
+from .convert import Convert, ColorModel, Time, Timecode
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
@@ -187,7 +187,7 @@ class FrameUtility:
         self,
         start_ms: int,
         end_ms: int,
-        fps: Union[int, float, Fraction] = Fraction(24000, 1001),
+        timecodes: Timecode,
         n_fr: int = 1,
     ):
         # Check for invalid values
@@ -195,27 +195,26 @@ class FrameUtility:
             raise ValueError("Parameters 'start_ms' and 'start_ms' must be >= 0.")
         if end_ms < start_ms:
             raise ValueError("Parameter 'start_ms' is expected to be <= 'end_ms'.")
-        if fps <= 0 or n_fr <= 0:
-            raise ValueError("Parameters 'fps' and 'n_fr' must be > 0.")
-
+        
+        self.timecodes = timecodes
         self.start_ms = start_ms
         self.end_ms = end_ms
-        self.end_ms_snapped = Convert.move_ms_to_frame(end_ms, fps, False)
-        self.fps = fps
 
-        self.start_fr = self.curr_fr = Convert.ms_to_frames(start_ms, fps, True)
-        self.end_fr = Convert.ms_to_frames(end_ms, fps, False)
+        self.start_fr = self.curr_fr = self.timecodes.ms_to_frames(self.start_ms, Time.START)
+        self.end_fr = self.timecodes.ms_to_frames(self.end_ms, Time.END)
         self.n_fr = n_fr
+
         self.i = 0
         self.n = self.end_fr - self.start_fr + 1
+        self.end_ms_snapped = self.timecodes.frames_to_ms(self.end_fr, Time.END)
 
     def __iter__(self):
         # Generate values for the frames on demand. The end time is always clamped to the end_ms value.
         for self.i in range(0, self.n, self.n_fr):
             yield (
-                Convert.frames_to_ms(self.curr_fr, self.fps, True),
+                self.timecodes.frames_to_ms(self.curr_fr, Time.START),
                 min(
-                    Convert.frames_to_ms(self.curr_fr + self.n_fr - 1, self.fps, False),
+                    self.timecodes.frames_to_ms(self.curr_fr + self.n_fr - 1, Time.END),
                     self.end_ms_snapped,
                 ),
                 self.i + 1,
@@ -264,7 +263,7 @@ class FrameUtility:
             >>> Frame 3/4: 125 - 175; fsc: 137.5
             >>> Frame 4/4: 175 - 225; fsc: 112.5
         """
-        curr_ms = Convert.frames_to_ms(self.i + (self.n_fr - 1) // 2, self.fps, False)
+        curr_ms = self.timecodes.frames_to_ms(self.i + (self.n_fr - 1) // 2, Time.END)
 
         if curr_ms <= start_time:
             return 0
