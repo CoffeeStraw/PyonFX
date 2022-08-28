@@ -792,7 +792,7 @@ class Timecode(object):
         with open(timestampsFilePath, "r") as f:
             lines = f.readlines()
 
-            if lines[0] != "# timestamp format v2\n":
+            if lines[0] not in ["# timecode format v2\n", "# timestamp format v2\n"]:
                 raise ValueError(
                     "The timestamp file you have provided is not properly formatted."
                 )
