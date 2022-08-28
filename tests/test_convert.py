@@ -1,6 +1,5 @@
 import os
 import sys
-from fractions import Fraction
 import pytest_check as check
 from pyonfx import *
 
@@ -13,49 +12,28 @@ io = Ass(path_ass)
 meta, styles, lines = io.get_data()
 
 # Config
-anime_fps = Fraction(24000, 1001)
+io_ms_to_frames = Ass(os.path.join(dir_path, "Ass", "ms_to_frames.ass"))
+io_frames_to_ms = Ass(os.path.join(dir_path, "Ass", "frames_to_ms.ass"))
+timecodes = Timecode(os.path.join(dir_path, "Ass", "timecodes.txt"))
 max_deviation = 3
 
 
 def test_ms_to_frames():
-    # All the outputs were checked with Aegisub DC 9214
-    # Test with dummy video
-    assert Convert.ms_to_frames(0, 1, True) == 0
-    assert Convert.ms_to_frames(0, 1, False) == -1
-    assert Convert.ms_to_frames(1, 1, True) == 1
-    assert Convert.ms_to_frames(1, 1, False) == 0
+    meta, styles, lines = io_ms_to_frames.get_data()
 
-    assert Convert.ms_to_frames(1000, 1, True) == 1
-    assert Convert.ms_to_frames(1001, 1, True) == 2
-    assert Convert.ms_to_frames(1000, 1, False) == 0
-    assert Convert.ms_to_frames(1001, 1, False) == 1
-
-    # Test with an anime video at 23.976 fps
-    assert Convert.ms_to_frames(0, anime_fps, True) == 0
-    assert Convert.ms_to_frames(0, anime_fps, False) == -1
-    assert Convert.ms_to_frames(20, anime_fps, True) == 1
-    assert Convert.ms_to_frames(60, anime_fps, False) == 1
-    assert Convert.ms_to_frames(41690, anime_fps, True) == 1000
-    assert Convert.ms_to_frames(41730, anime_fps, False) == 1000
+    for line in lines:
+        if line.style.isnumeric():
+            ms = int(line.style)
+            assert int(line.actor) == timecodes.ms_to_frames(ms, Time.START)
 
 
 def test_frames_to_ms():
-    # All the outputs were checked with Aegisub DC 9214
-    # Test with dummy video
-    assert (
-        Convert.frames_to_ms(0, 1, True) == 0
-    )  # Should be -500, but negative ms don't exist
-    assert Convert.frames_to_ms(0, 1, False) == 500
-    assert Convert.frames_to_ms(1, 1, True) == 500
-    assert Convert.frames_to_ms(1, 1, False) == 1500
+    meta, styles, lines = io_frames_to_ms.get_data()
 
-    # Test with an anime video at 23.976 fps
-    assert Convert.frames_to_ms(0, anime_fps, True) == 0
-    assert Convert.frames_to_ms(0, anime_fps, False) == 21
-    assert Convert.frames_to_ms(1, anime_fps, True) == 21
-    assert Convert.frames_to_ms(1, anime_fps, False) == 63
-    assert Convert.frames_to_ms(1000, anime_fps, True) == 41687
-    assert Convert.frames_to_ms(1000, anime_fps, False) == 41729
+    for line in lines:
+        if line.style.isnumeric():
+            frame = int(line.style)
+            assert int(line.actor) == timecodes.frames_to_ms(frame, Time.START)
 
 
 def test_move_ms_to_frame():
