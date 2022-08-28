@@ -63,9 +63,9 @@ class Convert:
         """
         # Milliseconds?
         if type(ass_ms) is int and ass_ms >= 0:
-            
+
             # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/ass/time.h#L32
-            ass_ms = (ass_ms + 5) - (ass_ms + 5) % 10 
+            ass_ms = (ass_ms + 5) - (ass_ms + 5) % 10
 
             return "{:d}:{:02d}:{:02d}.{:02d}".format(
                 math.floor(ass_ms / 3600000) % 10,
@@ -765,7 +765,7 @@ class Convert:
 
 class Time(Enum):
     START = "START"
-    END  = "END"
+    END = "END"
 
 
 class Timecode(object):
@@ -773,7 +773,7 @@ class Timecode(object):
     Args:
         timestampsFilePath (str): Path for the timestamp file. This program only support V2 timestamp format.
             Information about timestamp file: https://mkvtoolnix.download/doc/mkvmerge.html#mkvmerge.external_timestamp_files
-            How to extract timestamp file: 
+            How to extract timestamp file:
                 1 - Open the video with Aegisub. Video --> Save Timecodes File...
                 2 - https://sourceforge.net/projects/gmkvextractgui/ (Warning. With gMKVExtractGUI, you will need to remove the last timecode in the file)
 
@@ -781,19 +781,21 @@ class Timecode(object):
         __timecodes (list of :class:`int`): Contain the timecode of an video.
     """
 
-    __timecodes: List
+    __timecodes: List[int]
 
     def __init__(
-            self,
-            timestampsFilePath: str,
-        ):
+        self,
+        timestampsFilePath: str,
+    ):
         self.__timecodes = []
 
-        with open(timestampsFilePath, 'r') as f:
+        with open(timestampsFilePath, "r") as f:
             lines = f.readlines()
 
             if lines[0] != "# timestamp format v2\n":
-                raise ValueError("The timestamp file you have provided is not properly formatted.")
+                raise ValueError(
+                    "The timestamp file you have provided is not properly formatted."
+                )
 
             for line in lines[1:]:
                 try:
@@ -807,7 +809,12 @@ class Timecode(object):
         self.normalize_timecodes()
 
         self.__denominator = 1000000000
-        self.__numerator = (len(self.__timecodes) - 1) * self.__denominator * 1000 // self.__timecodes[-1]
+        self.__numerator = (
+            (len(self.__timecodes) - 1)
+            * self.__denominator
+            * 1000
+            // self.__timecodes[-1]
+        )
         self.__last = (len(self.__timecodes) - 1) * self.__denominator * 1000
 
     def validate_timecodes(self):
@@ -830,7 +837,9 @@ class Timecode(object):
         firstTimecode = self.__timecodes[0]
 
         if firstTimecode != 0:
-            self.__timecodes = [timecode - firstTimecode for timecode in self.__timecodes]
+            self.__timecodes = [
+                timecode - firstTimecode for timecode in self.__timecodes
+            ]
 
     def ms_to_frames(self, ms: int, type: Time = None) -> int:
         """
@@ -852,7 +861,9 @@ class Timecode(object):
             return (ms * self.__numerator // self.__denominator - 999) // 1000
 
         if ms > self.__timecodes[-1]:
-            return (ms * self.__numerator - self.__last + self.__denominator - 1) // self.__denominator // 1000 + (len(self.__timecodes) - 1)
+            return (
+                ms * self.__numerator - self.__last + self.__denominator - 1
+            ) // self.__denominator // 1000 + (len(self.__timecodes) - 1)
 
         """
         In this case bisect_right is equivalent to this:
@@ -887,7 +898,11 @@ class Timecode(object):
 
         if frame > (len(self.__timecodes) - 1):
             frames_past_end = frame - len(self.__timecodes) + 1
-            return (frames_past_end * 1000 * self.__denominator + self.__last + self.__numerator // 2) // self.__numerator
+            return (
+                frames_past_end * 1000 * self.__denominator
+                + self.__last
+                + self.__numerator // 2
+            ) // self.__numerator
 
         return self.__timecodes[frame]
 
@@ -904,7 +919,4 @@ class Timecode(object):
             The output represents ``ms`` converted.
         """
 
-        return self.frames_to_ms(
-            self.ms_to_frames(ms, type), 
-            type
-        )
+        return self.frames_to_ms(self.ms_to_frames(ms, type), type)

@@ -195,12 +195,14 @@ class FrameUtility:
             raise ValueError("Parameters 'start_ms' and 'start_ms' must be >= 0.")
         if end_ms < start_ms:
             raise ValueError("Parameter 'start_ms' is expected to be <= 'end_ms'.")
-        
+
         self.timecodes = timecodes
         self.start_ms = start_ms
         self.end_ms = end_ms
 
-        self.start_fr = self.curr_fr = self.timecodes.ms_to_frames(self.start_ms, Time.START)
+        self.start_fr = self.curr_fr = self.timecodes.ms_to_frames(
+            self.start_ms, Time.START
+        )
         self.end_fr = self.timecodes.ms_to_frames(self.end_ms, Time.END)
         self.n_fr = n_fr
 
