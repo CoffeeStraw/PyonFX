@@ -18,6 +18,17 @@ timecodes = Timecode(os.path.join(dir_path, "Ass", "timecodes.txt"))
 max_deviation = 3
 
 
+def test_validate_timecodes():
+    with check.raises(ValueError):
+        Timecode(os.path.join(dir_path, "Ass", "timecodes_short.txt"))
+
+    with check.raises(ValueError):
+        Timecode(os.path.join(dir_path, "Ass", "timecodes_not_sorted.txt"))
+
+    with check.raises(ValueError):
+        Timecode(os.path.join(dir_path, "Ass", "timecodes_identical.txt"))
+
+
 def test_ms_to_frames():
     meta, styles, lines = io_ms_to_frames.get_data()
 
