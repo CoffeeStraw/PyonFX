@@ -825,9 +825,9 @@ class Timecode(object):
         if len(self.__timecodes) <= 1:
             raise ValueError("Must have at least two timecodes to do anything useful.")
         if self.__timecodes != sorted(self.__timecodes):
-            raise ValueError("timecodes are not sorted")
+            raise ValueError("Timecodes are not sorted.")
         if self.__timecodes[0] == self.__timecodes[-1]:
-            raise ValueError("timecodes are all identical")
+            raise ValueError("Timecodes are all identical.")
 
     def normalize_timecodes(self):
         """
