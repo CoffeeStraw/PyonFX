@@ -14,19 +14,27 @@ meta, styles, lines = io.get_data()
 # Config
 io_ms_to_frames = Ass(os.path.join(dir_path, "Ass", "ms_to_frames.ass"))
 io_frames_to_ms = Ass(os.path.join(dir_path, "Ass", "frames_to_ms.ass"))
-timecodes = Timecode(os.path.join(dir_path, "Ass", "timecodes.txt"))
+timecodes = Timecode.from_timestamps_file(
+    os.path.join(dir_path, "Ass", "timecodes.txt")
+)
 max_deviation = 3
 
 
 def test_validate_timecodes():
     with check.raises(ValueError):
-        Timecode(os.path.join(dir_path, "Ass", "timecodes_short.txt"))
+        Timecode.from_timestamps_file(
+            os.path.join(dir_path, "Ass", "timecodes_short.txt")
+        )
 
     with check.raises(ValueError):
-        Timecode(os.path.join(dir_path, "Ass", "timecodes_not_sorted.txt"))
+        Timecode.from_timestamps_file(
+            os.path.join(dir_path, "Ass", "timecodes_not_sorted.txt")
+        )
 
     with check.raises(ValueError):
-        Timecode(os.path.join(dir_path, "Ass", "timecodes_identical.txt"))
+        Timecode.from_timestamps_file(
+            os.path.join(dir_path, "Ass", "timecodes_identical.txt")
+        )
 
 
 def test_ms_to_frames():

@@ -21,6 +21,8 @@ import math
 import colorsys
 import bisect
 from enum import Enum
+from ffms2 import VideoSource
+from fractions import Fraction
 from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
@@ -771,12 +773,7 @@ class Time(Enum):
 class Timecode(object):
     """
     Args:
-        timestampsFilePath (str): Path for the timestamp file. This program only support V2 timestamp format.
-            Information about timestamp file: https://mkvtoolnix.download/doc/mkvmerge.html#mkvmerge.external_timestamp_files
-            How to extract timestamp file:
-                1 - Open the video with Aegisub. Video --> Save Timecodes File...
-                2 - https://sourceforge.net/projects/gmkvextractgui/ (Warning. With gMKVExtractGUI, you will need to remove the last timecode in the file)
-
+        timecodes (list of :class:`int`): Contain the timecode of an video.
     Attributes:
         __timecodes (list of :class:`int`): Contain the timecode of an video.
     """
@@ -785,25 +782,9 @@ class Timecode(object):
 
     def __init__(
         self,
-        timestampsFilePath: str,
+        timecodes: List[int],
     ):
-        self.__timecodes = []
-
-        with open(timestampsFilePath, "r") as f:
-            lines = f.readlines()
-
-            if lines[0] not in ["# timecode format v2\n", "# timestamp format v2\n"]:
-                raise ValueError(
-                    "The timestamp file you have provided is not properly formatted."
-                )
-
-            for line in lines[1:]:
-                try:
-                    timecode = int(line)
-                except ValueError:
-                    continue
-                else:
-                    self.__timecodes.append(timecode)
+        self.__timecodes = timecodes
 
         self.validate_timecodes()
         self.normalize_timecodes()
@@ -816,6 +797,55 @@ class Timecode(object):
             // self.__timecodes[-1]
         )
         self.__last = (len(self.__timecodes) - 1) * self.__denominator * 1000
+
+    @classmethod
+    def from_fps(cls, fps: int | float | Fraction, number_of_frames: int) -> Timecode:
+        return cls([round(frame * 1000 / fps) for frame in range(number_of_frames)])
+
+    @classmethod
+    def from_mkv(cls, mkv_file_path: str, track_number: int = None) -> Timecode:
+        vsource = VideoSource(mkv_file_path, track_number)
+
+        # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/src/video_provider_ffmpegsource.cpp#L296-L314
+        timestamps = [
+            (
+                (frame.PTS * vsource.track.time_base.numerator)
+                // vsource.track.time_base.denominator
+            )
+            for frame in vsource.track.frame_info_list
+        ]
+
+        del vsource
+        return cls(timestamps)
+
+    @classmethod
+    def from_timestamps_file(cls, timestamps_file_path: str) -> Timecode:
+        """
+        timestamps_file_path (str): Path for the timestamp file. This program only support V2 timestamp format.
+        Information about timestamp file: https://mkvtoolnix.download/doc/mkvmerge.html#mkvmerge.external_timestamp_files
+        How to extract timestamp file:
+            1 - Open the video with Aegisub. Video --> Save Timecodes File...
+            2 - https://sourceforge.net/projects/gmkvextractgui/ (Warning. With gMKVExtractGUI, you will need to remove the last timecode in the file)
+        """
+        timestamps = []
+
+        with open(timestamps_file_path, "r") as f:
+            lines = f.readlines()
+
+            if lines[0] not in ["# timecode format v2\n", "# timestamp format v2\n"]:
+                raise ValueError(
+                    "The timestamp file you have provided is not properly formatted."
+                )
+
+            for line in lines[1:]:
+                try:
+                    timestamp = int(line)
+                except ValueError:
+                    continue
+                else:
+                    timestamps.append(timestamp)
+
+        return cls(timestamps)
 
     def validate_timecodes(self):
         """
