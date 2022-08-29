@@ -790,11 +790,11 @@ class Timecode(object):
         self.normalize_timecodes()
 
         self.__denominator = 1000000000
-        self.__numerator = (
+        self.__numerator = int(
             (len(self.__timecodes) - 1)
             * self.__denominator
             * 1000
-            // self.__timecodes[-1]
+            / self.__timecodes[-1]
         )
         self.__last = (len(self.__timecodes) - 1) * self.__denominator * 1000
 
@@ -808,9 +808,9 @@ class Timecode(object):
 
         # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/src/video_provider_ffmpegsource.cpp#L296-L314
         timestamps = [
-            (
+            int(
                 (frame.PTS * vsource.track.time_base.numerator)
-                // vsource.track.time_base.denominator
+                / vsource.track.time_base.denominator
             )
             for frame in vsource.track.frame_info_list
         ]
@@ -888,12 +888,12 @@ class Timecode(object):
             return self.ms_to_frames(ms - 1)
 
         if ms < 0:
-            return (ms * self.__numerator // self.__denominator - 999) // 1000
+            return int((int(ms * self.__numerator / self.__denominator - 999)) / 1000)
 
         if ms > self.__timecodes[-1]:
-            return (
+            return int(int((
                 ms * self.__numerator - self.__last + self.__denominator - 1
-            ) // self.__denominator // 1000 + (len(self.__timecodes) - 1)
+            ) / self.__denominator) / 1000) + (len(self.__timecodes) - 1)
 
         """
         In this case bisect_right is equivalent to this:
@@ -916,23 +916,23 @@ class Timecode(object):
         if type == Time.START:
             previousFrame = self.frames_to_ms(frame - 1)
             currentFrame = self.frames_to_ms(frame)
-            return previousFrame + (currentFrame - previousFrame + 1) // 2
+            return previousFrame + int((currentFrame - previousFrame + 1) / 2)
 
         if type == Time.END:
             currentFrame = self.frames_to_ms(frame)
             nextFrame = self.frames_to_ms(frame + 1)
-            return currentFrame + (nextFrame - currentFrame + 1) // 2
+            return currentFrame + int((nextFrame - currentFrame + 1) / 2)
 
         if frame < 0:
-            return frame * self.__denominator * 1000 // self.__numerator
+            return int(frame * self.__denominator * 1000 / self.__numerator)
 
         if frame > (len(self.__timecodes) - 1):
             frames_past_end = frame - len(self.__timecodes) + 1
-            return (
+            return int(
                 frames_past_end * 1000 * self.__denominator
                 + self.__last
-                + self.__numerator // 2
-            ) // self.__numerator
+                + int(self.__numerator / 2)
+            ) / self.__numerator
 
         return self.__timecodes[frame]
 
