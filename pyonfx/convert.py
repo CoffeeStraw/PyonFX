@@ -891,9 +891,13 @@ class Timecode(object):
             return int((int(ms * self.__numerator / self.__denominator - 999)) / 1000)
 
         if ms > self.__timecodes[-1]:
-            return int(int((
-                ms * self.__numerator - self.__last + self.__denominator - 1
-            ) / self.__denominator) / 1000) + (len(self.__timecodes) - 1)
+            return int(
+                int(
+                    (ms * self.__numerator - self.__last + self.__denominator - 1)
+                    / self.__denominator
+                )
+                / 1000
+            ) + (len(self.__timecodes) - 1)
 
         """
         In this case bisect_right is equivalent to this:
@@ -929,10 +933,13 @@ class Timecode(object):
         if frame > (len(self.__timecodes) - 1):
             frames_past_end = frame - len(self.__timecodes) + 1
             return int(
-                frames_past_end * 1000 * self.__denominator
-                + self.__last
-                + int(self.__numerator / 2)
-            ) / self.__numerator
+                (
+                    frames_past_end * 1000 * self.__denominator
+                    + self.__last
+                    + int(self.__numerator / 2)
+                )
+                / self.__numerator
+            )
 
         return self.__timecodes[frame]
 
