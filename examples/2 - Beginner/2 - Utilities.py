@@ -19,6 +19,9 @@ import random
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
+# Let's load the timestamps
+timestamps_list = from_timestamps_file("timestamps.txt")
+
 
 def romaji(line, l):
     for syl in Utils.all_non_empty(line.syls):
@@ -44,7 +47,9 @@ def romaji(line, l):
         # Main Effect
         # Let's create a FrameUtility object and set up a radius for the random positions
         FU = FrameUtility(
-            line.start_time + syl.start_time, line.start_time + syl.end_time
+            line.start_time + syl.start_time,
+            line.start_time + syl.end_time,
+            timestamps_list,
         )
         radius = 2
 

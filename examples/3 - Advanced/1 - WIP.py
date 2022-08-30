@@ -4,6 +4,9 @@ import random
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
+# Let's load the timestamps
+timestamps_list = from_timestamps_file(r"..\2 - Beginner\timestamps.txt")
+
 circle = Shape.ellipse(20, 20)
 
 
@@ -29,7 +32,9 @@ def romaji(line, l):
         l.layer = 1
 
         FU = FrameUtility(
-            line.start_time + syl.start_time, line.start_time + syl.end_time
+            line.start_time + syl.start_time,
+            line.start_time + syl.end_time,
+            timestamps_list,
         )
         rand = random.uniform(-10, 10)
 

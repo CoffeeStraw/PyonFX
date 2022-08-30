@@ -27,6 +27,9 @@ meta, styles, lines = io.get_data()
 star = Shape.star(5, 4, 10)
 CU = ColorUtility(lines)
 
+# Let's load the timestamps
+timestamps_list = from_timestamps_file("timestamps.txt")
+
 
 def romaji(line, l):
     # Setting up a delay, we will use it as duration time of the leadin and leadout effects
@@ -107,7 +110,9 @@ def romaji(line, l):
         # Jump-in to the first syl
         jump_height = 18
         if syl.i == 0:
-            FU = FrameUtility(line.start_time - line.leadin / 2, line.start_time)
+            FU = FrameUtility(
+                line.start_time - line.leadin / 2, line.start_time, timestamps_list
+            )
             for s, e, i, n in FU:
                 l.start_time = s
                 l.end_time = e
@@ -133,7 +138,9 @@ def romaji(line, l):
             else syl.width
         )
         FU = FrameUtility(
-            line.start_time + syl.start_time, line.start_time + syl.end_time
+            line.start_time + syl.start_time,
+            line.start_time + syl.end_time,
+            timestamps_list,
         )
         for s, e, i, n in FU:
             l.start_time = s
