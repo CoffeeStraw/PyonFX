@@ -35,6 +35,10 @@ Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", int)])
 
 
 class TimeType(Enum):
+    """
+    Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/vfr.h#L27-L40
+    """
+    EXACT = "EXACT"
     START = "START"
     END = "END"
 
@@ -90,7 +94,7 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def ms_to_frames(timestamps: list[int], ms: int, time_type: TimeType = None) -> int:
+    def ms_to_frames(timestamps: list[int], ms: int, time_type: TimeType = TimeType.EXACT) -> int:
         """Converts from milliseconds to frames.
 
         Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L205-L231
@@ -103,12 +107,13 @@ class Convert:
         Returns:
             The output represents ``ms`` converted.
         """
+        if time_type not in TimeType:
+            raise ValueError(f'Unknown time_type "{time_type}" provided.')
+
         if time_type == TimeType.START:
             return Convert.ms_to_frames(timestamps, ms - 1) + 1
         elif time_type == TimeType.END:
             return Convert.ms_to_frames(timestamps, ms - 1)
-        elif time_type:
-            raise ValueError(f'Unknown time_type "{time_type}" provided.')
 
         denominator, numerator, last = get_den_num_last(timestamps)
         if ms < 0:
@@ -126,7 +131,7 @@ class Convert:
 
     @staticmethod
     def frames_to_ms(
-        timestamps: list[int], frame: int, time_type: TimeType = None
+        timestamps: list[int], frame: int, time_type: TimeType = TimeType.EXACT
     ) -> int:
         """Converts from frames to milliseconds.
 
@@ -140,6 +145,9 @@ class Convert:
         Returns:
             The output represents ``frames`` converted.
         """
+        if time_type not in TimeType:
+            raise ValueError(f'Unknown time_type "{time_type}" provided.')
+
         if time_type == TimeType.START:
             prev_frame = Convert.frames_to_ms(timestamps, frame - 1)
             curr_frame = Convert.frames_to_ms(timestamps, frame)
@@ -148,8 +156,6 @@ class Convert:
             curr_frame = Convert.frames_to_ms(timestamps, frame)
             next_frame = Convert.frames_to_ms(timestamps, frame + 1)
             return curr_frame + int((next_frame - curr_frame + 1) / 2)
-        elif time_type:
-            raise ValueError(f'Unknown time_type "{time_type}" provided.')
 
         denominator, numerator, last = get_den_num_last(timestamps)
         if frame < 0:
