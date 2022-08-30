@@ -12,7 +12,7 @@ Export filters: Karaoke template
 YCbCr Matrix: TV.601
 
 [Aegisub Project Garbage]
-Timecodes File: timecodes.txt
+Timecodes File: timestamps.txt
 
 [V4+ Styles]
 Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding

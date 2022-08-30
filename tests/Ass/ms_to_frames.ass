@@ -12,7 +12,7 @@ Export filters: Karaoke template
 YCbCr Matrix: TV.601
 
 [Aegisub Project Garbage]
-Timecodes File: timecodes.txt
+Timecodes File: timestamps.txt
 Active Line: 1
 
 [V4+ Styles]
