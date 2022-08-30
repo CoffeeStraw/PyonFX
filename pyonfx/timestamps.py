@@ -20,8 +20,6 @@ from ffms2 import VideoSource
 from fractions import Fraction
 from typing import Union, Optional
 
-from sympy import denom
-
 
 def from_fps(fps: Union[int, float, Fraction], n_frames: int) -> list[int]:
     """Create timestamps for `n_frames` frames, based on the `fps` provided.
