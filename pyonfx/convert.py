@@ -94,9 +94,9 @@ class Convert:
     @staticmethod
     def ms_to_frames(timestamps: list[int], ms: int, time_type: TimeType = None) -> int:
         """Converts from milliseconds to frames.
-        
+
         Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L205-L231
-        
+
         Parameters:
             timestamps: ...
             ms (int): Milliseconds.
@@ -116,9 +116,9 @@ class Convert:
         if ms < 0:
             return int((int(ms * numerator / denominator - 999)) / 1000)
         elif ms > timestamps[-1]:
-            return int(int((
-                ms * numerator - last + denominator - 1
-            ) / denominator) / 1000) + (len(timestamps) - 1)
+            return int(
+                int((ms * numerator - last + denominator - 1) / denominator) / 1000
+            ) + (len(timestamps) - 1)
 
         # Employing bisect_right as a faster alternative to:
         # for i, timecode in reversed(list(enumerate(timestamps))):
@@ -126,9 +126,10 @@ class Convert:
         #         return i
         return bisect.bisect_right(timestamps, ms) - 1
 
-
     @staticmethod
-    def frames_to_ms(timestamps: list[int], frame: int, time_type: TimeType = None) -> int:
+    def frames_to_ms(
+        timestamps: list[int], frame: int, time_type: TimeType = None
+    ) -> int:
         """Converts from frames to milliseconds.
 
         Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L233-L256
@@ -157,17 +158,17 @@ class Convert:
             return int(frame * denominator * 1000 / numerator)
         elif frame > (len(timestamps) - 1):
             frames_past_end = frame - len(timestamps) + 1
-            return int(
-                frames_past_end * 1000 * denominator
-                + last
-                + int(numerator / 2)
-            ) / numerator
+            return (
+                int(frames_past_end * 1000 * denominator + last + int(numerator / 2))
+                / numerator
+            )
 
         return timestamps[frame]
 
-
     @staticmethod
-    def move_ms_to_frame(timestamps: list[int], ms: int, time_type: TimeType = None) -> int:
+    def move_ms_to_frame(
+        timestamps: list[int], ms: int, time_type: TimeType = None
+    ) -> int:
         """
         Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
         It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
@@ -180,7 +181,9 @@ class Convert:
             The output represents ``ms`` converted.
         """
 
-        return Convert.frames_to_ms(timestamps, Convert.ms_to_frames(timestamps, ms, time_type), time_type)
+        return Convert.frames_to_ms(
+            timestamps, Convert.ms_to_frames(timestamps, ms, time_type), time_type
+        )
 
     @staticmethod
     def alpha_ass_to_dec(alpha_ass: str) -> int:

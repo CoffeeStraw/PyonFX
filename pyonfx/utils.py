@@ -209,7 +209,9 @@ class FrameUtility:
 
         self.i = 0
         self.n = self.end_fr - self.start_fr + 1
-        self.end_ms_snapped = Convert.frames_to_ms(self.timestamps, self.end_fr, TimeType.END)
+        self.end_ms_snapped = Convert.frames_to_ms(
+            self.timestamps, self.end_fr, TimeType.END
+        )
 
     def __iter__(self):
         # Generate values for the frames on demand. The end time is always clamped to the end_ms value.
@@ -217,7 +219,9 @@ class FrameUtility:
             yield (
                 Convert.frames_to_ms(self.timestamps, self.curr_fr, TimeType.START),
                 min(
-                    Convert.frames_to_ms(self.timestamps, self.curr_fr + self.n_fr - 1, TimeType.END),
+                    Convert.frames_to_ms(
+                        self.timestamps, self.curr_fr + self.n_fr - 1, TimeType.END
+                    ),
                     self.end_ms_snapped,
                 ),
                 self.i + 1,
@@ -266,7 +270,9 @@ class FrameUtility:
             >>> Frame 3/4: 125 - 175; fsc: 137.5
             >>> Frame 4/4: 175 - 225; fsc: 112.5
         """
-        curr_ms = Convert.frames_to_ms(self.timestamps, self.i + (self.n_fr - 1) // 2, TimeType.END)
+        curr_ms = Convert.frames_to_ms(
+            self.timestamps, self.i + (self.n_fr - 1) // 2, TimeType.END
+        )
 
         if curr_ms <= start_time:
             return 0

@@ -26,7 +26,9 @@ def test_validate_timecodes():
         timestamps.from_timestamps_file(
             os.path.join(dir_path, "Ass", "timecodes_short.txt")
         )
-    assert str(exc_info.value) == "Must have at least two timecodes to do anything useful."
+    assert (
+        str(exc_info.value) == "Must have at least two timecodes to do anything useful."
+    )
 
     with pytest.raises(ValueError) as exc_info:
         timestamps.from_timestamps_file(
@@ -47,7 +49,9 @@ def test_ms_to_frames():
     for line in lines:
         if line.style.isnumeric():
             ms = int(line.style)
-            assert int(line.actor) == Convert.ms_to_frames(time_stamps, ms, TimeType.START)
+            assert int(line.actor) == Convert.ms_to_frames(
+                time_stamps, ms, TimeType.START
+            )
 
 
 def test_frames_to_ms():
@@ -56,7 +60,9 @@ def test_frames_to_ms():
     for line in lines:
         if line.style.isnumeric():
             frame = int(line.style)
-            assert int(line.actor) == Convert.frames_to_ms(time_stamps, frame, TimeType.START)
+            assert int(line.actor) == Convert.frames_to_ms(
+                time_stamps, frame, TimeType.START
+            )
 
 
 def test_move_ms_to_frame():
