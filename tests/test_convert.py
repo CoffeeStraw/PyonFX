@@ -1,7 +1,8 @@
+import json
 import os
-import sys
 import pytest
 import pytest_check as check
+import sys
 from pyonfx import *
 
 # Get ass path
@@ -48,8 +49,12 @@ def test_ms_to_frames():
     for line in lines:
         if line.style.isnumeric():
             ms = int(line.style)
-            assert int(line.actor) == Convert.ms_to_frames(
+            time = json.loads(line.raw_text)
+            assert time["start_time"] == Convert.ms_to_frames(
                 time_stamps, ms, TimeType.START
+            )
+            assert time["end_time"] == Convert.ms_to_frames(
+                time_stamps, ms, TimeType.END
             )
 
 
@@ -59,8 +64,12 @@ def test_frames_to_ms():
     for line in lines:
         if line.style.isnumeric():
             frame = int(line.style)
-            assert int(line.actor) == Convert.frames_to_ms(
+            time = json.loads(line.raw_text)
+            assert time["start_time"] == Convert.frames_to_ms(
                 time_stamps, frame, TimeType.START
+            )
+            assert time["end_time"] == Convert.frames_to_ms(
+                time_stamps, frame, TimeType.END
             )
 
 
