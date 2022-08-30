@@ -71,7 +71,7 @@ class Convert:
         """
         # Milliseconds?
         if type(ass_ms) is int and ass_ms >= 0:
-            # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/ass/timeType.h#L32
+            # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/ass/time.h#L32
             ass_ms = (ass_ms + 5) - (ass_ms + 5) % 10
 
             return "{:d}:{:02d}:{:02d}.{:02d}".format(
