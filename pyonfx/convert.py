@@ -38,6 +38,7 @@ class TimeType(Enum):
     """
     Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/vfr.h#L27-L40
     """
+
     EXACT = "EXACT"
     START = "START"
     END = "END"
@@ -94,7 +95,9 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def ms_to_frames(timestamps: list[int], ms: int, time_type: TimeType = TimeType.EXACT) -> int:
+    def ms_to_frames(
+        timestamps: list[int], ms: int, time_type: TimeType = TimeType.EXACT
+    ) -> int:
         """Converts from milliseconds to frames.
 
         Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L205-L231
@@ -117,7 +120,7 @@ class Convert:
 
         denominator, numerator, last = get_den_num_last(timestamps)
         if ms < 0:
-            return int((int(ms * numerator / denominator - 999)) / 1000)
+            return int(int(ms * numerator / denominator - 999) / 1000)
         elif ms > timestamps[-1]:
             return int(
                 int((ms * numerator - last + denominator - 1) / denominator) / 1000
