@@ -18,7 +18,7 @@
 import os
 from ffms2 import VideoSource
 from fractions import Fraction
-from typing import Union, Optional
+from typing import Tuple, Union, Optional
 
 
 def from_fps(fps: Union[int, float, Fraction], n_frames: int) -> list[int]:
@@ -93,6 +93,8 @@ def from_timestamps_file(path_timestamps: str) -> list[int]:
 def from_mkv(mkv_path: str, track_number: Optional[int] = None) -> list[int]:
     """Return timestamps read from a MKV file.
 
+    Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/src/video_provider_ffmpegsource.cpp#L296-L314
+
     Args:
         ...
 
@@ -101,7 +103,6 @@ def from_mkv(mkv_path: str, track_number: Optional[int] = None) -> list[int]:
     """
     video_source = VideoSource(mkv_path, track_number)
 
-    # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/src/video_provider_ffmpegsource.cpp#L296-L314
     timestamps = [
         int(
             (frame.PTS * video_source.track.time_base.numerator)
@@ -136,7 +137,7 @@ def validate(timestamps):
         raise ValueError("Timestamps are all identical.")
 
 
-def normalize(timestamps):
+def normalize(timestamps) -> list[int]:
     """Shift the timestamps to make them start from 0. This way, frame 0 will start at time 0.
 
     Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L50-L53
@@ -152,8 +153,10 @@ def normalize(timestamps):
     return timestamps
 
 
-def get_den_num_last(timestamps):
+def get_den_num_last(timestamps) -> Tuple[int, int, int]:
     """Compute denominator, numerator and last values.
+
+    Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L157-L159
 
     Args:
         ...
