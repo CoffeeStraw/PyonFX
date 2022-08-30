@@ -158,8 +158,8 @@ class Convert:
             return int(frame * denominator * 1000 / numerator)
         elif frame > (len(timestamps) - 1):
             frames_past_end = frame - len(timestamps) + 1
-            return (
-                int(frames_past_end * 1000 * denominator + last + int(numerator / 2))
+            return int(
+                (frames_past_end * 1000 * denominator + last + int(numerator / 2))
                 / numerator
             )
 
