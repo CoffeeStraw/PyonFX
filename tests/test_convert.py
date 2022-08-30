@@ -73,22 +73,6 @@ def test_frames_to_ms():
             )
 
 
-def test_move_ms_to_frame():
-    # All the outputs were checked with Aegisub DC 9214
-    # Test with dummy video
-    assert False
-
-    assert Convert.move_ms_to_frame(timestamps, 0, 1, True) == 0
-    assert Convert.move_ms_to_frame(timestamps, 96, 1, True) == 500
-    assert Convert.move_ms_to_frame(timestamps, 590, 1, True) == 500
-    assert Convert.move_ms_to_frame(timestamps, 1001, 1, True) == 1500
-
-    assert Convert.move_ms_to_frame(timestamps, 0, 1, False) == 0
-    assert Convert.move_ms_to_frame(timestamps, 96, 1, False) == 500
-    assert Convert.move_ms_to_frame(timestamps, 590, 1, False) == 500
-    assert Convert.move_ms_to_frame(timestamps, 1001, 1, False) == 1500
-
-
 def test_coloralpha():
     # -- Test alpha conversion functions --
     assert Convert.alpha_ass_to_dec("&HFF&") == 255
