@@ -21,8 +21,6 @@ import math
 import colorsys
 import bisect
 from enum import Enum
-from ffms2 import VideoSource
-from fractions import Fraction
 from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
