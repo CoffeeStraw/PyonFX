@@ -1,5 +1,6 @@
 import os
 import sys
+import pytest
 import pytest_check as check
 from pyonfx import *
 
@@ -21,20 +22,23 @@ max_deviation = 3
 
 
 def test_validate_timecodes():
-    with check.raises(ValueError):
+    with pytest.raises(ValueError) as exc_info:
         Timecode.from_timestamps_file(
             os.path.join(dir_path, "Ass", "timecodes_short.txt")
         )
+    assert str(exc_info.value) == "Must have at least two timecodes to do anything useful."
 
-    with check.raises(ValueError):
+    with pytest.raises(ValueError) as exc_info:
         Timecode.from_timestamps_file(
             os.path.join(dir_path, "Ass", "timecodes_not_sorted.txt")
         )
+    assert str(exc_info.value) == "Timecodes are not sorted."
 
-    with check.raises(ValueError):
+    with pytest.raises(ValueError) as exc_info:
         Timecode.from_timestamps_file(
             os.path.join(dir_path, "Ass", "timecodes_identical.txt")
         )
+    assert str(exc_info.value) == "Timecodes are all identical."
 
 
 def test_ms_to_frames():
