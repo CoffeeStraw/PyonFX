@@ -110,7 +110,7 @@ class Convert:
         Returns:
             The output represents ``ms`` converted.
         """
-        if time_type not in TimeType:
+        if not isinstance(time_type, TimeType):
             raise ValueError(f'Unknown time_type "{time_type}" provided.')
 
         if time_type == TimeType.START:
@@ -148,7 +148,7 @@ class Convert:
         Returns:
             The output represents ``frames`` converted.
         """
-        if time_type not in TimeType:
+        if not isinstance(time_type, TimeType):
             raise ValueError(f'Unknown time_type "{time_type}" provided.')
 
         if time_type == TimeType.START:
