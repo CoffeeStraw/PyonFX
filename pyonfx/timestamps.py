@@ -132,6 +132,9 @@ def validate(timestamps):
     if any(timestamps[i] > timestamps[i + 1] for i in range(len(timestamps) - 1)):
         raise ValueError("Timestamps must be in non-decreasing order.")
 
+    if timestamps.count(timestamps[0]) == len(timestamps):
+        raise ValueError("Timestamps are all identical.")
+
 
 def normalize(timestamps):
     """Shift the timestamps to make them start from 0. This way, frame 0 will start at time 0.

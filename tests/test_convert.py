@@ -22,25 +22,24 @@ max_deviation = 3
 
 
 def test_validate_timecodes():
-    with pytest.raises(ValueError) as exc_info:
-        timestamps.from_timestamps_file(
-            os.path.join(dir_path, "Ass", "timecodes_short.txt")
-        )
-    assert (
-        str(exc_info.value) == "Must have at least two timecodes to do anything useful."
-    )
 
     with pytest.raises(ValueError) as exc_info:
         timestamps.from_timestamps_file(
-            os.path.join(dir_path, "Ass", "timecodes_not_sorted.txt")
+            os.path.join(dir_path, "Ass", "timestamps_short.txt")
         )
-    assert str(exc_info.value) == "Timecodes are not sorted."
+    assert str(exc_info.value) == "There must be at least 2 timestamps."
 
     with pytest.raises(ValueError) as exc_info:
         timestamps.from_timestamps_file(
-            os.path.join(dir_path, "Ass", "timecodes_identical.txt")
+            os.path.join(dir_path, "Ass", "timestamps_not_sorted.txt")
         )
-    assert str(exc_info.value) == "Timecodes are all identical."
+    assert str(exc_info.value) == "Timestamps must be in non-decreasing order."
+
+    with pytest.raises(ValueError) as exc_info:
+        timestamps.from_timestamps_file(
+            os.path.join(dir_path, "Ass", "timestamps_identical.txt")
+        )
+    assert str(exc_info.value) == "Timestamps are all identical."
 
 
 def test_ms_to_frames():
