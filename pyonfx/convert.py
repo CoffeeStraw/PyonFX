@@ -96,9 +96,9 @@ class Convert:
         Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L205-L231
 
         Parameters:
-            timestamps: ...
+            timestamps (list[int]): ...
             ms (int): Milliseconds.
-            type (Time): ...
+            time_type (TimeType): ...
 
         Returns:
             The output represents ``ms`` converted.
@@ -133,9 +133,9 @@ class Convert:
         Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L233-L256
 
         Parameters:
-            timestamps: ...
+            timestamps (list[int]): ...
             frame (int): Frame.
-            type (Time): ...
+            time_type (TimeType): ...
 
         Returns:
             The output represents ``frames`` converted.
@@ -172,8 +172,9 @@ class Convert:
         It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
 
         Parameters:
+            timestamps: (list[int]): ...
             ms (int): Milliseconds.
-            type (Time): The type time you need. For me detail about Time type, see the Time Class.
+            time_type (TimeType): ...
 
         Returns:
             The output represents ``ms`` converted.
