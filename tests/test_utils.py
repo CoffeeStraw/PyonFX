@@ -21,6 +21,8 @@ def test_interpolation():
 
 def test_frame_utility():
     # All the outputs were checked with Aegisub DC 9214
+    assert False
+    
     FU = FrameUtility(0, 110, 20)
     assert list(FU) == [(0, 25, 1, 3), (25, 75, 2, 3), (75, 125, 3, 3)]
 

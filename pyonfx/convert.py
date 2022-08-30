@@ -26,6 +26,7 @@ from fractions import Fraction
 from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
+from .timestamps import get_den_num_last
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
@@ -33,6 +34,11 @@ if TYPE_CHECKING:
 
 # A simple NamedTuple to represent pixels
 Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", int)])
+
+
+class TimeType(Enum):
+    START = "START"
+    END = "END"
 
 
 class ColorModel(Enum):
@@ -65,8 +71,7 @@ class Convert:
         """
         # Milliseconds?
         if type(ass_ms) is int and ass_ms >= 0:
-
-            # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/ass/time.h#L32
+            # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/ass/timeType.h#L32
             ass_ms = (ass_ms + 5) - (ass_ms + 5) % 10
 
             return "{:d}:{:02d}:{:02d}.{:02d}".format(
@@ -85,6 +90,97 @@ class Convert:
             )
         else:
             raise ValueError("Milliseconds or ASS timestamp expected")
+
+    @staticmethod
+    def ms_to_frames(timestamps: list[int], ms: int, time_type: TimeType = None) -> int:
+        """Converts from milliseconds to frames.
+        
+        Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L205-L231
+        
+        Parameters:
+            timestamps: ...
+            ms (int): Milliseconds.
+            type (Time): ...
+
+        Returns:
+            The output represents ``ms`` converted.
+        """
+        if time_type == TimeType.START:
+            return Convert.ms_to_frames(timestamps, ms - 1) + 1
+        elif time_type == TimeType.END:
+            return Convert.ms_to_frames(timestamps, ms - 1)
+        elif time_type:
+            raise ValueError(f'Unknown time_type "{time_type}" provided.')
+
+        denominator, numerator, last = get_den_num_last(timestamps)
+        if ms < 0:
+            return int((int(ms * numerator / denominator - 999)) / 1000)
+        elif ms > timestamps[-1]:
+            return int(int((
+                ms * numerator - last + denominator - 1
+            ) / denominator) / 1000) + (len(timestamps) - 1)
+
+        # Employing bisect_right as a faster alternative to:
+        # for i, timecode in reversed(list(enumerate(timestamps))):
+        #     if timecode <= ms:
+        #         return i
+        return bisect.bisect_right(timestamps, ms) - 1
+
+
+    @staticmethod
+    def frames_to_ms(timestamps: list[int], frame: int, time_type: TimeType = None) -> int:
+        """Converts from frames to milliseconds.
+
+        Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L233-L256
+
+        Parameters:
+            timestamps: ...
+            frame (int): Frame.
+            type (Time): ...
+
+        Returns:
+            The output represents ``frames`` converted.
+        """
+        if time_type == TimeType.START:
+            prev_frame = Convert.frames_to_ms(timestamps, frame - 1)
+            curr_frame = Convert.frames_to_ms(timestamps, frame)
+            return prev_frame + int((curr_frame - prev_frame + 1) / 2)
+        elif time_type == TimeType.END:
+            curr_frame = Convert.frames_to_ms(timestamps, frame)
+            next_frame = Convert.frames_to_ms(timestamps, frame + 1)
+            return curr_frame + int((next_frame - curr_frame + 1) / 2)
+        elif time_type:
+            raise ValueError(f'Unknown time_type "{time_type}" provided.')
+
+        denominator, numerator, last = get_den_num_last(timestamps)
+        if frame < 0:
+            return int(frame * denominator * 1000 / numerator)
+        elif frame > (len(timestamps) - 1):
+            frames_past_end = frame - len(timestamps) + 1
+            return int(
+                frames_past_end * 1000 * denominator
+                + last
+                + int(numerator / 2)
+            ) / numerator
+
+        return timestamps[frame]
+
+
+    @staticmethod
+    def move_ms_to_frame(timestamps: list[int], ms: int, time_type: TimeType = None) -> int:
+        """
+        Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
+        It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
+
+        Parameters:
+            ms (int): Milliseconds.
+            type (Time): The type time you need. For me detail about Time type, see the Time Class.
+
+        Returns:
+            The output represents ``ms`` converted.
+        """
+
+        return Convert.frames_to_ms(timestamps, Convert.ms_to_frames(timestamps, ms, time_type), time_type)
 
     @staticmethod
     def alpha_ass_to_dec(alpha_ass: str) -> int:
@@ -763,190 +859,3 @@ class Convert:
     @staticmethod
     def image_to_pixels(image):
         pass
-
-
-class Time(Enum):
-    START = "START"
-    END = "END"
-
-
-class Timecode(object):
-    """
-    Args:
-        timecodes (list of :class:`int`): Contain the timecode of an video.
-    Attributes:
-        __timecodes (list of :class:`int`): Contain the timecode of an video.
-    """
-
-    __timecodes: List[int]
-
-    def __init__(
-        self,
-        timecodes: List[int],
-    ):
-        self.__timecodes = timecodes
-
-        self.validate_timecodes()
-        self.normalize_timecodes()
-
-        self.__denominator = 1000000000
-        self.__numerator = int(
-            (len(self.__timecodes) - 1)
-            * self.__denominator
-            * 1000
-            / self.__timecodes[-1]
-        )
-        self.__last = (len(self.__timecodes) - 1) * self.__denominator * 1000
-
-    @classmethod
-    def from_fps(cls, fps: int | float | Fraction, number_of_frames: int) -> Timecode:
-        return cls([round(frame * 1000 / fps) for frame in range(number_of_frames)])
-
-    @classmethod
-    def from_mkv(cls, mkv_file_path: str, track_number: int = None) -> Timecode:
-        vsource = VideoSource(mkv_file_path, track_number)
-
-        # From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/src/video_provider_ffmpegsource.cpp#L296-L314
-        timestamps = [
-            int(
-                (frame.PTS * vsource.track.time_base.numerator)
-                / vsource.track.time_base.denominator
-            )
-            for frame in vsource.track.frame_info_list
-        ]
-
-        del vsource
-        return cls(timestamps)
-
-    @classmethod
-    def from_timestamps_file(cls, timestamps_file_path: str) -> Timecode:
-        """
-        timestamps_file_path (str): Path for the timestamp file. This program only support V2 timestamp format.
-        Information about timestamp file: https://mkvtoolnix.download/doc/mkvmerge.html#mkvmerge.external_timestamp_files
-        How to extract timestamp file:
-            1 - Open the video with Aegisub. Video --> Save Timecodes File...
-            2 - https://sourceforge.net/projects/gmkvextractgui/ (Warning. With gMKVExtractGUI, you will need to remove the last timecode in the file)
-        """
-        timestamps = []
-
-        with open(timestamps_file_path, "r") as f:
-            lines = f.readlines()
-
-            if lines[0] not in ["# timecode format v2\n", "# timestamp format v2\n"]:
-                raise ValueError(
-                    "The timestamp file you have provided is not properly formatted."
-                )
-
-            for line in lines[1:]:
-                try:
-                    timestamp = int(line)
-                except ValueError:
-                    continue
-                else:
-                    timestamps.append(timestamp)
-
-        return cls(timestamps)
-
-    def validate_timecodes(self):
-        """
-        Verify that timecodes monotonically increase.
-        Inspired By: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L39-L46
-        """
-        if len(self.__timecodes) <= 1:
-            raise ValueError("Must have at least two timecodes to do anything useful.")
-        if self.__timecodes != sorted(self.__timecodes):
-            raise ValueError("Timecodes are not sorted.")
-        if self.__timecodes[0] == self.__timecodes[-1]:
-            raise ValueError("Timecodes are all identical.")
-
-    def normalize_timecodes(self):
-        """
-        Shift timecodes so that frame 0 starts at time 0.
-        Inspired By: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L50-L53
-        """
-        firstTimecode = self.__timecodes[0]
-
-        if firstTimecode != 0:
-            self.__timecodes = [
-                timecode - firstTimecode for timecode in self.__timecodes
-            ]
-
-    def ms_to_frames(self, ms: int, type: Time = None) -> int:
-        """
-        Parameters:
-            ms (int): Milliseconds.
-            type (Time): The type time you need. For me detail about Time type, see the Time Class.
-        Returns:
-            The frame for an ms and a timing type.
-        Inspired By: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L205-L231
-
-        """
-        if type == Time.START:
-            return self.ms_to_frames(ms - 1) + 1
-
-        if type == Time.END:
-            return self.ms_to_frames(ms - 1)
-
-        if ms < 0:
-            return int((int(ms * self.__numerator / self.__denominator - 999)) / 1000)
-
-        if ms > self.__timecodes[-1]:
-            return int(int((
-                ms * self.__numerator - self.__last + self.__denominator - 1
-            ) / self.__denominator) / 1000) + (len(self.__timecodes) - 1)
-
-        """
-        In this case bisect_right is equivalent to this:
-
-        for i, timecode in reversed(list(enumerate(self.__timecodes))):
-            if timecode <= ms:
-                return i
-        """
-        return bisect.bisect_right(self.__timecodes, ms) - 1
-
-    def frames_to_ms(self, frame: int, type: Time = None) -> int:
-        """
-        Parameters:
-            frame (int): Frame.
-            type (Time): The type time you need. For me detail about Time type, see the Time Class.
-        Returns:
-            The MS for an frame and a timing type.
-        Inspired By: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L233-L256
-        """
-        if type == Time.START:
-            previousFrame = self.frames_to_ms(frame - 1)
-            currentFrame = self.frames_to_ms(frame)
-            return previousFrame + int((currentFrame - previousFrame + 1) / 2)
-
-        if type == Time.END:
-            currentFrame = self.frames_to_ms(frame)
-            nextFrame = self.frames_to_ms(frame + 1)
-            return currentFrame + int((nextFrame - currentFrame + 1) / 2)
-
-        if frame < 0:
-            return int(frame * self.__denominator * 1000 / self.__numerator)
-
-        if frame > (len(self.__timecodes) - 1):
-            frames_past_end = frame - len(self.__timecodes) + 1
-            return int(
-                frames_past_end * 1000 * self.__denominator
-                + self.__last
-                + int(self.__numerator / 2)
-            ) / self.__numerator
-
-        return self.__timecodes[frame]
-
-    def move_ms_to_frame(self, ms: int, type: Time = None) -> int:
-        """
-        Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
-        It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
-
-        Parameters:
-            ms (int): Milliseconds.
-            type (Time): The type time you need. For me detail about Time type, see the Time Class.
-
-        Returns:
-            The output represents ``ms`` converted.
-        """
-
-        return self.frames_to_ms(self.ms_to_frames(ms, type), type)

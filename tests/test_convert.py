@@ -14,26 +14,26 @@ meta, styles, lines = io.get_data()
 # Config
 io_ms_to_frames = Ass(os.path.join(dir_path, "Ass", "ms_to_frames.ass"))
 io_frames_to_ms = Ass(os.path.join(dir_path, "Ass", "frames_to_ms.ass"))
-timecodes = Timecode.from_timestamps_file(
-    os.path.join(dir_path, "Ass", "timecodes.txt")
+time_stamps = timestamps.from_timestamps_file(
+    os.path.join(dir_path, "Ass", "timestamps.txt")
 )
 max_deviation = 3
 
 
-def test_validate_timecodes():
+def test_validate_timestamps():
     with check.raises(ValueError):
-        Timecode.from_timestamps_file(
-            os.path.join(dir_path, "Ass", "timecodes_short.txt")
+        timestamps.from_timestamps_file(
+            os.path.join(dir_path, "Ass", "timestamps_short.txt")
         )
 
     with check.raises(ValueError):
-        Timecode.from_timestamps_file(
-            os.path.join(dir_path, "Ass", "timecodes_not_sorted.txt")
+        timestamps.from_timestamps_file(
+            os.path.join(dir_path, "Ass", "timestamps_not_sorted.txt")
         )
 
     with check.raises(ValueError):
-        Timecode.from_timestamps_file(
-            os.path.join(dir_path, "Ass", "timecodes_identical.txt")
+        timestamps.from_timestamps_file(
+            os.path.join(dir_path, "Ass", "timestamps_identical.txt")
         )
 
 
@@ -43,7 +43,7 @@ def test_ms_to_frames():
     for line in lines:
         if line.style.isnumeric():
             ms = int(line.style)
-            assert int(line.actor) == timecodes.ms_to_frames(ms, Time.START)
+            assert int(line.actor) == Convert.ms_to_frames(time_stamps, ms, TimeType.START)
 
 
 def test_frames_to_ms():
@@ -52,21 +52,23 @@ def test_frames_to_ms():
     for line in lines:
         if line.style.isnumeric():
             frame = int(line.style)
-            assert int(line.actor) == timecodes.frames_to_ms(frame, Time.START)
+            assert int(line.actor) == Convert.frames_to_ms(time_stamps, frame, TimeType.START)
 
 
 def test_move_ms_to_frame():
     # All the outputs were checked with Aegisub DC 9214
     # Test with dummy video
-    assert Convert.move_ms_to_frame(0, 1, True) == 0
-    assert Convert.move_ms_to_frame(96, 1, True) == 500
-    assert Convert.move_ms_to_frame(590, 1, True) == 500
-    assert Convert.move_ms_to_frame(1001, 1, True) == 1500
+    assert False
 
-    assert Convert.move_ms_to_frame(0, 1, False) == 0
-    assert Convert.move_ms_to_frame(96, 1, False) == 500
-    assert Convert.move_ms_to_frame(590, 1, False) == 500
-    assert Convert.move_ms_to_frame(1001, 1, False) == 1500
+    assert Convert.move_ms_to_frame(timestamps, 0, 1, True) == 0
+    assert Convert.move_ms_to_frame(timestamps, 96, 1, True) == 500
+    assert Convert.move_ms_to_frame(timestamps, 590, 1, True) == 500
+    assert Convert.move_ms_to_frame(timestamps, 1001, 1, True) == 1500
+
+    assert Convert.move_ms_to_frame(timestamps, 0, 1, False) == 0
+    assert Convert.move_ms_to_frame(timestamps, 96, 1, False) == 500
+    assert Convert.move_ms_to_frame(timestamps, 590, 1, False) == 500
+    assert Convert.move_ms_to_frame(timestamps, 1001, 1, False) == 1500
 
 
 def test_coloralpha():
