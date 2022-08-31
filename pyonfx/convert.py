@@ -173,9 +173,7 @@ class Convert:
         return timestamps[frame]
 
     @staticmethod
-    def move_ms_to_frame(
-        timestamps: list[int], ms: int, time_type: TimeType = None
-    ) -> int:
+    def move_ms_to_frame(timestamps: list[int], ms: int, time_type: TimeType) -> int:
         """
         Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
         It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
