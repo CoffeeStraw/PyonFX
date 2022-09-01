@@ -110,7 +110,6 @@ def from_mkv(mkv_path: str, track_number: Optional[int] = None) -> list[int]:
         )
         for frame in video_source.track.frame_info_list
     ]
-    del video_source
 
     validate(timestamps)
     return normalize(timestamps)
