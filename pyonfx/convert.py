@@ -96,16 +96,16 @@ class Convert:
 
     @staticmethod
     def ms_to_frames(
-        timestamps: list[int], ms: int, time_type: TimeType = TimeType.EXACT
+        timestamps: List[int], ms: int, time_type: TimeType = TimeType.EXACT
     ) -> int:
         """Converts from milliseconds to frames.
 
         Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L205-L231
 
         Parameters:
-            timestamps (list[int]): ...
+            timestamps (list of int): A list of [timestamps](https://en.wikipedia.org/wiki/Timestamp) encoded as integers.
             ms (int): Milliseconds.
-            time_type (TimeType): ...
+            time_type (:class:`TimeType`, optional): The type of the provided time (start/end).
 
         Returns:
             The output represents ``ms`` converted.
@@ -134,16 +134,16 @@ class Convert:
 
     @staticmethod
     def frames_to_ms(
-        timestamps: list[int], frame: int, time_type: TimeType = TimeType.EXACT
+        timestamps: List[int], frame: int, time_type: TimeType = TimeType.EXACT
     ) -> int:
         """Converts from frames to milliseconds.
 
         Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/common/vfr.cpp#L233-L256
 
         Parameters:
-            timestamps (list[int]): ...
+            timestamps (list of int): A list of [timestamps](https://en.wikipedia.org/wiki/Timestamp) encoded as integers.
             frame (int): Frame.
-            time_type (TimeType): ...
+            time_type (:class:`TimeType`, optional): The type of the provided time (start/end).
 
         Returns:
             The output represents ``frames`` converted.
@@ -173,15 +173,15 @@ class Convert:
         return timestamps[frame]
 
     @staticmethod
-    def move_ms_to_frame(timestamps: list[int], ms: int, time_type: TimeType) -> int:
+    def move_ms_to_frame(timestamps: List[int], ms: int, time_type: TimeType) -> int:
         """
         Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
         It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
 
         Parameters:
-            timestamps: (list[int]): ...
+            timestamps (list of int): A list of [timestamps](https://en.wikipedia.org/wiki/Timestamp) encoded as integers.
             ms (int): Milliseconds.
-            time_type (TimeType): ...
+            time_type (:class:`TimeType`, optional): The type of the provided time (start/end).
 
         Returns:
             The output represents ``ms`` converted.

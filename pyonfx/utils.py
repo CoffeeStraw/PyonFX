@@ -143,75 +143,84 @@ class FrameUtility:
     You can use it to iterate over the frames going from ``start_ms``
     to ``end_ms`` and perform operations easily over multiple frames.
 
-    BACKGROUND KNOWLEDGE:
-
-    When reproducing a video+sub in a player, a line is rendered on the current frame
-    if the current time of the player is in between the line's start and end time.
-
-    The frame's duration can be determined by the fps value.
-
-    Let's now walk through an example: fps = 20 -> frame_duration = 50 ms.
-
-    The player will then seek for frames at the following times: 0, 50, 100, 150, ...
-
-    To accomodate this fact, frames' start and end times are positioned as follows:
-    - Frame 0: 0-25
-    - Frame 1: 25-75
-    - Frame 2: 75-125
-    - Frame 3: 125-175
-    - ...
-
-    This way, the frames' mid time will always be one of the player's seek times.
-    The only exception is the first frame, since we can't have negative times.
+    Both Constant Frame Rate (CFR) and Variable Frame Rate (VFR) videos are supported.
 
     Parameters:
         start_ms (positive int): Initial time in ms.
         end_ms (positive int): Final time in ms.
-        fps (positive int, float or Fraction, optional): Frames per second.
-        timestamps: ...
+        timestamps (list of int): A list of [timestamps](https://en.wikipedia.org/wiki/Timestamp) encoded as integers. Usually, this is automatically constructed for you and available in your :class:`Ass` object.
         n_fr (positive int, optional): Number of frames covered by each iteration.
 
     Returns:
         Returns a Generator yielding start_ms, end_ms, current frame index and total number of frames at each step.
 
     Example:
-        >>> FU = FrameUtility(0, 110, 20)
+        >>> # Let's assume to have an Ass object named "io" having a 20 fps video (i.e. frames are 50 ms long)
+        >>> FU = FrameUtility(0, 110, io.input_timestamps)
         >>> for s, e, i, n in FU:
         >>>     print(f"Frame {i}/{n}: {s} - {e}")
         >>>
         >>> Frame 1/3: 0 - 25
         >>> Frame 2/3: 25 - 75
         >>> Frame 3/3: 75 - 125
+
+    Note:
+        In the following we try to cover at our best the knowledge behind FrameUtility.
+
+        Say we have an .mkv file containing a video file and a subtitle file.
+        When reproducing the .mkv in a player, a line is rendered on the current frame
+        if the current time of the player is in between the line's start and end time.
+
+        Depending on the video file, the frames' duration can either be constant (CFR) or
+        variable (VFR).
+
+        Let's now walk through an example.
+        Say we have a CFR video having fps = 20 (i.e. the individual frame duration = 50 ms).
+
+        The player will then seek for frames at the following times: 0, 50, 100, 150, ...
+
+        We now want to generate a subtitle line for each frame. Which start time and end time should we generate?
+        Based on the theory above, there are multiple answers to make our lines appear.
+
+        FrameUtility implements what should be the safest answer: it generates the start and end times such that
+        the mid time will always be the closest to the player's seek times. Therefore:
+        - Frame 0: 0-25
+        - Frame 1: 25-75
+        - Frame 2: 75-125
+        - Frame 3: 125-175
+        - ...
+
+        As you can see, the only exception in this case is the first frame, since we can't have negative times.
     """
 
     def __init__(
         self,
         start_ms: int,
         end_ms: int,
-        timestamps: list[int],
+        timestamps: List[int],
         n_fr: int = 1,
     ):
         # Check for invalid values
         if start_ms < 0 or end_ms < 0:
             raise ValueError("Parameters 'start_ms' and 'start_ms' must be >= 0.")
-        if end_ms < start_ms:
+        if start_ms > end_ms:
             raise ValueError("Parameter 'start_ms' is expected to be <= 'end_ms'.")
 
-        self.timestamps = timestamps
         self.start_ms = start_ms
         self.end_ms = end_ms
+        self.timestamps = timestamps
 
         self.start_fr = self.curr_fr = Convert.ms_to_frames(
-            self.timestamps, self.start_ms, TimeType.START
+            timestamps, start_ms, TimeType.START
         )
-        self.end_fr = Convert.ms_to_frames(self.timestamps, self.end_ms, TimeType.END)
+        self.end_fr = Convert.ms_to_frames(timestamps, end_ms, TimeType.END)
+        self.end_ms_snapped = Convert.frames_to_ms(
+            timestamps, self.end_fr, TimeType.END
+        )
         self.n_fr = n_fr
 
         self.i = 0
         self.n = self.end_fr - self.start_fr + 1
-        self.end_ms_snapped = Convert.frames_to_ms(
-            self.timestamps, self.end_fr, TimeType.END
-        )
 
     def __iter__(self):
         # Generate values for the frames on demand. The end time is always clamped to the end_ms value.
@@ -229,16 +238,16 @@ class FrameUtility:
             )
             self.curr_fr += self.n_fr
 
-        # Reset the object to make it usable again
+        # Make the object re-usable
         self.reset()
 
     def reset(self):
         """
         Resets the FrameUtility object to its starting values.
-        It is a mandatory operation if you want to reuse the same object.
+        Allows to reuse the same FrameUtility object multiple times.
         """
-        self.i = 0
         self.curr_fr = self.start_fr
+        self.i = 0
 
     def add(
         self,
@@ -247,19 +256,30 @@ class FrameUtility:
         end_value: float,
         accelerator: float = 1.0,
     ) -> float:
-        """
-        You can see this function as a \"\\t\" tag usable in frame per frame operations.
+        """The corresponding of the ``\\t`` tag in the frame per frame environment.
+
+        The ``\\t`` tag performs a transformation from one style to another.
+        This function is more primitive: it allows to perform a transformation from a numeric value to another.
+        Which can then be used in tags defining styles, thus achieving the same results of the ``\\t`` tag.
+
         It must be used inside a for loop which iterates a FrameUtility object.
 
         Parameters:
             start_time (int): Initial time.
             end_time (int): Final time.
-            end_value (int or float): Value reached at end_time.
+            end_value (int or float): Numeric value reached at end_time.
             accelerator (float): Accelerator value.
 
+        Returns:
+            The transformed numeric value at the current frame of this FrameUtility object.
+
         Examples:
-            >>> FU = FrameUtility(25, 225, 20)
+            >>> # Let's assume to have an Ass object named "io" having a 20 fps video (i.e. frames are 50 ms long)
+            >>> FU = FrameUtility(25, 225, io.input_timestamps)
             >>> for s, e, i, n in FU:
+            >>>     # We would like to transform the fsc value
+            >>>     # from 100 up 150 for the first 100 ms,
+            >>>     # and then from 150 to 100 for the remaining 200 ms
             >>>     fsc = 100
             >>>     fsc += FU.add(0, 100, 50)
             >>>     fsc += FU.add(100, 200, -50)
