@@ -58,11 +58,15 @@ def test_move_ms_to_frame():
     for line in lines:
         if line.style.isnumeric():
             time = json.loads(line.raw_text)
-            assert Convert.time(line.start_time) == Convert.time(
-                Convert.move_ms_to_frame(timestamps, time["ms"], TimeType.START)
+            assert line.start_time == Convert.time(
+                Convert.time(
+                    Convert.move_ms_to_frame(timestamps, time["ms"], TimeType.START)
+                )
             )
-            assert Convert.time(line.end_time) == Convert.time(
-                Convert.move_ms_to_frame(timestamps, time["ms"], TimeType.END)
+            assert line.end_time == Convert.time(
+                Convert.time(
+                    Convert.move_ms_to_frame(timestamps, time["ms"], TimeType.END)
+                )
             )
 
 
