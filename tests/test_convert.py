@@ -15,6 +15,7 @@ meta, styles, lines = io.get_data()
 # Config
 io_ms_to_frames = Ass(os.path.join(dir_path, "Ass", "ms_to_frames.ass"))
 io_frames_to_ms = Ass(os.path.join(dir_path, "Ass", "frames_to_ms.ass"))
+io_move_ms_to_frame = Ass(os.path.join(dir_path, "Ass", "move_ms_to_frame.ass"))
 time_stamps = timestamps.from_timestamps_file(
     os.path.join(dir_path, "Ass", "timestamps.txt")
 )
@@ -50,6 +51,15 @@ def test_frames_to_ms():
                 time_stamps, frame, TimeType.END
             )
 
+
+def test_move_ms_to_frame():
+    meta, styles, lines = io_move_ms_to_frame.get_data()
+
+    for line in lines:
+        if line.style.isnumeric():
+            time = json.loads(line.raw_text)
+            assert Convert.time(line.start_time) == Convert.time(Convert.move_ms_to_frame(time_stamps, time["ms"], TimeType.START))
+            assert Convert.time(line.end_time) == Convert.time(Convert.move_ms_to_frame(time_stamps, time["ms"], TimeType.END))
 
 def test_coloralpha():
     # -- Test alpha conversion functions --
