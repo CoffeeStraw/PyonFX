@@ -16,7 +16,7 @@ meta, styles, lines = io.get_data()
 io_ms_to_frames = Ass(os.path.join(dir_path, "Ass", "ms_to_frames.ass"))
 io_frames_to_ms = Ass(os.path.join(dir_path, "Ass", "frames_to_ms.ass"))
 io_move_ms_to_frame = Ass(os.path.join(dir_path, "Ass", "move_ms_to_frame.ass"))
-time_stamps = timestamps.from_timestamps_file(
+timestamps = timestamps.from_timestamps_file(
     os.path.join(dir_path, "Ass", "timestamps.txt")
 )
 max_deviation = 3
@@ -30,10 +30,10 @@ def test_ms_to_frames():
             ms = int(line.style)
             time = json.loads(line.raw_text)
             assert time["start_time"] == Convert.ms_to_frames(
-                time_stamps, ms, TimeType.START
+                timestamps, ms, TimeType.START
             )
             assert time["end_time"] == Convert.ms_to_frames(
-                time_stamps, ms, TimeType.END
+                timestamps, ms, TimeType.END
             )
 
 
@@ -45,10 +45,10 @@ def test_frames_to_ms():
             frame = int(line.style)
             time = json.loads(line.raw_text)
             assert time["start_time"] == Convert.frames_to_ms(
-                time_stamps, frame, TimeType.START
+                timestamps, frame, TimeType.START
             )
             assert time["end_time"] == Convert.frames_to_ms(
-                time_stamps, frame, TimeType.END
+                timestamps, frame, TimeType.END
             )
 
 
@@ -58,8 +58,13 @@ def test_move_ms_to_frame():
     for line in lines:
         if line.style.isnumeric():
             time = json.loads(line.raw_text)
-            assert Convert.time(line.start_time) == Convert.time(Convert.move_ms_to_frame(time_stamps, time["ms"], TimeType.START))
-            assert Convert.time(line.end_time) == Convert.time(Convert.move_ms_to_frame(time_stamps, time["ms"], TimeType.END))
+            assert Convert.time(line.start_time) == Convert.time(
+                Convert.move_ms_to_frame(timestamps, time["ms"], TimeType.START)
+            )
+            assert Convert.time(line.end_time) == Convert.time(
+                Convert.move_ms_to_frame(timestamps, time["ms"], TimeType.END)
+            )
+
 
 def test_coloralpha():
     # -- Test alpha conversion functions --

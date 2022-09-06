@@ -4,6 +4,7 @@ from pyonfx import *
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
+
 def test_validate_timecodes():
 
     with pytest.raises(ValueError) as exc_info:
