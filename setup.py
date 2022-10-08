@@ -19,7 +19,7 @@ def find_version(*file_paths):
 
 
 def get_requirements():
-    requirements = ["pyquaternion", "ffms2"]
+    requirements = ["pyquaternion", "decord"]
 
     if os.environ.get("READTHEDOCS") != "True":
         requirements.extend(

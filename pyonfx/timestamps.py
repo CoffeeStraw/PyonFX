@@ -17,10 +17,9 @@
 
 import os
 import sys
+from decord import VideoReader
 from fractions import Fraction
 from typing import List, Tuple, Union, Optional
-
-from ffms2 import VideoSource
 
 
 def from_fps(fps: Union[int, float, Fraction], n_frames: int) -> List[int]:
@@ -95,37 +94,46 @@ def from_timestamps_file(path_timestamps: str) -> List[int]:
     return normalize(timestamps)
 
 
-def from_mkv(mkv_path: str, track_number: Optional[int] = None) -> List[int]:
-    """Read timestamps from a MKV file and return them.
-
-    Inspired by: https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/src/video_provider_ffmpegsource.cpp#L296-L314
+def from_video_file(video_path: str) -> List[int]:
+    """Read timestamps from a video file and return them.
+    It can only read MKV and MP4 file
 
     Args:
-        mkv_path (str): Path for the mkv file (either relative to your .py file or absolute).
-        track_number (int, optional): ID of the track containing the timestamps file.
+        video_path (str): Path for the mkv file (either relative to your .py file or absolute).
 
     Returns:
-        A list of [timestamps](https://en.wikipedia.org/wiki/Timestamp) encoded as integers.
+        A list of [timestamps](https://en.wikipedia.org/wiki/Timestamp) in ms encoded as integers.
     """
     # Getting timestamps absolute path and checking for its existance
-    if not os.path.isabs(mkv_path):
+    if not os.path.isabs(video_path):
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
-        mkv_path = os.path.join(dirname, mkv_path)
-    if not os.path.isfile(mkv_path):
-        raise FileNotFoundError(f'Invalid path for the mkv file: "{mkv_path}"')
+        video_path = os.path.join(dirname, video_path)
+    if not os.path.isfile(video_path):
+        raise FileNotFoundError(f'Invalid path for the mkv file: "{video_path}"')
+
+    with open(video_path, "rb") as f:
+
+        mkv_signature = f.read(4)
+        # MP4 file have an offset of 4, but since mkv already read 4, the offset is already applied
+        mp4_signature = f.read(8)
+
+        # From https://en.wikipedia.org/wiki/List_of_file_signatures
+        if not (
+            mkv_signature == b"\x1a\x45\xdf\xa3"
+            or mp4_signature == b"\x66\x74\x79\x70\x69\x73\x6f\x6d"
+        ):
+            raise TypeError(
+                "Invalid video format. PyonFX can only process MKV and MP4 file"
+            )
 
     # Parsing timestamps
-    video_source = VideoSource(mkv_path, track_number)
+    vr = VideoReader(video_path)
 
-    timestamps = [
-        int(
-            (frame.PTS * video_source.track.time_base.numerator)
-            / video_source.track.time_base.denominator
-        )
-        for frame in video_source.track.frame_info_list
-    ]
+    timestamps = vr.get_frame_timestamp(range(len(vr)))
+    timestamps = (timestamps[:, 0] * 1000).round().astype(int).tolist()
 
     validate(timestamps)
+    # decord seems to already normalize the timestamps, but we do it just to be sure since it is not write in their documentation.
     return normalize(timestamps)
 
 
