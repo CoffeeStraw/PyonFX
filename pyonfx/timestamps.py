@@ -19,7 +19,8 @@ import os
 import sys
 from decord import VideoReader
 from fractions import Fraction
-from typing import List, Tuple, Union, Optional
+from mimetypes import guess_type
+from typing import List, Tuple, Union
 
 
 def from_fps(fps: Union[int, float, Fraction], n_frames: int) -> List[int]:
@@ -114,13 +115,14 @@ def from_video_file(video_path: str) -> List[int]:
     with open(video_path, "rb") as f:
 
         mkv_signature = f.read(4)
-        # MP4 file have an offset of 4, but since mkv already read 4, the offset is already applied
-        mp4_signature = f.read(8)
+
+        # MP4 file have a ton of signature, ftypiso2, ftypisom, ftypmp42, ftypmp41, etc
+        # I didn't found a list of all of them. This is why we only check their extension
 
         # From https://en.wikipedia.org/wiki/List_of_file_signatures
         if not (
             mkv_signature == b"\x1a\x45\xdf\xa3"
-            or mp4_signature == b"\x66\x74\x79\x70\x69\x73\x6f\x6d"
+            or guess_type(video_path)[0] == "video/mp4"
         ):
             raise TypeError(
                 "Invalid video format. PyonFX can only process MKV and MP4 file"
