@@ -1,4 +1,0 @@
-# timecode format v2
-0
-42
-20
