@@ -41,6 +41,7 @@ Main contribution ways are to [open issues](https://github.com/CoffeeStraw/PyonF
 
 If you want to contribute with a pull request, please remember to:
 * Install the PyonFX package in development mode with the command ``pip install -e .[dev]``. Packages included in ``dev`` allows you to run tests, format your code and generate documentation.
+* Install the font [Migu 1P](https://www.freejapanesefont.com/migu-font-%E3%83%9F%E3%82%B0%E3%83%95%E3%82%A9%E3%83%B3%E3%83%88/). It is necessary to have installed it to be able to run some test.
 * Check if your changes are consistent with the [Style guideline](#style-guideline).
 * Increase the version number in the [``__init__.py``](https://github.com/CoffeeStraw/PyonFX/blob/master/pyonfx/__init__.py) file. It follows the following setup: ``MainVersion.NewFeature.BugFixes``. This means that if your PR contains bux fixes, you must increment the final number. If you've added a new feature, increase the second number. You should never have to touch the first number, as 0 stands for "beta stage" and 1 for "release stage".
 
