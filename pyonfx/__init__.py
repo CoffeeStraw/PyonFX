@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 from .font_utility import Font
-from .timestamps import *
+from .timestamps import Timestamps
 from .ass_core import Ass, Meta, Style, Line, Word, Syllable, Char
 from .convert import Convert, ColorModel, TimeType
 from .shape import Shape

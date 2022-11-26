@@ -16,7 +16,7 @@ meta, styles, lines = io.get_data()
 io_ms_to_frames = Ass(os.path.join(dir_path, "Ass", "ms_to_frames.ass"))
 io_frames_to_ms = Ass(os.path.join(dir_path, "Ass", "frames_to_ms.ass"))
 io_move_ms_to_frame = Ass(os.path.join(dir_path, "Ass", "move_ms_to_frame.ass"))
-timestamps = timestamps.from_timestamps_file(
+timestamps = Timestamps.from_timestamps_file(
     os.path.join(dir_path, "Ass", "timestamps.txt")
 )
 max_deviation = 3

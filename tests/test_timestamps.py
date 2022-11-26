@@ -1,6 +1,7 @@
 import os
 import pytest
 from pyonfx import *
+from fractions import Fraction
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -8,44 +9,44 @@ dir_path = os.path.dirname(os.path.realpath(__file__))
 def test_from_fps():
     # Verify fps limit
     with pytest.raises(ValueError) as exc_info:
-        timestamps.from_fps(-1, 1000)
+        Timestamps.from_fps(-1, 1000)
     assert (
         str(exc_info.value)
         == "Parameter 'fps' must be between 0 and 1000 (0 not included)."
     )
 
     with pytest.raises(ValueError) as exc_info:
-        timestamps.from_fps(0, 1000)
+        Timestamps.from_fps(0, 1000)
     assert (
         str(exc_info.value)
         == "Parameter 'fps' must be between 0 and 1000 (0 not included)."
     )
 
     try:
-        timestamps.from_fps(1, 1000)
+        Timestamps.from_fps(1, 1000)
     except Exception:
         assert False
 
     try:
-        timestamps.from_fps(1000, 1000)
+        Timestamps.from_fps(1000, 1000)
     except Exception:
         assert False
 
     with pytest.raises(ValueError) as exc_info:
-        timestamps.from_fps(1001, 1000)
+        Timestamps.from_fps(1001, 1000)
     assert (
         str(exc_info.value)
         == "Parameter 'fps' must be between 0 and 1000 (0 not included)."
     )
 
-    timestamps_result = timestamps.from_fps(Fraction(24000, 1001), 10)
+    timestamps_result = Timestamps.from_fps(Fraction(24000, 1001), 10)
     # The expectation timestamps have been generated from an Aegisub Dummy Video and Video --> Save Timecodes Files...
     timestamps_expectation = [0, 42, 83, 125, 167, 209, 250, 292, 334, 375]
     assert timestamps_result == timestamps_expectation
 
 
 def test_from_timestamps_file():
-    timestamps_result = timestamps.from_timestamps_file(
+    timestamps_result = Timestamps.from_timestamps_file(
         os.path.join(dir_path, "Ass", "timestamps.txt")
     )
 
@@ -34106,7 +34107,7 @@ def test_from_video_file():
         30447,
     ]
     # Video credit: https://pixabay.com/videos/wood-anemones-wildflower-flower-112429/
-    timestamps_result = timestamps.from_video_file(
+    timestamps_result = Timestamps.from_video_file(
         os.path.join(dir_path, "Ass", "Wood Anemones - 112429.mp4")
     )
     assert len(timestamps_result) == len(timestamps_expected)
@@ -34853,13 +34854,13 @@ def test_from_video_file():
         30447,
     ]
 
-    timestamps_result = timestamps.from_video_file(
+    timestamps_result = Timestamps.from_video_file(
         os.path.join(dir_path, "Ass", "Wood Anemones - 112429.mkv")
     )
     assert timestamps_result == timestamps_expected
 
     with pytest.raises(TypeError) as exc_info:
-        timestamps.from_video_file(
+        Timestamps.from_video_file(
             os.path.join(dir_path, "Ass", "Wood Anemones - 112429.avi")
         )
     assert (
@@ -34871,15 +34872,15 @@ def test_from_video_file():
 def test_validate():
 
     with pytest.raises(ValueError) as exc_info:
-        timestamps.validate([0])
+        Timestamps.validate([0])
     assert str(exc_info.value) == "There must be at least 2 timestamps."
 
     with pytest.raises(ValueError) as exc_info:
-        timestamps.validate([0, 42, 20])
+        Timestamps.validate([0, 42, 20])
     assert str(exc_info.value) == "Timestamps must be in non-decreasing order."
 
     with pytest.raises(ValueError) as exc_info:
-        timestamps.validate([20, 20])
+        Timestamps.validate([20, 20])
     assert str(exc_info.value) == "Timestamps must not be all identical."
 
 
@@ -34887,5 +34888,5 @@ def test_normalize():
     positive_timestamps_to_be_normalize = [10, 20, 30, 40, 50]
     negative_timestamps_to_be_normalize = [-10, 0, 10, 20, 30]
     timestamps_expected_results = [0, 10, 20, 30, 40]
-    assert normalize(positive_timestamps_to_be_normalize) == timestamps_expected_results
-    assert normalize(negative_timestamps_to_be_normalize) == timestamps_expected_results
+    assert Timestamps.normalize(positive_timestamps_to_be_normalize) == timestamps_expected_results
+    assert Timestamps.normalize(negative_timestamps_to_be_normalize) == timestamps_expected_results

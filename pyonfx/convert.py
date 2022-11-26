@@ -24,7 +24,7 @@ from enum import Enum
 from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
-from .timestamps import get_den_num_last
+from .timestamps import Timestamps
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
@@ -118,7 +118,7 @@ class Convert:
         elif time_type == TimeType.END:
             return Convert.ms_to_frames(timestamps, ms - 1)
 
-        denominator, numerator, last = get_den_num_last(timestamps)
+        denominator, numerator, last = Timestamps.get_den_num_last(timestamps)
         if ms < 0:
             return int(int(ms * numerator / denominator - 999) / 1000)
         elif ms > timestamps[-1]:
@@ -160,7 +160,7 @@ class Convert:
             next_frame = Convert.frames_to_ms(timestamps, frame + 1)
             return curr_frame + int((next_frame - curr_frame + 1) / 2)
 
-        denominator, numerator, last = get_den_num_last(timestamps)
+        denominator, numerator, last = Timestamps.get_den_num_last(timestamps)
         if frame < 0:
             return int(frame * denominator * 1000 / numerator)
         elif frame > (len(timestamps) - 1):
