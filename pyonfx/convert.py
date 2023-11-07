@@ -33,6 +33,35 @@ if TYPE_CHECKING:
 Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", int)])
 
 
+class TimeType(Enum):
+    """
+    START: Correspond to the start of the subtitle.
+        Ex:
+            fps = 24000/1001
+            rounding_method = RoundingMethod.ROUND
+            frame 0 : 0 ms
+            frame 1 : [1,42] ms
+            frame 2 : [43,83] ms
+    END: Correspond to the end of the subtitle.
+        Ex:
+            fps = 24000/1001
+            rounding_method = RoundingMethod.ROUND
+            frame 0 : ]0,42] ms
+            frame 1 : [43,83] ms
+            frame 2 : [84,125] ms
+    EXACT: Correspond to a precise frame in the video player.
+        Ex:
+            fps = 24000/1001
+            rounding_method = RoundingMethod.ROUND
+            frame 0 : [0,41] ms
+            frame 1 : [42,82] ms
+            frame 2 : [83,124] ms
+    """
+    START = "START"
+    END = "END"
+    EXACT = "EXACT"
+
+
 class ColorModel(Enum):
     ASS = "&HBBGGRR&"
     ASS_STYLE = "&HAABBGGRR"
