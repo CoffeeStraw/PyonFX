@@ -18,12 +18,15 @@
 from __future__ import annotations
 import re
 import math
+import bisect
 import colorsys
 from enum import Enum
 from fractions import Fraction
 from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
+from typing import List, NamedTuple, Optional, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
+from .timestamps import RoundingMethod, Timestamps
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
@@ -113,24 +116,54 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def ms_to_frames(ms: int, fps: Union[int, float, Fraction], is_start: bool) -> int:
-        """Converts from milliseconds to frames.
+    def ms_to_frames(
+        timestamps: Timestamps,
+        ms: int,
+        time_type: TimeType,
+        approximate: Optional[bool] = True
+    ) -> int:
+        """Converts milliseconds to frames.
 
         Parameters:
+            timestamps (Timestamps): An Timestamps object
             ms (int): Milliseconds.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
+            time_type (TimeType): The type of the provided time (start/end).
+            approximate (bool, optional): If True and if the ``ms`` is over the video length, it will approximate the frame.
 
         Returns:
-            The output represents ``ms`` converted.
+            The output represents ``ms`` converted into ``frames``.
         """
-        # Logic taken from: https://github.com/Aegisub/Aegisub/blob/master/libaegisub/common/vfr.cpp#L205
-        if ms < 0:
-            raise ValueError("Parameter 'ms' must be an integer >= 0.")
-        if fps <= 0:
-            raise ValueError("Parameter 'fps' must be an integer > 0.")
-        # NOTE: a frame can be negative in Aegisub, so here we allow this possibility
-        return math.ceil((ms - 0.5) / 1000 * fps) - (0 if is_start else 1)
+        if ms < timestamps.timestamps[0]:
+            raise ValueError("You cannot specify a time under 0.")
+
+        if not approximate and ms > timestamps.timestamps[-1]:
+            raise ValueError("You cannot specify a time over the video length.")
+
+        if time_type == TimeType.START:
+            if ms == timestamps.timestamps[0]:
+                return 0
+            return Convert.ms_to_frames(timestamps, ms - 1, TimeType.EXACT) + 1
+        elif time_type == TimeType.END:
+            if ms == timestamps.timestamps[0]:
+                return -1
+            return Convert.ms_to_frames(timestamps, ms - 1, TimeType.EXACT)
+
+        if ms > timestamps.timestamps[-1]:
+            # For explanation of this, see docs/Proof algorithm - ms_to_frames.md
+            if timestamps.rounding_method == RoundingMethod.ROUND:
+                upper_bound = (ms + Fraction("0.5")) * timestamps.fpms
+            elif timestamps.rounding_method == RoundingMethod.FLOOR:
+                upper_bound = (ms + 1) * timestamps.fpms
+            else:
+                raise NotImplementedError(f'The method "{timestamps.rounding_method}" is not supported.')
+            trunc_frame = int(upper_bound)
+            return trunc_frame - 1 if upper_bound == trunc_frame else trunc_frame
+
+        # Employing bisect_right as a faster alternative to:
+        # for i, timecode in reversed(list(enumerate(timestamps))):
+        #     if timecode <= ms:
+        #         return i
+        return bisect.bisect_right(timestamps.timestamps, ms) - 1
 
     @staticmethod
     def frames_to_ms(
