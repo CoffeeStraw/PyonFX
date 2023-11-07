@@ -42,11 +42,9 @@ class RangeV1:
 
 
 class TimestampsFileParser:
-
     def parse_file(
-            file_content: TextIOWrapper,
-            rounding_method: RoundingMethod
-        ) -> Tuple[List[int], Fraction, Fraction]:
+        file_content: TextIOWrapper, rounding_method: RoundingMethod
+    ) -> Tuple[List[int], Fraction, Fraction]:
         """Parse timestamps from a [timestamps file](https://mkvtoolnix.download/doc/mkvmerge.html#mkvmerge.external_timestamp_files) and return them.
 
         Inspired by: https://gitlab.com/mbunkus/mkvtoolnix/-/blob/72dfe260effcbd0e7d7cf6998c12bb35308c004f/src/merge/timestamp_factory.cpp#L27-74
@@ -69,23 +67,34 @@ class TimestampsFileParser:
         line = file_content.readline()
         match = regex_timestamps.search(line)
         if match is None:
-            raise ValueError(f"The timestamps at line 0 is invalid. Here is the line: \"{line}\"")
+            raise ValueError(
+                f'The timestamps at line 0 is invalid. Here is the line: "{line}"'
+            )
 
         version = int(match.group(1))
 
         if version == 1:
-            timestamps, last_frame_time, fpms = TimestampsFileParser._parse_v1_file(file_content, rounding_method)
+            timestamps, last_frame_time, fpms = TimestampsFileParser._parse_v1_file(
+                file_content, rounding_method
+            )
         elif version == 2 or version == 4:
-            timestamps, last_frame_time, fpms = TimestampsFileParser._parse_v2_and_v4_file(file_content, version, rounding_method)
+            (
+                timestamps,
+                last_frame_time,
+                fpms,
+            ) = TimestampsFileParser._parse_v2_and_v4_file(
+                file_content, version, rounding_method
+            )
         else:
-            raise NotImplementedError(f'The file uses version {version} for its timestamps, but this format is currently not compatible with PyonFX.')
+            raise NotImplementedError(
+                f"The file uses version {version} for its timestamps, but this format is currently not compatible with PyonFX."
+            )
 
         return timestamps, last_frame_time, fpms
 
     def _parse_v1_file(
-            file_content: TextIOWrapper,
-            rounding_method: RoundingMethod
-        ) -> Tuple[List[int], Fraction, Fraction]:
+        file_content: TextIOWrapper, rounding_method: RoundingMethod
+    ) -> Tuple[List[int], Fraction, Fraction]:
         """Create timestamps based on the timestamps v1 file provided.
 
         Inspired by: https://gitlab.com/mbunkus/mkvtoolnix/-/blob/72dfe260effcbd0e7d7cf6998c12bb35308c004f/src/merge/timestamp_factory.cpp#L82-175
@@ -106,20 +115,26 @@ class TimestampsFileParser:
 
         for line in file_content:
             if not line:
-                raise ValueError(f"The timestamps file does not contain a valid 'Assume' line with the default number of frames per second.")
+                raise ValueError(
+                    f"The timestamps file does not contain a valid 'Assume' line with the default number of frames per second."
+                )
             line = line.strip(" \t")
 
             if line and not line.startswith("#"):
                 break
 
         if not line.lower().startswith("assume "):
-            raise ValueError(f"The timestamps file does not contain a valid 'Assume' line with the default number of frames per second.")
+            raise ValueError(
+                f"The timestamps file does not contain a valid 'Assume' line with the default number of frames per second."
+            )
 
         line = line[7:].strip(" \t")
         try:
             default_fps = Fraction(line)
         except ValueError:
-            raise ValueError(f"The timestamps file does not contain a valid 'Assume' line with the default number of frames per second.")
+            raise ValueError(
+                f"The timestamps file does not contain a valid 'Assume' line with the default number of frames per second."
+            )
 
         for line in file_content:
             line = line.strip(" \t\n\r")
@@ -129,20 +144,26 @@ class TimestampsFileParser:
 
             line_splitted = line.split(",")
             if len(line_splitted) != 3:
-                raise ValueError(f"The timestamps file contain a invalid line. Here is it: \"{line}\"")
+                raise ValueError(
+                    f'The timestamps file contain a invalid line. Here is it: "{line}"'
+                )
             try:
                 start_frame = int(line_splitted[0])
                 end_frame = int(line_splitted[1])
                 fps = Fraction(line_splitted[2])
             except ValueError:
-                raise ValueError(f"The timestamps file contain a invalid line. Here is it: \"{line}\"")
+                raise ValueError(
+                    f'The timestamps file contain a invalid line. Here is it: "{line}"'
+                )
 
             range_v1 = RangeV1(start_frame, end_frame, fps)
 
             if range_v1.start_frame < 0 or range_v1.end_frame < 0:
                 raise ValueError("Cannot specify frame rate for negative frames.")
             if range_v1.end_frame < range_v1.start_frame:
-                raise ValueError("End frame must be greater than or equal to start frame.")
+                raise ValueError(
+                    "End frame must be greater than or equal to start frame."
+                )
             if range_v1.fps <= 0:
                 raise ValueError("FPS must be greater than zero.")
             elif range_v1.fps == 0:
@@ -174,10 +195,8 @@ class TimestampsFileParser:
         return timestamps, time, fpms
 
     def _parse_v2_and_v4_file(
-            file_content: TextIOWrapper,
-            version: int,
-            rounding_method: RoundingMethod
-        ) -> Tuple[List[int], Fraction, Fraction]:
+        file_content: TextIOWrapper, version: int, rounding_method: RoundingMethod
+    ) -> Tuple[List[int], Fraction, Fraction]:
         """Create timestamps based on the timestamps v1 file provided.
 
         Inspired by: https://gitlab.com/mbunkus/mkvtoolnix/-/blob/72dfe260effcbd0e7d7cf6998c12bb35308c004f/src/merge/timestamp_factory.cpp#L201-267
@@ -211,7 +230,9 @@ class TimestampsFileParser:
             try:
                 timestamp = Fraction(line)
             except ValueError:
-                raise ValueError(f"The timestamps file contain a invalid line. Here is it: \"{line}\"")
+                raise ValueError(
+                    f'The timestamps file contain a invalid line. Here is it: "{line}"'
+                )
 
             if highest_timestamp is None or highest_timestamp < timestamp:
                 highest_timestamp = timestamp
@@ -221,7 +242,9 @@ class TimestampsFileParser:
             rounded_timestamp = rounding_method(timestamp)
 
             if version == 2 and rounded_timestamp < previous_timestamp:
-                raise ValueError(f"The timestamps file contain timestamps NOT in ascending order.")
+                raise ValueError(
+                    f"The timestamps file contain timestamps NOT in ascending order."
+                )
 
             previous_timestamp = rounded_timestamp
             timestamps.append(rounded_timestamp)
@@ -234,7 +257,9 @@ class TimestampsFileParser:
 
         duration = highest_timestamp - lowest_timestamp
         if duration:
-            fpms = Fraction(len(timestamps) - 1) / (highest_timestamp - lowest_timestamp)
+            fpms = Fraction(len(timestamps) - 1) / (
+                highest_timestamp - lowest_timestamp
+            )
         else:
             fpms = 0
         return timestamps, highest_timestamp, fpms
@@ -286,25 +311,35 @@ class Timestamps:
 
         if timestamps is not None:
             if last_frame_time is None:
-                raise ValueError("If you specify a value for ``timestamps``, you must specify a value for ``last_frame_time``")
+                raise ValueError(
+                    "If you specify a value for ``timestamps``, you must specify a value for ``last_frame_time``"
+                )
             self.last_frame_time = last_frame_time
 
             Timestamps.validate(timestamps)
             self.timestamps = timestamps
 
             if normalize:
-                self.timestamps, self.last_frame_time = Timestamps.normalize(self.timestamps, self.last_frame_time)
+                self.timestamps, self.last_frame_time = Timestamps.normalize(
+                    self.timestamps, self.last_frame_time
+                )
 
             if fpms is None:
                 # Approximation of the fpms
-                self.fpms = Fraction(len(timestamps) - 1, self.timestamps[-1] - self.timestamps[0])
+                self.fpms = Fraction(
+                    len(timestamps) - 1, self.timestamps[-1] - self.timestamps[0]
+                )
             else:
                 self.fpms = fpms
         else:
             if fpms is None:
-                raise ValueError("If you don't specify a value for ``timestamps``, you must specify a value for ``fpms``")
+                raise ValueError(
+                    "If you don't specify a value for ``timestamps``, you must specify a value for ``fpms``"
+                )
             if last_frame_time is not None:
-                raise ValueError("If you specify a value for ``fpms``, you cannot specify a value for ``last_frame_time``")
+                raise ValueError(
+                    "If you specify a value for ``fpms``, you cannot specify a value for ``last_frame_time``"
+                )
 
             self.fpms = fpms
             self.timestamps = [0]
@@ -314,7 +349,7 @@ class Timestamps:
     def from_fps(
         cls: Timestamps,
         fps: Union[int, float, Fraction, Decimal],
-        rounding_method: Optional[RoundingMethod] = RoundingMethod.ROUND
+        rounding_method: Optional[RoundingMethod] = RoundingMethod.ROUND,
     ) -> Timestamps:
         """Create timestamps based on the `fps` provided.
 
@@ -326,7 +361,9 @@ class Timestamps:
             A Timestamps instance.
         """
         if not 0 < fps <= 1000:
-            raise ValueError("Parameter ``fps`` must be between 0 and 1000 (0 not included).")
+            raise ValueError(
+                "Parameter ``fps`` must be between 0 and 1000 (0 not included)."
+            )
 
         fpms = Fraction(fps) / Fraction(1000)
 
@@ -341,7 +378,7 @@ class Timestamps:
         cls: Timestamps,
         path_to_timestamps_file_or_content: Union[str, os.PathLike[str]],
         normalize: Optional[bool] = True,
-        rounding_method: Optional[RoundingMethod] = RoundingMethod.ROUND
+        rounding_method: Optional[RoundingMethod] = RoundingMethod.ROUND,
     ) -> Timestamps:
         """Create timestamps based on a [timestamps file](https://mkvtoolnix.download/doc/mkvmerge.html#mkvmerge.external_timestamp_files).
 
@@ -362,17 +399,21 @@ class Timestamps:
 
         if os.path.isfile(path_to_timestamps_file_or_content):
             with open(path_to_timestamps_file_or_content, "r") as f:
-                timestamps, last_frame_time, fpms = TimestampsFileParser.parse_file(f, rounding_method)
+                timestamps, last_frame_time, fpms = TimestampsFileParser.parse_file(
+                    f, rounding_method
+                )
         else:
             f = StringIO(path_to_timestamps_file_or_content)
-            timestamps, last_frame_time, fpms = TimestampsFileParser.parse_file(f, rounding_method)
+            timestamps, last_frame_time, fpms = TimestampsFileParser.parse_file(
+                f, rounding_method
+            )
 
         return cls(
             rounding_method=rounding_method,
             timestamps=timestamps,
             normalize=normalize,
             fpms=fpms,
-            last_frame_time=last_frame_time
+            last_frame_time=last_frame_time,
         )
 
     @classmethod
@@ -381,7 +422,7 @@ class Timestamps:
         video_path: str,
         index: Optional[int] = 0,
         normalize: Optional[bool] = True,
-        rounding_method: Optional[RoundingMethod] = RoundingMethod.ROUND
+        rounding_method: Optional[RoundingMethod] = RoundingMethod.ROUND,
     ) -> Timestamps:
         """Create timestamps based on the ``video_path`` provided.
 
@@ -404,7 +445,9 @@ class Timestamps:
             highest_timestamp: Fraction = None
 
             for packet in packets:
-                timestamp = Fraction(packet.get("pts_time", packet.get("dts_time"))) * Fraction(1000)
+                timestamp = Fraction(
+                    packet.get("pts_time", packet.get("dts_time"))
+                ) * Fraction(1000)
                 if highest_timestamp is None or highest_timestamp < timestamp:
                     highest_timestamp = timestamp
                 if lowest_timestamp is None or lowest_timestamp > timestamp:
@@ -428,10 +471,13 @@ class Timestamps:
 
         cmd = [
             "ffprobe",
-            "-select_streams", f"{index}",
-            "-show_entries", "packet=pts_time,dts_time:stream=codec_type,time_base:format=format_name",
+            "-select_streams",
+            f"{index}",
+            "-show_entries",
+            "packet=pts_time,dts_time:stream=codec_type,time_base:format=format_name",
             f"{video_path}",
-            "-print_format", "json"
+            "-print_format",
+            "json",
         ]
         ffprobe_output = subprocess.run(cmd, capture_output=True, text=True)
         ffprobe_output_dict = json.loads(ffprobe_output.stdout)
@@ -443,16 +489,23 @@ class Timestamps:
             raise ValueError(f"The index {index} is not in the file {video_path}.")
 
         if ffprobe_output_dict["streams"][0]["codec_type"] != "video":
-            raise ValueError(f'The index {index} is not a video stream. It is an "{ffprobe_output_dict["streams"][0]["codec_type"]}" stream.')
+            raise ValueError(
+                f'The index {index} is not a video stream. It is an "{ffprobe_output_dict["streams"][0]["codec_type"]}" stream.'
+            )
 
         if ffprobe_output_dict["format"]["format_name"] == "matroska,webm":
             # We only do this check for .mkv file. See the note about mkv in the class documentation
             time_base = Fraction(ffprobe_output_dict["streams"][0]["time_base"])
             # 1/1000 represent 1 ms. If the time_base cannot divided by 1/1000, then it means that the timestamps aren't rounded
-            if time_base % (1/1000):
-                warnings.warn("Your mkv file isn't perfectly rounded to ms. In this situation, you may prefer to use RoundingMethod.floor then RoundingMethod.ROUND.", UserWarning)
+            if time_base % (1 / 1000):
+                warnings.warn(
+                    "Your mkv file isn't perfectly rounded to ms. In this situation, you may prefer to use RoundingMethod.floor then RoundingMethod.ROUND.",
+                    UserWarning,
+                )
 
-        first_frame_time, last_frame_time, timestamps = get_timestamps(ffprobe_output_dict["packets"])
+        first_frame_time, last_frame_time, timestamps = get_timestamps(
+            ffprobe_output_dict["packets"]
+        )
         fpms = Fraction(len(timestamps) - 1) / (last_frame_time - first_frame_time)
 
         return cls(
@@ -460,7 +513,7 @@ class Timestamps:
             timestamps=timestamps,
             normalize=normalize,
             fpms=fpms,
-            last_frame_time=last_frame_time
+            last_frame_time=last_frame_time,
         )
 
     @staticmethod
@@ -480,7 +533,9 @@ class Timestamps:
             raise ValueError("Timestamps must not be all identical.")
 
     @staticmethod
-    def normalize(timestamps: List[int], last_frame_time: Fraction) -> Tuple[List[int], Fraction]:
+    def normalize(
+        timestamps: List[int], last_frame_time: Fraction
+    ) -> Tuple[List[int], Fraction]:
         """Shift the timestamps to make them start from 0. This way, frame 0 will start at time 0.
 
         Parameters:
@@ -490,5 +545,8 @@ class Timestamps:
             The timestamps normalized and the last frame time normalized.
         """
         if timestamps[0]:
-            return list(map(lambda t: t - timestamps[0], timestamps)), last_frame_time - timestamps[0]
+            return (
+                list(map(lambda t: t - timestamps[0], timestamps)),
+                last_frame_time - timestamps[0],
+            )
         return timestamps, last_frame_time

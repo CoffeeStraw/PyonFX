@@ -20,7 +20,7 @@ def test_interpolation():
 
 
 def test_frame_utility():
-    timestamps = Timestamps.from_fps(Fraction(24000, 1001)) 
+    timestamps = Timestamps.from_fps(Fraction(24000, 1001))
 
     FU = FrameUtility(0, 110, timestamps)
     assert list(FU) == [(0, 21, 1, 3), (21, 63, 2, 3), (63, 104, 3, 3)]

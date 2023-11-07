@@ -14,14 +14,16 @@ meta, styles, lines = io.get_data()
 
 
 def test_frames_to_ms_vfr():
-    timestamps_str = "# timecode format v2\n" \
-    "0\n" \
-    "1000\n" \
-    "1500\n" \
-    "2000\n" \
-    "2001\n" \
-    "2002\n" \
-    "2003\n"
+    timestamps_str = (
+        "# timecode format v2\n"
+        "0\n"
+        "1000\n"
+        "1500\n"
+        "2000\n"
+        "2001\n"
+        "2002\n"
+        "2003\n"
+    )
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     assert 0 == Convert.frames_to_ms(timestamps, 0, TimeType.EXACT)
@@ -33,30 +35,56 @@ def test_frames_to_ms_vfr():
     assert 2003 == Convert.frames_to_ms(timestamps, 6, TimeType.EXACT)
 
     assert 0 == Convert.frames_to_ms(timestamps, 0, TimeType.START)
-    assert 500 == Convert.frames_to_ms(timestamps, 1, TimeType.START) # answer must be ]0, 1000]
-    assert 1250 == Convert.frames_to_ms(timestamps, 2, TimeType.START) # answer must be ]1000, 1500]
-    assert 1750 == Convert.frames_to_ms(timestamps, 3, TimeType.START) # answer must be ]1500, 2000]
-    assert 2001 == Convert.frames_to_ms(timestamps, 4, TimeType.START) # answer must be ]2000, 2001]
-    assert 2002 == Convert.frames_to_ms(timestamps, 5, TimeType.START) # answer must be ]2001, 2002]
-    assert 2003 == Convert.frames_to_ms(timestamps, 6, TimeType.START) # answer must be ]2002, 2003]
+    assert 500 == Convert.frames_to_ms(
+        timestamps, 1, TimeType.START
+    )  # answer must be ]0, 1000]
+    assert 1250 == Convert.frames_to_ms(
+        timestamps, 2, TimeType.START
+    )  # answer must be ]1000, 1500]
+    assert 1750 == Convert.frames_to_ms(
+        timestamps, 3, TimeType.START
+    )  # answer must be ]1500, 2000]
+    assert 2001 == Convert.frames_to_ms(
+        timestamps, 4, TimeType.START
+    )  # answer must be ]2000, 2001]
+    assert 2002 == Convert.frames_to_ms(
+        timestamps, 5, TimeType.START
+    )  # answer must be ]2001, 2002]
+    assert 2003 == Convert.frames_to_ms(
+        timestamps, 6, TimeType.START
+    )  # answer must be ]2002, 2003]
 
-    assert 500 == Convert.frames_to_ms(timestamps, 0, TimeType.END) # answer must be ]0, 1000]
-    assert 1250 == Convert.frames_to_ms(timestamps, 1, TimeType.END) # answer must be ]1000, 1500]
-    assert 1750 == Convert.frames_to_ms(timestamps, 2, TimeType.END) # answer must be ]1500, 2000]
-    assert 2001 == Convert.frames_to_ms(timestamps, 3, TimeType.END) # answer must be ]2000, 2001]
-    assert 2002 == Convert.frames_to_ms(timestamps, 4, TimeType.END) # answer must be ]2001, 2002]
-    assert 2003 == Convert.frames_to_ms(timestamps, 5, TimeType.END) # answer must be ]2002, 2003]
+    assert 500 == Convert.frames_to_ms(
+        timestamps, 0, TimeType.END
+    )  # answer must be ]0, 1000]
+    assert 1250 == Convert.frames_to_ms(
+        timestamps, 1, TimeType.END
+    )  # answer must be ]1000, 1500]
+    assert 1750 == Convert.frames_to_ms(
+        timestamps, 2, TimeType.END
+    )  # answer must be ]1500, 2000]
+    assert 2001 == Convert.frames_to_ms(
+        timestamps, 3, TimeType.END
+    )  # answer must be ]2000, 2001]
+    assert 2002 == Convert.frames_to_ms(
+        timestamps, 4, TimeType.END
+    )  # answer must be ]2001, 2002]
+    assert 2003 == Convert.frames_to_ms(
+        timestamps, 5, TimeType.END
+    )  # answer must be ]2002, 2003]
 
 
 def test_frames_to_ms_invalid_frame():
-    timestamps_str = "# timecode format v2\n" \
-    "0\n" \
-    "1000\n" \
-    "1500\n" \
-    "2000\n" \
-    "2001\n" \
-    "2002\n" \
-    "2003\n"
+    timestamps_str = (
+        "# timecode format v2\n"
+        "0\n"
+        "1000\n"
+        "1500\n"
+        "2000\n"
+        "2001\n"
+        "2002\n"
+        "2003\n"
+    )
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     with pytest.raises(ValueError) as exc_info:
@@ -73,14 +101,16 @@ def test_frames_to_ms_invalid_frame():
 
 
 def test_frames_to_ms_approximate():
-    timestamps_str = "# timecode format v2\n" \
-    "0\n" \
-    "1000\n" \
-    "1500\n" \
-    "2000\n" \
-    "2001\n" \
-    "2002\n" \
-    "2003\n"
+    timestamps_str = (
+        "# timecode format v2\n"
+        "0\n"
+        "1000\n"
+        "1500\n"
+        "2000\n"
+        "2001\n"
+        "2002\n"
+        "2003\n"
+    )
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     # fpms = 6/2003
@@ -106,9 +136,7 @@ def test_frames_to_ms_approximate():
 
 
 def test_frames_to_ms_round():
-    timestamps_str = "# timecode format v1\n" \
-    "Assume 30\n" \
-    "5,10,15\n"
+    timestamps_str = "# timecode format v1\n" "Assume 30\n" "5,10,15\n"
 
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
@@ -128,17 +156,23 @@ def test_frames_to_ms_round():
     assert 567 == Convert.frames_to_ms(timestamps, 11, TimeType.EXACT)
     # From here, we guess the ms from the last frame timestamps and fps
     # The last frame is equal to (5 * 1/30 * 1000 + 6 * 1/15 * 1000) = 1700/3 = 566.666
-    assert 600 == Convert.frames_to_ms(timestamps, 12, TimeType.EXACT) # 1700/3 + 1/30 * 1000 = 600
-    assert 633 == Convert.frames_to_ms(timestamps, 13, TimeType.EXACT) # 1700/3 + 2/30 * 1000 = round(633.33) = 633
-    assert 667 == Convert.frames_to_ms(timestamps, 14, TimeType.EXACT) # 1700/3 + 3/30 * 1000 = round(666.66) = 667
+    assert 600 == Convert.frames_to_ms(
+        timestamps, 12, TimeType.EXACT
+    )  # 1700/3 + 1/30 * 1000 = 600
+    assert 633 == Convert.frames_to_ms(
+        timestamps, 13, TimeType.EXACT
+    )  # 1700/3 + 2/30 * 1000 = round(633.33) = 633
+    assert 667 == Convert.frames_to_ms(
+        timestamps, 14, TimeType.EXACT
+    )  # 1700/3 + 3/30 * 1000 = round(666.66) = 667
 
 
 def test_frames_to_ms_floor():
-    timestamps_str = "# timecode format v1\n" \
-    "Assume 30\n" \
-    "5,10,15\n"
+    timestamps_str = "# timecode format v1\n" "Assume 30\n" "5,10,15\n"
 
-    timestamps = Timestamps.from_timestamps_file(timestamps_str, rounding_method=RoundingMethod.FLOOR)
+    timestamps = Timestamps.from_timestamps_file(
+        timestamps_str, rounding_method=RoundingMethod.FLOOR
+    )
 
     # Frame 0 to 5 - 30 fps
     assert 0 == Convert.frames_to_ms(timestamps, 0, TimeType.EXACT)
@@ -156,20 +190,28 @@ def test_frames_to_ms_floor():
     assert 566 == Convert.frames_to_ms(timestamps, 11, TimeType.EXACT)
     # From here, we guess the ms from the last frame timestamps and fps
     # The last frame is equal to (5 * 1/30 * 1000 + 6 * 1/15 * 1000) = 1700/3 = 566.666
-    assert 600 == Convert.frames_to_ms(timestamps, 12, TimeType.EXACT) # 1700/3 + 1/30 * 1000 = 600
-    assert 633 == Convert.frames_to_ms(timestamps, 13, TimeType.EXACT) # 1700/3 + 2/30 * 1000 = floor(633.33) = 633
-    assert 666 == Convert.frames_to_ms(timestamps, 14, TimeType.EXACT) # 1700/3 + 3/30 * 1000 = floor(666.66) = 666
+    assert 600 == Convert.frames_to_ms(
+        timestamps, 12, TimeType.EXACT
+    )  # 1700/3 + 1/30 * 1000 = 600
+    assert 633 == Convert.frames_to_ms(
+        timestamps, 13, TimeType.EXACT
+    )  # 1700/3 + 2/30 * 1000 = floor(633.33) = 633
+    assert 666 == Convert.frames_to_ms(
+        timestamps, 14, TimeType.EXACT
+    )  # 1700/3 + 3/30 * 1000 = floor(666.66) = 666
 
 
 def test_ms_to_frames_vfr():
-    timestamps_str = "# timecode format v2\n" \
-    "0\n" \
-    "1000\n" \
-    "1500\n" \
-    "2000\n" \
-    "2001\n" \
-    "2002\n" \
-    "2003\n"
+    timestamps_str = (
+        "# timecode format v2\n"
+        "0\n"
+        "1000\n"
+        "1500\n"
+        "2000\n"
+        "2001\n"
+        "2002\n"
+        "2003\n"
+    )
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     assert 0 == Convert.ms_to_frames(timestamps, 0, TimeType.EXACT)
@@ -208,14 +250,16 @@ def test_ms_to_frames_vfr():
 
 
 def test_ms_to_frames_invalid_frame():
-    timestamps_str = "# timecode format v2\n" \
-    "0\n" \
-    "1000\n" \
-    "1500\n" \
-    "2000\n" \
-    "2001\n" \
-    "2002\n" \
-    "2003\n"
+    timestamps_str = (
+        "# timecode format v2\n"
+        "0\n"
+        "1000\n"
+        "1500\n"
+        "2000\n"
+        "2001\n"
+        "2002\n"
+        "2003\n"
+    )
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     with pytest.raises(ValueError) as exc_info:
@@ -232,14 +276,16 @@ def test_ms_to_frames_invalid_frame():
 
 
 def test_ms_to_frames_approximate():
-    timestamps_str = "# timecode format v2\n" \
-    "0\n" \
-    "1000\n" \
-    "1500\n" \
-    "2000\n" \
-    "2001\n" \
-    "2002\n" \
-    "2003\n"
+    timestamps_str = (
+        "# timecode format v2\n"
+        "0\n"
+        "1000\n"
+        "1500\n"
+        "2000\n"
+        "2001\n"
+        "2002\n"
+        "2003\n"
+    )
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     try:

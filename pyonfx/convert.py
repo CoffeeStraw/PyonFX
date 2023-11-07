@@ -59,6 +59,7 @@ class TimeType(Enum):
             frame 1 : [42,82] ms
             frame 2 : [83,124] ms
     """
+
     START = "START"
     END = "END"
     EXACT = "EXACT"
@@ -119,7 +120,7 @@ class Convert:
         timestamps: Timestamps,
         ms: int,
         time_type: TimeType,
-        approximate: Optional[bool] = True
+        approximate: Optional[bool] = True,
     ) -> int:
         """Converts milliseconds to frames.
 
@@ -154,7 +155,9 @@ class Convert:
             elif timestamps.rounding_method == RoundingMethod.FLOOR:
                 upper_bound = (ms + 1) * timestamps.fpms
             else:
-                raise NotImplementedError(f'The method "{timestamps.rounding_method}" is not supported.')
+                raise NotImplementedError(
+                    f'The method "{timestamps.rounding_method}" is not supported.'
+                )
             trunc_frame = int(upper_bound)
             return trunc_frame - 1 if upper_bound == trunc_frame else trunc_frame
 
@@ -167,8 +170,9 @@ class Convert:
     @staticmethod
     def frames_to_ms(
         timestamps: Timestamps,
-        frame: int, time_type: TimeType,
-        approximate: Optional[bool] = True
+        frame: int,
+        time_type: TimeType,
+        approximate: Optional[bool] = True,
     ) -> int:
         """Converts frames to milliseconds.
 
@@ -208,7 +212,9 @@ class Convert:
 
         if frame > len(timestamps.timestamps) - 1:
             frames_past_end = frame - len(timestamps.timestamps) + 1
-            return timestamps.rounding_method(frames_past_end * 1 / timestamps.fpms + timestamps.last_frame_time)
+            return timestamps.rounding_method(
+                frames_past_end * 1 / timestamps.fpms + timestamps.last_frame_time
+            )
 
         return timestamps.timestamps[frame]
 
@@ -228,9 +234,7 @@ class Convert:
         """
 
         return Convert.frames_to_ms(
-            timestamps,
-            Convert.ms_to_frames(timestamps, ms, time_type),
-            time_type
+            timestamps, Convert.ms_to_frames(timestamps, ms, time_type), time_type
         )
 
     @staticmethod

@@ -209,9 +209,13 @@ class FrameUtility:
         self.end_ms = end_ms
         self.timestamps = timestamps
 
-        self.start_fr = self.curr_fr = Convert.ms_to_frames(timestamps, start_ms, TimeType.START)
+        self.start_fr = self.curr_fr = Convert.ms_to_frames(
+            timestamps, start_ms, TimeType.START
+        )
         self.end_fr = Convert.ms_to_frames(timestamps, end_ms, TimeType.END)
-        self.end_ms_snapped = Convert.frames_to_ms(timestamps, self.end_fr, TimeType.END)
+        self.end_ms_snapped = Convert.frames_to_ms(
+            timestamps, self.end_fr, TimeType.END
+        )
         self.n_fr = n_fr
 
         self.i = 0
@@ -223,7 +227,9 @@ class FrameUtility:
             yield (
                 Convert.frames_to_ms(self.timestamps, self.curr_fr, TimeType.START),
                 min(
-                    Convert.frames_to_ms(self.timestamps, self.curr_fr + self.n_fr - 1, TimeType.END),
+                    Convert.frames_to_ms(
+                        self.timestamps, self.curr_fr + self.n_fr - 1, TimeType.END
+                    ),
                     self.end_ms_snapped,
                 ),
                 self.i + 1,
@@ -282,7 +288,9 @@ class FrameUtility:
             >>> Frame 3/4: 125 - 175; fsc: 137.5
             >>> Frame 4/4: 175 - 225; fsc: 112.5
         """
-        curr_ms = Convert.frames_to_ms(self.timestamps, self.i + (self.n_fr - 1) // 2, TimeType.END)
+        curr_ms = Convert.frames_to_ms(
+            self.timestamps, self.i + (self.n_fr - 1) // 2, TimeType.END
+        )
 
         if curr_ms <= start_time:
             return 0
