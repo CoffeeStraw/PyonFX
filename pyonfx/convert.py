@@ -213,26 +213,24 @@ class Convert:
         return timestamps.timestamps[frame]
 
     @staticmethod
-    def move_ms_to_frame(
-        ms: int, fps: Union[int, float, Fraction], is_start: bool
-    ) -> int:
+    def move_ms_to_frame(timestamps: Timestamps, ms: int, time_type: TimeType) -> int:
         """
-        Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
-        It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
+        Moves the ms to when the corresponding frame starts or ends
+        It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub.
 
         Parameters:
+            timestamps (Timestamps): An Timestamps object
             ms (int): Milliseconds.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
+            time_type (TimeType): The type of the provided time (start/end).
 
         Returns:
             The output represents ``ms`` converted.
         """
-        # Since ms can't be negative, we have to handle frame 0 when converting frame value for a start time
-        if ms == 0:
-            return 0
+
         return Convert.frames_to_ms(
-            Convert.ms_to_frames(ms, fps, is_start), fps, is_start
+            timestamps,
+            Convert.ms_to_frames(timestamps, ms, time_type),
+            time_type
         )
 
     @staticmethod
