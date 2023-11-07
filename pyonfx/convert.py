@@ -16,13 +16,12 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
-import re
-import math
 import bisect
 import colorsys
+import math
+import re
 from enum import Enum
 from fractions import Fraction
-from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
 from typing import List, NamedTuple, Optional, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
@@ -167,33 +166,51 @@ class Convert:
 
     @staticmethod
     def frames_to_ms(
-        frames: int, fps: Union[int, float, Fraction], is_start: bool
+        timestamps: Timestamps,
+        frame: int, time_type: TimeType,
+        approximate: Optional[bool] = True
     ) -> int:
-        """Converts from frames to milliseconds.
+        """Converts frames to milliseconds.
 
         Parameters:
-            frames (int): Frames.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
+            timestamps (Timestamps): An Timestamps object
+            frame (int): Frame.
+            time_type (TimeType): The type of the provided time (start/end).
+            approximate (bool, optional): If True and ``frame`` is over the video length, it will approximate the ``ms``.
 
         Returns:
-            The output represents ``frames`` converted.
+            The output represents ``frame`` converted into ``ms``.
         """
-        # Logic taken from: https://github.com/Aegisub/Aegisub/blob/master/libaegisub/common/vfr.cpp#L233
-        if frames < 0:
-            raise ValueError("Parameter 'frames' must be an integer >= 0.")
-        if fps <= 0:
-            raise ValueError("Parameter 'fps' must be an integer > 0.")
-        # Since ms can't be negative, we have to handle frame 0 when converting frame value for a start time
-        if is_start and frames == 0:
-            return 0
-        curr_ms = frames * 1000 / fps
-        if is_start:
-            prev_ms = (frames - 1) * 1000 / fps
-            return math.floor(prev_ms + (curr_ms - prev_ms + 1) / 2)
-        else:
-            next_ms = (frames + 1) * 1000 / fps
-            return math.floor(curr_ms + (next_ms - curr_ms + 1) / 2)
+        if frame < 0:
+            raise ValueError("You cannot specify a frame under 0.")
+
+        if not approximate and frame > len(timestamps.timestamps) - 1:
+            raise ValueError("You cannot specify a frame over the video length.")
+
+        if time_type == TimeType.START:
+            if frame == 0:
+                return timestamps.timestamps[0]
+
+            # Previous image excluded
+            prev_ms = Convert.frames_to_ms(timestamps, frame - 1, TimeType.EXACT) + 1
+            # Current image inclued
+            curr_ms = Convert.frames_to_ms(timestamps, frame, TimeType.EXACT)
+
+            return prev_ms + (curr_ms - prev_ms) // 2
+
+        elif time_type == TimeType.END:
+            # Current image excluded
+            curr_ms = Convert.frames_to_ms(timestamps, frame, TimeType.EXACT) + 1
+            # Next image inclued
+            next_ms = Convert.frames_to_ms(timestamps, frame + 1, TimeType.EXACT)
+
+            return curr_ms + (next_ms - curr_ms) // 2
+
+        if frame > len(timestamps.timestamps) - 1:
+            frames_past_end = frame - len(timestamps.timestamps) + 1
+            return timestamps.rounding_method(frames_past_end * 1 / timestamps.fpms + timestamps.last_frame_time)
+
+        return timestamps.timestamps[frame]
 
     @staticmethod
     def move_ms_to_frame(
