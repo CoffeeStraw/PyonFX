@@ -16,6 +16,7 @@ You can also make some simpler usage, like just applying color changes to the wh
 It could look like much code for such a simple effect, but it's needed and an easy method with much potential for extensions.
 """
 
+from fractions import Fraction
 from pyonfx import *
 import random
 import math
@@ -26,6 +27,9 @@ meta, styles, lines = io.get_data()
 # Creating the star and extracting all the color changes from the input file
 star = Shape.star(5, 4, 10)
 CU = ColorUtility(lines)
+
+# Let's load the timestamps
+timestamps_list = Timestamps.from_fps(Fraction(24000, 1001))
 
 
 def romaji(line, l):
@@ -107,7 +111,9 @@ def romaji(line, l):
         # Jump-in to the first syl
         jump_height = 18
         if syl.i == 0:
-            FU = FrameUtility(line.start_time - line.leadin / 2, line.start_time)
+            FU = FrameUtility(
+                line.start_time - line.leadin / 2, line.start_time, timestamps_list
+            )
             for s, e, i, n in FU:
                 l.start_time = s
                 l.end_time = e
@@ -133,7 +139,9 @@ def romaji(line, l):
             else syl.width
         )
         FU = FrameUtility(
-            line.start_time + syl.start_time, line.start_time + syl.end_time
+            line.start_time + syl.start_time,
+            line.start_time + syl.end_time,
+            timestamps_list,
         )
         for s, e, i, n in FU:
             l.start_time = s
