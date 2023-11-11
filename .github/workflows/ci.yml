@@ -69,10 +69,6 @@ jobs:
       - name: Install platform-specific requirements (macOS) # Note: brew is very slow sometimes. TODO: speedup brew by using caching.
         if: matrix.os == 'macos-latest'
         run: brew install python py3cairo pygobject3 pango ffmpeg
-      - name: Install platform-specific requirements (Windows)
-        if: matrix.os == 'windows-latest'
-        run: |
-          choco install ffmpeg -y
     
       - name: Install fonts (non-Windows)
         if: matrix.os != 'windows-latest'
