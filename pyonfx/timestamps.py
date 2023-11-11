@@ -273,8 +273,9 @@ class Timestamps:
         Ex:
             Player - Method - proof
             mpv    - round  - https://github.com/mpv-player/mpv/blob/7480efa62c0a2a1779b4fdaa804a6512aa488400/sub/sd_ass.c#L499
-            VLC    - floor  - https://github.com/videolan/vlc/blob/f7bb59d9f51cc10b25ff86d34a3eff744e60c46e/include/vlc_tick.h#L118-L130
             FFmpeg - floor  - https://github.com/FFmpeg/FFmpeg/blob/fd1712b6fb8b7acc04ccaa7c02b9a5c9f233cfb3/libavfilter/vf_subtitles.c#L194-L196
+            VLC    - floor  - https://code.videolan.org/videolan/vlc/-/blob/df6394ea8003e035a281b6818e6432c7d492ed2f/modules/codec/libass.c#L453-454
+                              https://code.videolan.org/videolan/vlc/-/blob/df6394ea8003e035a281b6818e6432c7d492ed2f/include/vlc_tick.h#L120-132
             MPC-HC - floor  - https://github.com/clsid2/mpc-hc/blob/0994fd605a9fb4d15806d0efdd6399ba1bc5f984/src/Subtitles/LibassContext.cpp#L843
     Important note:
         Matroska (.mkv) file are an exception !!!
