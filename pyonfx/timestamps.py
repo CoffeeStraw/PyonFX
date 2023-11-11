@@ -316,7 +316,16 @@ class Timestamps:
                 )
             self.last_frame_time = last_frame_time
 
-            Timestamps.validate(timestamps)
+            # Validate the timestamps
+            if len(timestamps) <= 1:
+                raise ValueError("There must be at least 2 timestamps.")
+
+            if any(timestamps[i] > timestamps[i + 1] for i in range(len(timestamps) - 1)):
+                raise ValueError("Timestamps must be in non-decreasing order.")
+
+            if timestamps.count(timestamps[0]) == len(timestamps):
+                raise ValueError("Timestamps must not be all identical.")
+
             self.timestamps = timestamps
 
             if normalize:
@@ -515,22 +524,6 @@ class Timestamps:
             fpms=fpms,
             last_frame_time=last_frame_time,
         )
-
-    @staticmethod
-    def validate(timestamps: List[int]) -> None:
-        """Verify that the provided timestamps are valid, raising ValueError in case they are not.
-
-        Parameters:
-            timestamps (list of int): A list of [timestamps](https://en.wikipedia.org/wiki/Timestamp) encoded as integers.
-        """
-        if len(timestamps) <= 1:
-            raise ValueError("There must be at least 2 timestamps.")
-
-        if any(timestamps[i] > timestamps[i + 1] for i in range(len(timestamps) - 1)):
-            raise ValueError("Timestamps must be in non-decreasing order.")
-
-        if timestamps.count(timestamps[0]) == len(timestamps):
-            raise ValueError("Timestamps must not be all identical.")
 
     @staticmethod
     def normalize(

@@ -285,15 +285,15 @@ def test_from_video_file_invalid_path():
 
 def test_validate():
     with pytest.raises(ValueError) as exc_info:
-        Timestamps.validate([0])
+        Timestamps(RoundingMethod.FLOOR, [0], last_frame_time=Fraction(0))
     assert str(exc_info.value) == "There must be at least 2 timestamps."
 
     with pytest.raises(ValueError) as exc_info:
-        Timestamps.validate([0, 42, 20])
+        Timestamps(RoundingMethod.FLOOR, [0, 42, 20], last_frame_time=Fraction(0))
     assert str(exc_info.value) == "Timestamps must be in non-decreasing order."
 
     with pytest.raises(ValueError) as exc_info:
-        Timestamps.validate([20, 20])
+        Timestamps(RoundingMethod.FLOOR, [20, 20], last_frame_time=Fraction(0))
     assert str(exc_info.value) == "Timestamps must not be all identical."
 
 
