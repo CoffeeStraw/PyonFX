@@ -267,6 +267,7 @@ class TimestampsFileParser:
 
 class Timestamps:
     """Timestamps object contains informations about the timestamps of an video.
+    Both Constant Frame Rate (CFR) and Variable Frame Rate (VFR) videos are supported.
 
     Video player have 2 methods to deal with timestamps. Some floor them and other round them.
     This can lead to difference when displaying the subtitle.

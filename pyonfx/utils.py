@@ -142,8 +142,6 @@ class FrameUtility:
     You can use it to iterate over the frames going from ``start_ms``
     to ``end_ms`` and perform operations easily over multiple frames.
 
-    Both Constant Frame Rate (CFR) and Variable Frame Rate (VFR) videos are supported.
-
     Parameters:
         start_ms (positive int): Initial time in ms.
         end_ms (positive int): Final time in ms.
