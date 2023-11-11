@@ -292,7 +292,7 @@ class Timestamps:
         timestamps (List[int], optional): A list of [timestamps](https://en.wikipedia.org/wiki/Timestamp) in milliseconds encoded as integers.
                                 It represent each frame [presentation timestamp (PTS)](https://en.wikipedia.org/wiki/Presentation_timestamp)
         normalize (bool, optional): If True, it will shift the timestamps to make them start from 0. If false, the option does nothing.
-        fpms (Fraction, optional): The fpms.
+        fpms (Fraction, optional): Frames per milliseconds.
         last_frame_time (Fraction, optional): The last frame time not rounded.
     """
 
