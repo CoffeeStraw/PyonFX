@@ -26,7 +26,7 @@ import warnings
 from decimal import Decimal
 from fractions import Fraction
 from io import StringIO, TextIOWrapper
-from typing import Callable, List, Optional, Tuple, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 
 class RoundingMethod(Enum):
@@ -309,7 +309,7 @@ class Timestamps:
         fpms: Optional[Fraction] = None,
         last_frame_time: Optional[Fraction] = None,
     ):
-        self.rounding_method = rounding_method
+        self.__rounding_method = rounding_method
 
         if timestamps is not None:
             if last_frame_time is None:
@@ -355,6 +355,14 @@ class Timestamps:
             self.fpms = fpms
             self.timestamps = [0]
             self.last_frame_time = Fraction(0)
+
+    @property
+    def rounding_method(self) -> RoundingMethod:
+        return self.__rounding_method
+
+    @rounding_method.setter
+    def rounding_method(self, value: Any):
+        raise AttributeError("You cannot change the value of rounding_method")
 
     @classmethod
     def from_fps(
