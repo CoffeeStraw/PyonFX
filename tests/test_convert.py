@@ -116,23 +116,14 @@ def test_frames_to_ms_approximate():
     # fpms = 6/2003
     # round(1/fpms * 7) = round(2336.83) = 2337
     assert 2337 == Convert.frames_to_ms(timestamps, 7, TimeType.EXACT)
-    with pytest.raises(ValueError) as exc_info:
-        Convert.frames_to_ms(timestamps, 7, TimeType.EXACT, False)
-    assert str(exc_info.value) == "You cannot specify a frame over the video length."
 
     # 2003 + (2337 - 2003) // 2 = 2170
     assert 2170 == Convert.frames_to_ms(timestamps, 7, TimeType.START)
-    with pytest.raises(ValueError) as exc_info:
-        Convert.frames_to_ms(timestamps, 7, TimeType.START, False)
-    assert str(exc_info.value) == "You cannot specify a frame over the video length."
 
     # fpms = 6/2003
     # round(1/fpms * 8) = round(2670.67) = 2671
     # 2337 + (2671 - 2337) // 2 = 2504
     assert 2504 == Convert.frames_to_ms(timestamps, 7, TimeType.END)
-    with pytest.raises(ValueError) as exc_info:
-        Convert.frames_to_ms(timestamps, 7, TimeType.END, False)
-    assert str(exc_info.value) == "You cannot specify a frame over the video length."
 
 
 def test_frames_to_ms_round():
@@ -273,44 +264,6 @@ def test_ms_to_frames_invalid_frame():
     with pytest.raises(ValueError) as exc_info:
         Convert.ms_to_frames(timestamps, -1, TimeType.END)
     assert str(exc_info.value) == "You cannot specify a time under 0."
-
-
-def test_ms_to_frames_approximate():
-    timestamps_str = (
-        "# timecode format v2\n"
-        "0\n"
-        "1000\n"
-        "1500\n"
-        "2000\n"
-        "2001\n"
-        "2002\n"
-        "2003\n"
-    )
-    timestamps = Timestamps.from_timestamps_file(timestamps_str)
-
-    try:
-        Convert.ms_to_frames(timestamps, 2004, TimeType.EXACT)
-    except Exception:
-        assert True
-    with pytest.raises(ValueError) as exc_info:
-        Convert.ms_to_frames(timestamps, 2004, TimeType.EXACT, False)
-    assert str(exc_info.value) == "You cannot specify a time over the video length."
-
-    try:
-        Convert.ms_to_frames(timestamps, 2004, TimeType.START)
-    except Exception:
-        assert True
-    with pytest.raises(ValueError) as exc_info:
-        Convert.ms_to_frames(timestamps, 2004, TimeType.START, False)
-    assert str(exc_info.value) == "You cannot specify a time over the video length."
-
-    try:
-        Convert.ms_to_frames(timestamps, 2004, TimeType.END)
-    except Exception:
-        assert True
-    with pytest.raises(ValueError) as exc_info:
-        Convert.ms_to_frames(timestamps, 2004, TimeType.END, False)
-    assert str(exc_info.value) == "You cannot specify a time over the video length."
 
 
 def test_ms_to_frames_round():

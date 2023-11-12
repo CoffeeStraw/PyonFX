@@ -118,27 +118,22 @@ class Convert:
 
     @staticmethod
     def ms_to_frames(
-        timestamps: Timestamps,
         ms: int,
         time_type: TimeType,
-        approximate: Optional[bool] = True,
+        timestamps: Timestamps,
     ) -> int:
         """Converts milliseconds to frames.
 
         Parameters:
-            timestamps (Timestamps): An Timestamps object
             ms (int): Milliseconds.
             time_type (TimeType): The type of the provided time (start/end).
-            approximate (bool, optional): If True and if the ``ms`` is over the video length, it will approximate the frame.
+            timestamps (Timestamps): An Timestamps object
 
         Returns:
             The output represents ``ms`` converted into ``frames``.
         """
         if ms < timestamps.timestamps[0]:
             raise ValueError("You cannot specify a time under 0.")
-
-        if not approximate and ms > timestamps.timestamps[-1]:
-            raise ValueError("You cannot specify a time over the video length.")
 
         if time_type == TimeType.START:
             if ms == timestamps.timestamps[0]:
@@ -170,27 +165,22 @@ class Convert:
 
     @staticmethod
     def frames_to_ms(
-        timestamps: Timestamps,
         frame: int,
         time_type: TimeType,
-        approximate: Optional[bool] = True,
+        timestamps: Timestamps,
     ) -> int:
         """Converts frames to milliseconds.
 
         Parameters:
-            timestamps (Timestamps): An Timestamps object
             frame (int): Frame.
             time_type (TimeType): The type of the provided time (start/end).
-            approximate (bool, optional): If True and ``frame`` is over the video length, it will approximate the ``ms``.
+            timestamps (Timestamps): An Timestamps object
 
         Returns:
             The output represents ``frame`` converted into ``ms``.
         """
         if frame < 0:
             raise ValueError("You cannot specify a frame under 0.")
-
-        if not approximate and frame > len(timestamps.timestamps) - 1:
-            raise ValueError("You cannot specify a frame over the video length.")
 
         if time_type == TimeType.START:
             if frame == 0:
