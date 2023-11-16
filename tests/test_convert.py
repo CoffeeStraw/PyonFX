@@ -26,51 +26,51 @@ def test_frames_to_ms_vfr():
     )
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
-    assert 0 == Convert.frames_to_ms(timestamps, 0, TimeType.EXACT)
-    assert 1000 == Convert.frames_to_ms(timestamps, 1, TimeType.EXACT)
-    assert 1500 == Convert.frames_to_ms(timestamps, 2, TimeType.EXACT)
-    assert 2000 == Convert.frames_to_ms(timestamps, 3, TimeType.EXACT)
-    assert 2001 == Convert.frames_to_ms(timestamps, 4, TimeType.EXACT)
-    assert 2002 == Convert.frames_to_ms(timestamps, 5, TimeType.EXACT)
-    assert 2003 == Convert.frames_to_ms(timestamps, 6, TimeType.EXACT)
+    assert 0 == Convert.frames_to_ms(0, TimeType.EXACT, timestamps)
+    assert 1000 == Convert.frames_to_ms(1, TimeType.EXACT, timestamps)
+    assert 1500 == Convert.frames_to_ms(2, TimeType.EXACT, timestamps)
+    assert 2000 == Convert.frames_to_ms(3, TimeType.EXACT, timestamps)
+    assert 2001 == Convert.frames_to_ms(4, TimeType.EXACT, timestamps)
+    assert 2002 == Convert.frames_to_ms(5, TimeType.EXACT, timestamps)
+    assert 2003 == Convert.frames_to_ms(6, TimeType.EXACT, timestamps)
 
-    assert 0 == Convert.frames_to_ms(timestamps, 0, TimeType.START)
+    assert 0 == Convert.frames_to_ms(0, TimeType.START, timestamps)
     assert 500 == Convert.frames_to_ms(
-        timestamps, 1, TimeType.START
+        1, TimeType.START, timestamps
     )  # answer must be ]0, 1000]
     assert 1250 == Convert.frames_to_ms(
-        timestamps, 2, TimeType.START
+        2, TimeType.START, timestamps
     )  # answer must be ]1000, 1500]
     assert 1750 == Convert.frames_to_ms(
-        timestamps, 3, TimeType.START
+        3, TimeType.START, timestamps
     )  # answer must be ]1500, 2000]
     assert 2001 == Convert.frames_to_ms(
-        timestamps, 4, TimeType.START
+        4, TimeType.START, timestamps
     )  # answer must be ]2000, 2001]
     assert 2002 == Convert.frames_to_ms(
-        timestamps, 5, TimeType.START
+        5, TimeType.START, timestamps
     )  # answer must be ]2001, 2002]
     assert 2003 == Convert.frames_to_ms(
-        timestamps, 6, TimeType.START
+        6, TimeType.START, timestamps
     )  # answer must be ]2002, 2003]
 
     assert 500 == Convert.frames_to_ms(
-        timestamps, 0, TimeType.END
+        0, TimeType.END, timestamps
     )  # answer must be ]0, 1000]
     assert 1250 == Convert.frames_to_ms(
-        timestamps, 1, TimeType.END
+        1, TimeType.END, timestamps
     )  # answer must be ]1000, 1500]
     assert 1750 == Convert.frames_to_ms(
-        timestamps, 2, TimeType.END
+        2, TimeType.END, timestamps
     )  # answer must be ]1500, 2000]
     assert 2001 == Convert.frames_to_ms(
-        timestamps, 3, TimeType.END
+        3, TimeType.END, timestamps
     )  # answer must be ]2000, 2001]
     assert 2002 == Convert.frames_to_ms(
-        timestamps, 4, TimeType.END
+        4, TimeType.END, timestamps
     )  # answer must be ]2001, 2002]
     assert 2003 == Convert.frames_to_ms(
-        timestamps, 5, TimeType.END
+        5, TimeType.END, timestamps
     )  # answer must be ]2002, 2003]
 
 
@@ -88,15 +88,15 @@ def test_frames_to_ms_invalid_frame():
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     with pytest.raises(ValueError) as exc_info:
-        Convert.frames_to_ms(timestamps, -1, TimeType.EXACT)
+        Convert.frames_to_ms(-1, TimeType.EXACT, timestamps)
     assert str(exc_info.value) == "You cannot specify a frame under 0."
 
     with pytest.raises(ValueError) as exc_info:
-        Convert.frames_to_ms(timestamps, -1, TimeType.END)
+        Convert.frames_to_ms(-1, TimeType.END, timestamps)
     assert str(exc_info.value) == "You cannot specify a frame under 0."
 
     with pytest.raises(ValueError) as exc_info:
-        Convert.frames_to_ms(timestamps, -1, TimeType.END)
+        Convert.frames_to_ms(-1, TimeType.END, timestamps)
     assert str(exc_info.value) == "You cannot specify a frame under 0."
 
 
@@ -115,15 +115,15 @@ def test_frames_to_ms_approximate():
 
     # fpms = 6/2003
     # round(1/fpms * 7) = round(2336.83) = 2337
-    assert 2337 == Convert.frames_to_ms(timestamps, 7, TimeType.EXACT)
+    assert 2337 == Convert.frames_to_ms(7, TimeType.EXACT, timestamps)
 
     # 2003 + (2337 - 2003) // 2 = 2170
-    assert 2170 == Convert.frames_to_ms(timestamps, 7, TimeType.START)
+    assert 2170 == Convert.frames_to_ms(7, TimeType.START, timestamps)
 
     # fpms = 6/2003
     # round(1/fpms * 8) = round(2670.67) = 2671
     # 2337 + (2671 - 2337) // 2 = 2504
-    assert 2504 == Convert.frames_to_ms(timestamps, 7, TimeType.END)
+    assert 2504 == Convert.frames_to_ms(7, TimeType.END, timestamps)
 
 
 def test_frames_to_ms_round():
@@ -132,29 +132,29 @@ def test_frames_to_ms_round():
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     # Frame 0 to 5 - 30 fps
-    assert 0 == Convert.frames_to_ms(timestamps, 0, TimeType.EXACT)
-    assert 33 == Convert.frames_to_ms(timestamps, 1, TimeType.EXACT)
-    assert 67 == Convert.frames_to_ms(timestamps, 2, TimeType.EXACT)
-    assert 100 == Convert.frames_to_ms(timestamps, 3, TimeType.EXACT)
-    assert 133 == Convert.frames_to_ms(timestamps, 4, TimeType.EXACT)
-    assert 167 == Convert.frames_to_ms(timestamps, 5, TimeType.EXACT)
+    assert 0 == Convert.frames_to_ms(0, TimeType.EXACT, timestamps)
+    assert 33 == Convert.frames_to_ms(1, TimeType.EXACT, timestamps)
+    assert 67 == Convert.frames_to_ms(2, TimeType.EXACT, timestamps)
+    assert 100 == Convert.frames_to_ms(3, TimeType.EXACT, timestamps)
+    assert 133 == Convert.frames_to_ms(4, TimeType.EXACT, timestamps)
+    assert 167 == Convert.frames_to_ms(5, TimeType.EXACT, timestamps)
     # Frame 6 to 11 - 15 fps
-    assert 233 == Convert.frames_to_ms(timestamps, 6, TimeType.EXACT)
-    assert 300 == Convert.frames_to_ms(timestamps, 7, TimeType.EXACT)
-    assert 367 == Convert.frames_to_ms(timestamps, 8, TimeType.EXACT)
-    assert 433 == Convert.frames_to_ms(timestamps, 9, TimeType.EXACT)
-    assert 500 == Convert.frames_to_ms(timestamps, 10, TimeType.EXACT)
-    assert 567 == Convert.frames_to_ms(timestamps, 11, TimeType.EXACT)
+    assert 233 == Convert.frames_to_ms(6, TimeType.EXACT, timestamps)
+    assert 300 == Convert.frames_to_ms(7, TimeType.EXACT, timestamps)
+    assert 367 == Convert.frames_to_ms(8, TimeType.EXACT, timestamps)
+    assert 433 == Convert.frames_to_ms(9, TimeType.EXACT, timestamps)
+    assert 500 == Convert.frames_to_ms(10, TimeType.EXACT, timestamps)
+    assert 567 == Convert.frames_to_ms(11, TimeType.EXACT, timestamps)
     # From here, we guess the ms from the last frame timestamps and fps
     # The last frame is equal to (5 * 1/30 * 1000 + 6 * 1/15 * 1000) = 1700/3 = 566.666
     assert 600 == Convert.frames_to_ms(
-        timestamps, 12, TimeType.EXACT
+        12, TimeType.EXACT, timestamps
     )  # 1700/3 + 1/30 * 1000 = 600
     assert 633 == Convert.frames_to_ms(
-        timestamps, 13, TimeType.EXACT
+        13, TimeType.EXACT, timestamps
     )  # 1700/3 + 2/30 * 1000 = round(633.33) = 633
     assert 667 == Convert.frames_to_ms(
-        timestamps, 14, TimeType.EXACT
+        14, TimeType.EXACT, timestamps
     )  # 1700/3 + 3/30 * 1000 = round(666.66) = 667
 
 
@@ -166,29 +166,29 @@ def test_frames_to_ms_floor():
     )
 
     # Frame 0 to 5 - 30 fps
-    assert 0 == Convert.frames_to_ms(timestamps, 0, TimeType.EXACT)
-    assert 33 == Convert.frames_to_ms(timestamps, 1, TimeType.EXACT)
-    assert 66 == Convert.frames_to_ms(timestamps, 2, TimeType.EXACT)
-    assert 100 == Convert.frames_to_ms(timestamps, 3, TimeType.EXACT)
-    assert 133 == Convert.frames_to_ms(timestamps, 4, TimeType.EXACT)
-    assert 166 == Convert.frames_to_ms(timestamps, 5, TimeType.EXACT)
+    assert 0 == Convert.frames_to_ms(0, TimeType.EXACT, timestamps)
+    assert 33 == Convert.frames_to_ms(1, TimeType.EXACT, timestamps)
+    assert 66 == Convert.frames_to_ms(2, TimeType.EXACT, timestamps)
+    assert 100 == Convert.frames_to_ms(3, TimeType.EXACT, timestamps)
+    assert 133 == Convert.frames_to_ms(4, TimeType.EXACT, timestamps)
+    assert 166 == Convert.frames_to_ms(5, TimeType.EXACT, timestamps)
     # Frame 6 to 11 - 15 fps
-    assert 233 == Convert.frames_to_ms(timestamps, 6, TimeType.EXACT)
-    assert 300 == Convert.frames_to_ms(timestamps, 7, TimeType.EXACT)
-    assert 366 == Convert.frames_to_ms(timestamps, 8, TimeType.EXACT)
-    assert 433 == Convert.frames_to_ms(timestamps, 9, TimeType.EXACT)
-    assert 500 == Convert.frames_to_ms(timestamps, 10, TimeType.EXACT)
-    assert 566 == Convert.frames_to_ms(timestamps, 11, TimeType.EXACT)
+    assert 233 == Convert.frames_to_ms(6, TimeType.EXACT, timestamps)
+    assert 300 == Convert.frames_to_ms(7, TimeType.EXACT, timestamps)
+    assert 366 == Convert.frames_to_ms(8, TimeType.EXACT, timestamps)
+    assert 433 == Convert.frames_to_ms(9, TimeType.EXACT, timestamps)
+    assert 500 == Convert.frames_to_ms(10, TimeType.EXACT, timestamps)
+    assert 566 == Convert.frames_to_ms(11, TimeType.EXACT, timestamps)
     # From here, we guess the ms from the last frame timestamps and fps
     # The last frame is equal to (5 * 1/30 * 1000 + 6 * 1/15 * 1000) = 1700/3 = 566.666
     assert 600 == Convert.frames_to_ms(
-        timestamps, 12, TimeType.EXACT
+        12, TimeType.EXACT, timestamps
     )  # 1700/3 + 1/30 * 1000 = 600
     assert 633 == Convert.frames_to_ms(
-        timestamps, 13, TimeType.EXACT
+        13, TimeType.EXACT, timestamps
     )  # 1700/3 + 2/30 * 1000 = floor(633.33) = 633
     assert 666 == Convert.frames_to_ms(
-        timestamps, 14, TimeType.EXACT
+        14, TimeType.EXACT, timestamps
     )  # 1700/3 + 3/30 * 1000 = floor(666.66) = 666
 
 
@@ -205,39 +205,39 @@ def test_ms_to_frames_vfr():
     )
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
-    assert 0 == Convert.ms_to_frames(timestamps, 0, TimeType.EXACT)
-    assert 0 == Convert.ms_to_frames(timestamps, 999, TimeType.EXACT)
-    assert 1 == Convert.ms_to_frames(timestamps, 1000, TimeType.EXACT)
-    assert 1 == Convert.ms_to_frames(timestamps, 1499, TimeType.EXACT)
-    assert 2 == Convert.ms_to_frames(timestamps, 1500, TimeType.EXACT)
-    assert 2 == Convert.ms_to_frames(timestamps, 1999, TimeType.EXACT)
-    assert 3 == Convert.ms_to_frames(timestamps, 2000, TimeType.EXACT)
-    assert 4 == Convert.ms_to_frames(timestamps, 2001, TimeType.EXACT)
-    assert 5 == Convert.ms_to_frames(timestamps, 2002, TimeType.EXACT)
-    assert 6 == Convert.ms_to_frames(timestamps, 2003, TimeType.EXACT)
-    assert 6 == Convert.ms_to_frames(timestamps, 2004, TimeType.EXACT)
+    assert 0 == Convert.ms_to_frames(0, TimeType.EXACT, timestamps)
+    assert 0 == Convert.ms_to_frames(999, TimeType.EXACT, timestamps)
+    assert 1 == Convert.ms_to_frames(1000, TimeType.EXACT, timestamps)
+    assert 1 == Convert.ms_to_frames(1499, TimeType.EXACT, timestamps)
+    assert 2 == Convert.ms_to_frames(1500, TimeType.EXACT, timestamps)
+    assert 2 == Convert.ms_to_frames(1999, TimeType.EXACT, timestamps)
+    assert 3 == Convert.ms_to_frames(2000, TimeType.EXACT, timestamps)
+    assert 4 == Convert.ms_to_frames(2001, TimeType.EXACT, timestamps)
+    assert 5 == Convert.ms_to_frames(2002, TimeType.EXACT, timestamps)
+    assert 6 == Convert.ms_to_frames(2003, TimeType.EXACT, timestamps)
+    assert 6 == Convert.ms_to_frames(2004, TimeType.EXACT, timestamps)
 
-    assert 0 == Convert.ms_to_frames(timestamps, 0, TimeType.START)
-    assert 1 == Convert.ms_to_frames(timestamps, 1, TimeType.START)
-    assert 1 == Convert.ms_to_frames(timestamps, 1000, TimeType.START)
-    assert 2 == Convert.ms_to_frames(timestamps, 1001, TimeType.START)
-    assert 2 == Convert.ms_to_frames(timestamps, 1500, TimeType.START)
-    assert 3 == Convert.ms_to_frames(timestamps, 1501, TimeType.START)
-    assert 3 == Convert.ms_to_frames(timestamps, 2000, TimeType.START)
-    assert 4 == Convert.ms_to_frames(timestamps, 2001, TimeType.START)
-    assert 5 == Convert.ms_to_frames(timestamps, 2002, TimeType.START)
-    assert 6 == Convert.ms_to_frames(timestamps, 2003, TimeType.START)
-    assert 7 == Convert.ms_to_frames(timestamps, 2004, TimeType.START)
+    assert 0 == Convert.ms_to_frames(0, TimeType.START, timestamps)
+    assert 1 == Convert.ms_to_frames(1, TimeType.START, timestamps)
+    assert 1 == Convert.ms_to_frames(1000, TimeType.START, timestamps)
+    assert 2 == Convert.ms_to_frames(1001, TimeType.START, timestamps)
+    assert 2 == Convert.ms_to_frames(1500, TimeType.START, timestamps)
+    assert 3 == Convert.ms_to_frames(1501, TimeType.START, timestamps)
+    assert 3 == Convert.ms_to_frames(2000, TimeType.START, timestamps)
+    assert 4 == Convert.ms_to_frames(2001, TimeType.START, timestamps)
+    assert 5 == Convert.ms_to_frames(2002, TimeType.START, timestamps)
+    assert 6 == Convert.ms_to_frames(2003, TimeType.START, timestamps)
+    assert 7 == Convert.ms_to_frames(2004, TimeType.START, timestamps)
 
-    assert -1 == Convert.ms_to_frames(timestamps, 0, TimeType.END)
-    assert 0 == Convert.ms_to_frames(timestamps, 1, TimeType.END)
-    assert 1 == Convert.ms_to_frames(timestamps, 1500, TimeType.END)
-    assert 2 == Convert.ms_to_frames(timestamps, 1501, TimeType.END)
-    assert 2 == Convert.ms_to_frames(timestamps, 2000, TimeType.END)
-    assert 3 == Convert.ms_to_frames(timestamps, 2001, TimeType.END)
-    assert 4 == Convert.ms_to_frames(timestamps, 2002, TimeType.END)
-    assert 5 == Convert.ms_to_frames(timestamps, 2003, TimeType.END)
-    assert 6 == Convert.ms_to_frames(timestamps, 2004, TimeType.END)
+    assert -1 == Convert.ms_to_frames(0, TimeType.END, timestamps)
+    assert 0 == Convert.ms_to_frames(1, TimeType.END, timestamps)
+    assert 1 == Convert.ms_to_frames(1500, TimeType.END, timestamps)
+    assert 2 == Convert.ms_to_frames(1501, TimeType.END, timestamps)
+    assert 2 == Convert.ms_to_frames(2000, TimeType.END, timestamps)
+    assert 3 == Convert.ms_to_frames(2001, TimeType.END, timestamps)
+    assert 4 == Convert.ms_to_frames(2002, TimeType.END, timestamps)
+    assert 5 == Convert.ms_to_frames(2003, TimeType.END, timestamps)
+    assert 6 == Convert.ms_to_frames(2004, TimeType.END, timestamps)
 
 
 def test_ms_to_frames_invalid_frame():
@@ -254,32 +254,32 @@ def test_ms_to_frames_invalid_frame():
     timestamps = Timestamps.from_timestamps_file(timestamps_str)
 
     with pytest.raises(ValueError) as exc_info:
-        Convert.ms_to_frames(timestamps, -1, TimeType.EXACT)
+        Convert.ms_to_frames(-1, TimeType.EXACT, timestamps)
     assert str(exc_info.value) == "You cannot specify a time under 0."
 
     with pytest.raises(ValueError) as exc_info:
-        Convert.ms_to_frames(timestamps, -1, TimeType.START)
+        Convert.ms_to_frames(-1, TimeType.START, timestamps)
     assert str(exc_info.value) == "You cannot specify a time under 0."
 
     with pytest.raises(ValueError) as exc_info:
-        Convert.ms_to_frames(timestamps, -1, TimeType.END)
+        Convert.ms_to_frames(-1, TimeType.END, timestamps)
     assert str(exc_info.value) == "You cannot specify a time under 0."
 
 
 def test_ms_to_frames_round():
     # 16 fps is a edge case, see docs/Proof algorithm - ms_to_frames.md
     timestamps = Timestamps.from_fps(16)
-    assert 0 == Convert.ms_to_frames(timestamps, 62, TimeType.EXACT)
-    assert 1 == Convert.ms_to_frames(timestamps, 63, TimeType.EXACT)
-    assert 2 == Convert.ms_to_frames(timestamps, 187, TimeType.EXACT)
-    assert 3 == Convert.ms_to_frames(timestamps, 188, TimeType.EXACT)
+    assert 0 == Convert.ms_to_frames(62, TimeType.EXACT, timestamps)
+    assert 1 == Convert.ms_to_frames(63, TimeType.EXACT, timestamps)
+    assert 2 == Convert.ms_to_frames(187, TimeType.EXACT, timestamps)
+    assert 3 == Convert.ms_to_frames(188, TimeType.EXACT, timestamps)
 
 
 def test_ms_to_frames_floor():
     # 15 fps is a edge case, see docs/Proof algorithm - ms_to_frames.md
     timestamps = Timestamps.from_fps(15, rounding_method=RoundingMethod.FLOOR)
-    assert 2 == Convert.ms_to_frames(timestamps, 199, TimeType.EXACT)
-    assert 3 == Convert.ms_to_frames(timestamps, 200, TimeType.EXACT)
+    assert 2 == Convert.ms_to_frames(199, TimeType.EXACT, timestamps)
+    assert 3 == Convert.ms_to_frames(200, TimeType.EXACT, timestamps)
 
 
 def test_coloralpha():

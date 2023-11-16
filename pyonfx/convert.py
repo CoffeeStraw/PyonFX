@@ -138,11 +138,11 @@ class Convert:
         if time_type == TimeType.START:
             if ms == timestamps.timestamps[0]:
                 return 0
-            return Convert.ms_to_frames(timestamps, ms - 1, TimeType.EXACT) + 1
+            return Convert.ms_to_frames(ms - 1, TimeType.EXACT, timestamps) + 1
         elif time_type == TimeType.END:
             if ms == timestamps.timestamps[0]:
                 return -1
-            return Convert.ms_to_frames(timestamps, ms - 1, TimeType.EXACT)
+            return Convert.ms_to_frames(ms - 1, TimeType.EXACT, timestamps)
 
         if ms > timestamps.timestamps[-1]:
             # For explanation of this, see docs/Proof algorithm - ms_to_frames.md
@@ -187,17 +187,17 @@ class Convert:
                 return timestamps.timestamps[0]
 
             # Previous image excluded
-            prev_ms = Convert.frames_to_ms(timestamps, frame - 1, TimeType.EXACT) + 1
+            prev_ms = Convert.frames_to_ms(frame - 1, TimeType.EXACT, timestamps) + 1
             # Current image inclued
-            curr_ms = Convert.frames_to_ms(timestamps, frame, TimeType.EXACT)
+            curr_ms = Convert.frames_to_ms(frame, TimeType.EXACT, timestamps)
 
             return prev_ms + (curr_ms - prev_ms) // 2
 
         elif time_type == TimeType.END:
             # Current image excluded
-            curr_ms = Convert.frames_to_ms(timestamps, frame, TimeType.EXACT) + 1
+            curr_ms = Convert.frames_to_ms(frame, TimeType.EXACT, timestamps) + 1
             # Next image inclued
-            next_ms = Convert.frames_to_ms(timestamps, frame + 1, TimeType.EXACT)
+            next_ms = Convert.frames_to_ms(frame + 1, TimeType.EXACT, timestamps)
 
             return curr_ms + (next_ms - curr_ms) // 2
 
