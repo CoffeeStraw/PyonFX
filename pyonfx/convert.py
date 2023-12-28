@@ -16,14 +16,16 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
-import re
-import math
+import bisect
 import colorsys
+import math
+import re
 from enum import Enum
 from fractions import Fraction
-from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
+from typing import List, NamedTuple, Optional, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
+from .timestamps import RoundingMethod, Timestamps
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
@@ -31,6 +33,36 @@ if TYPE_CHECKING:
 
 # A simple NamedTuple to represent pixels
 Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", int)])
+
+
+class TimeType(Enum):
+    """
+    START: Correspond to the start of the subtitle.
+        Ex:
+            fps = 24000/1001
+            rounding_method = RoundingMethod.ROUND
+            frame 0 : 0 ms
+            frame 1 : [1,42] ms
+            frame 2 : [43,83] ms
+    END: Correspond to the end of the subtitle.
+        Ex:
+            fps = 24000/1001
+            rounding_method = RoundingMethod.ROUND
+            frame 0 : ]0,42] ms
+            frame 1 : [43,83] ms
+            frame 2 : [84,125] ms
+    EXACT: Correspond to a precise frame in the video player.
+        Ex:
+            fps = 24000/1001
+            rounding_method = RoundingMethod.ROUND
+            frame 0 : [0,41] ms
+            frame 1 : [42,82] ms
+            frame 2 : [83,124] ms
+    """
+
+    START = "START"
+    END = "END"
+    EXACT = "EXACT"
 
 
 class ColorModel(Enum):
@@ -63,6 +95,9 @@ class Convert:
         """
         # Milliseconds?
         if type(ass_ms) is int and ass_ms >= 0:
+            # It round ms to cs. From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/ass/time.h#L32
+            # Ex: 49 ms to 50 ms
+            ass_ms = (ass_ms + 5) - (ass_ms + 5) % 10
 
             return "{:d}:{:02d}:{:02d}.{:02d}".format(
                 math.floor(ass_ms / 3600000) % 10,
@@ -82,76 +117,115 @@ class Convert:
             raise ValueError("Milliseconds or ASS timestamp expected")
 
     @staticmethod
-    def ms_to_frames(ms: int, fps: Union[int, float, Fraction], is_start: bool) -> int:
-        """Converts from milliseconds to frames.
+    def ms_to_frames(
+        ms: int,
+        time_type: TimeType,
+        timestamps: Timestamps,
+    ) -> int:
+        """Converts milliseconds to frames.
 
         Parameters:
             ms (int): Milliseconds.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
+            time_type (TimeType): The type of the provided time (start/end).
+            timestamps (Timestamps): An Timestamps object
 
         Returns:
-            The output represents ``ms`` converted.
+            The output represents ``ms`` converted into ``frames``.
         """
-        # Logic taken from: https://github.com/Aegisub/Aegisub/blob/master/libaegisub/common/vfr.cpp#L205
-        if ms < 0:
-            raise ValueError("Parameter 'ms' must be an integer >= 0.")
-        if fps <= 0:
-            raise ValueError("Parameter 'fps' must be an integer > 0.")
-        # NOTE: a frame can be negative in Aegisub, so here we allow this possibility
-        return math.ceil((ms - 0.5) / 1000 * fps) - (0 if is_start else 1)
+        if ms < timestamps.timestamps[0]:
+            raise ValueError("You cannot specify a time under 0.")
+
+        if time_type == TimeType.START:
+            if ms == timestamps.timestamps[0]:
+                return 0
+            return Convert.ms_to_frames(ms - 1, TimeType.EXACT, timestamps) + 1
+        elif time_type == TimeType.END:
+            if ms == timestamps.timestamps[0]:
+                return -1
+            return Convert.ms_to_frames(ms - 1, TimeType.EXACT, timestamps)
+
+        if ms > timestamps.timestamps[-1]:
+            # For explanation of this, see docs/Proof algorithm - ms_to_frames.md
+            if timestamps.rounding_method == RoundingMethod.ROUND:
+                upper_bound = (ms + Fraction("0.5")) * timestamps.fpms
+            elif timestamps.rounding_method == RoundingMethod.FLOOR:
+                upper_bound = (ms + 1) * timestamps.fpms
+            else:
+                raise NotImplementedError(
+                    f'The method "{timestamps.rounding_method}" is not supported.'
+                )
+            trunc_frame = int(upper_bound)
+            return trunc_frame - 1 if upper_bound == trunc_frame else trunc_frame
+
+        # Employing bisect_right as a faster alternative to:
+        # for i, timecode in reversed(list(enumerate(timestamps))):
+        #     if timecode <= ms:
+        #         return i
+        return bisect.bisect_right(timestamps.timestamps, ms) - 1
 
     @staticmethod
     def frames_to_ms(
-        frames: int, fps: Union[int, float, Fraction], is_start: bool
+        frame: int,
+        time_type: TimeType,
+        timestamps: Timestamps,
     ) -> int:
-        """Converts from frames to milliseconds.
+        """Converts frames to milliseconds.
 
         Parameters:
-            frames (int): Frames.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
+            frame (int): Frame.
+            time_type (TimeType): The type of the provided time (start/end).
+            timestamps (Timestamps): An Timestamps object
 
         Returns:
-            The output represents ``frames`` converted.
+            The output represents ``frame`` converted into ``ms``.
         """
-        # Logic taken from: https://github.com/Aegisub/Aegisub/blob/master/libaegisub/common/vfr.cpp#L233
-        if frames < 0:
-            raise ValueError("Parameter 'frames' must be an integer >= 0.")
-        if fps <= 0:
-            raise ValueError("Parameter 'fps' must be an integer > 0.")
-        # Since ms can't be negative, we have to handle frame 0 when converting frame value for a start time
-        if is_start and frames == 0:
-            return 0
-        curr_ms = frames * 1000 / fps
-        if is_start:
-            prev_ms = (frames - 1) * 1000 / fps
-            return math.floor(prev_ms + (curr_ms - prev_ms + 1) / 2)
-        else:
-            next_ms = (frames + 1) * 1000 / fps
-            return math.floor(curr_ms + (next_ms - curr_ms + 1) / 2)
+        if frame < 0:
+            raise ValueError("You cannot specify a frame under 0.")
+
+        if time_type == TimeType.START:
+            if frame == 0:
+                return timestamps.timestamps[0]
+
+            # Previous image excluded
+            prev_ms = Convert.frames_to_ms(frame - 1, TimeType.EXACT, timestamps) + 1
+            # Current image inclued
+            curr_ms = Convert.frames_to_ms(frame, TimeType.EXACT, timestamps)
+
+            return prev_ms + (curr_ms - prev_ms) // 2
+
+        elif time_type == TimeType.END:
+            # Current image excluded
+            curr_ms = Convert.frames_to_ms(frame, TimeType.EXACT, timestamps) + 1
+            # Next image inclued
+            next_ms = Convert.frames_to_ms(frame + 1, TimeType.EXACT, timestamps)
+
+            return curr_ms + (next_ms - curr_ms) // 2
+
+        if frame > len(timestamps.timestamps) - 1:
+            frames_past_end = frame - len(timestamps.timestamps) + 1
+            return timestamps.rounding_method(
+                frames_past_end * 1 / timestamps.fpms + timestamps.last_frame_time
+            )
+
+        return timestamps.timestamps[frame]
 
     @staticmethod
-    def move_ms_to_frame(
-        ms: int, fps: Union[int, float, Fraction], is_start: bool
-    ) -> int:
+    def move_ms_to_frame(timestamps: Timestamps, ms: int, time_type: TimeType) -> int:
         """
-        Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
-        It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
+        Moves the ms to when the corresponding frame starts or ends
+        It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub.
 
         Parameters:
+            timestamps (Timestamps): An Timestamps object
             ms (int): Milliseconds.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
+            time_type (TimeType): The type of the provided time (start/end).
 
         Returns:
             The output represents ``ms`` converted.
         """
-        # Since ms can't be negative, we have to handle frame 0 when converting frame value for a start time
-        if ms == 0:
-            return 0
+
         return Convert.frames_to_ms(
-            Convert.ms_to_frames(ms, fps, is_start), fps, is_start
+            timestamps, Convert.ms_to_frames(timestamps, ms, time_type), time_type
         )
 
     @staticmethod

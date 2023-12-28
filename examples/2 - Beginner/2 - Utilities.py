@@ -13,11 +13,15 @@ For subtitles, we create a vertical static gradient.
 As exercise, you can try to transform it into an horizontal one :)
 """
 
+from fractions import Fraction
 from pyonfx import *
 import random
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
+
+# Let's load the timestamps
+timestamps_list = Timestamps.from_fps(Fraction(24000, 1001))
 
 
 def romaji(line, l):
@@ -44,7 +48,9 @@ def romaji(line, l):
         # Main Effect
         # Let's create a FrameUtility object and set up a radius for the random positions
         FU = FrameUtility(
-            line.start_time + syl.start_time, line.start_time + syl.end_time
+            line.start_time + syl.start_time,
+            line.start_time + syl.end_time,
+            timestamps_list,
         )
         radius = 2
 
