@@ -1,8 +1,12 @@
+from fractions import Fraction
 from pyonfx import *
 import random
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
+
+# Let's load the timestamps
+timestamps_list = Timestamps.from_fps(Fraction(24000, 1001))
 
 circle = Shape.ellipse(20, 20)
 
@@ -29,7 +33,9 @@ def romaji(line, l):
         l.layer = 1
 
         FU = FrameUtility(
-            line.start_time + syl.start_time, line.start_time + syl.end_time
+            line.start_time + syl.start_time,
+            line.start_time + syl.end_time,
+            timestamps_list,
         )
         rand = random.uniform(-10, 10)
 
