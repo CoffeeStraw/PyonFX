@@ -4,6 +4,7 @@ But depending on what the user want, he may need to floor the result or round it
 Important to note, $frame \in \mathbb{N}$. This means we need to take the **integer** between the 2 bounds of the inequations that are detailed below.
 
 ## Explanation for rounding method
+$$ms = \text{round}(frame * {1 \over fps} * 1000)$$
 
 Important to note, here the rounding method round up, so, if it encounter $round(x.5)$, it will become $x + 1$
 
@@ -30,6 +31,7 @@ else:
 
 
 ## Explanation for floor method
+$$ms = \lfloor frame * {1 \over fps} * 1000 \rfloor$$
 
 From the previous equation, we can deduce this:
 $$ms \le frame * {1 \over fps} * 1000 < ms + 1$$
