@@ -1,0 +1,54 @@
+[project]
+name = "pyonfx"
+description = "An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha)."
+authors = [
+    { name = "Antonio Strippoli", email = "clarantonio98@gmail.com" },
+]
+license = { file = "LICENSE" }
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "pyquaternion",
+    "pywin32; platform_system=='Windows'",
+    "pycairo; platform_system=='Linux' or platform_system=='Darwin'",
+    "PyGObject; platform_system=='Linux' or platform_system=='Darwin'",
+]
+classifiers=[
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+]
+dynamic = ["version"]
+keywords = ["typesetting", "ass", "subtitle", "aegisub", "karaoke", "kfx", "advanced-substation-alpha", "karaoke-effect"]
+
+[project.urls]
+Documentation = "https://pyonfx.rtfd.io/"
+Source = "https://github.com/CoffeeStraw/PyonFX/"
+Tracker = "https://github.com/CoffeeStraw/PyonFX/issues/"
+
+[project.optional-dependencies]
+dev = [
+  "black",
+  "pytest",
+  "pytest-check",
+  "sphinx>=5.0.0",
+  "sphinx_panels",
+  "sphinx_rtd_theme",
+  "sphinxcontrib-napoleon",
+]
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.dynamic]
+version = { attr = "pyonfx.__init__.__version__" }
+
+[tool.setuptools.packages.find]
+include = ["pyonfx*"]
