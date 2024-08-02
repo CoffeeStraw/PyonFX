@@ -79,11 +79,11 @@ jobs:
         if: matrix.os != 'windows-latest'
         run: |
           go install github.com/Crosse/font-install@latest
-          font-install "https://osdn.net/frs/redir.php?m=gigenet&f=mix-mplus-ipa%2F58720%2Fmigu-1p-20130430.zip"
+          font-install "https://github.com/itouhiro/mixfont-mplus-ipa/releases/download/v2020.0307/migu-1p-20200307.zip"
         shell: bash
       - name: Install fonts (Windows)
         if: matrix.os == 'windows-latest'
-        run: ./.github/scripts/install-fonts.ps1 'https://osdn.net/frs/redir.php?m=gigenet&f=mix-mplus-ipa%2F58720%2Fmigu-1p-20130430.zip'
+        run: ./.github/scripts/install-fonts.ps1 'https://github.com/itouhiro/mixfont-mplus-ipa/releases/download/v2020.0307/migu-1p-20200307.zip'
         shell: pwsh
 
       - name: Cache Python
