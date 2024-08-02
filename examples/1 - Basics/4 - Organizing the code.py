@@ -20,6 +20,7 @@ kanji in vertical alignment, you can specify this parameter to False.
 Note that this code will not do anything, because there is nothing written in the romaji, kanji, sub functions.
 We will create our first effect in the next section: 2 - Beginner
 """
+
 from pyonfx import *
 
 io = Ass("in.ass")

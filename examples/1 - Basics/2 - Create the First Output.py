@@ -25,6 +25,7 @@ For more info:
 - open_aegisub: https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Ass.open_aegisub
 - open_mpv: https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Ass.open_mpv
 """
+
 from pyonfx import *
 
 io = Ass("in.ass")

@@ -8,6 +8,7 @@ and finally write them back on our output with time shifted by 2000ms.
 For more info about the copy method:
 https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html#pyonfx.ass_core.Line.copy
 """
+
 from pyonfx import *
 
 io = Ass("in.ass")

@@ -19,6 +19,7 @@ even in a small input file like the one in this folder.
 You can find more info about each object used to represent the input .ass file here:
 https://pyonfx.readthedocs.io/en/latest/reference/ass%20core.html
 """
+
 from pyonfx import *
 
 io = Ass("in.ass")
