@@ -16,11 +16,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
-import re
-import math
 import colorsys
+import math
+import re
 from enum import Enum
-from fractions import Fraction
 from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
 
 from .font_utility import Font
@@ -80,79 +79,6 @@ class Convert:
             )
         else:
             raise ValueError("Milliseconds or ASS timestamp expected")
-
-    @staticmethod
-    def ms_to_frames(ms: int, fps: Union[int, float, Fraction], is_start: bool) -> int:
-        """Converts from milliseconds to frames.
-
-        Parameters:
-            ms (int): Milliseconds.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
-
-        Returns:
-            The output represents ``ms`` converted.
-        """
-        # Logic taken from: https://github.com/Aegisub/Aegisub/blob/master/libaegisub/common/vfr.cpp#L205
-        if ms < 0:
-            raise ValueError("Parameter 'ms' must be an integer >= 0.")
-        if fps <= 0:
-            raise ValueError("Parameter 'fps' must be an integer > 0.")
-        # NOTE: a frame can be negative in Aegisub, so here we allow this possibility
-        return math.ceil((ms - 0.5) / 1000 * fps) - (0 if is_start else 1)
-
-    @staticmethod
-    def frames_to_ms(
-        frames: int, fps: Union[int, float, Fraction], is_start: bool
-    ) -> int:
-        """Converts from frames to milliseconds.
-
-        Parameters:
-            frames (int): Frames.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
-
-        Returns:
-            The output represents ``frames`` converted.
-        """
-        # Logic taken from: https://github.com/Aegisub/Aegisub/blob/master/libaegisub/common/vfr.cpp#L233
-        if frames < 0:
-            raise ValueError("Parameter 'frames' must be an integer >= 0.")
-        if fps <= 0:
-            raise ValueError("Parameter 'fps' must be an integer > 0.")
-        # Since ms can't be negative, we have to handle frame 0 when converting frame value for a start time
-        if is_start and frames == 0:
-            return 0
-        curr_ms = frames * 1000 / fps
-        if is_start:
-            prev_ms = (frames - 1) * 1000 / fps
-            return math.floor(prev_ms + (curr_ms - prev_ms + 1) / 2)
-        else:
-            next_ms = (frames + 1) * 1000 / fps
-            return math.floor(curr_ms + (next_ms - curr_ms + 1) / 2)
-
-    @staticmethod
-    def move_ms_to_frame(
-        ms: int, fps: Union[int, float, Fraction], is_start: bool
-    ) -> int:
-        """
-        Moves the ms to when the corresponding frame starts or ends (depending on ``is_start``).
-        It is something close to using "CTRL + 3" and "CTRL + 4" on Aegisub 3.2.2.
-
-        Parameters:
-            ms (int): Milliseconds.
-            fps (positive int, float or Fraction): Frames per second.
-            is_start (bool): True if this time will be used for the start_time of a line, else False.
-
-        Returns:
-            The output represents ``ms`` converted.
-        """
-        # Since ms can't be negative, we have to handle frame 0 when converting frame value for a start time
-        if ms == 0:
-            return 0
-        return Convert.frames_to_ms(
-            Convert.ms_to_frames(ms, fps, is_start), fps, is_start
-        )
 
     @staticmethod
     def alpha_ass_to_dec(alpha_ass: str) -> int:
