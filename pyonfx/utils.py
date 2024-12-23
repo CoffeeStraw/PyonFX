@@ -143,27 +143,6 @@ class FrameUtility:
     You can use it to iterate over the frames going from ``start_ms``
     to ``end_ms`` and perform operations easily over multiple frames.
 
-    BACKGROUND KNOWLEDGE:
-
-    When reproducing a video+sub in a player, a line is rendered on the current frame
-    if the current time of the player is in between the line's start and end time.
-
-    The frame's duration can be determined by the fps value.
-
-    Let's now walk through an example: fps = 20 -> frame_duration = 50 ms.
-
-    The player will then seek for frames at the following times: 0, 50, 100, 150, ...
-
-    To accomodate this fact, frames' start and end times are positioned as follows:
-    - Frame 0: 0-25
-    - Frame 1: 25-75
-    - Frame 2: 75-125
-    - Frame 3: 125-175
-    - ...
-
-    This way, the frames' mid time will always be one of the player's seek times.
-    The only exception is the first frame, since we can't have negative times.
-
     Parameters:
         start_ms (positive int): Initial time in ms.
         end_ms (positive int): Final time in ms.
@@ -174,13 +153,41 @@ class FrameUtility:
         Returns a Generator yielding start_ms, end_ms, current frame index and total number of frames at each step.
 
     Example:
-        >>> FU = FrameUtility(0, 110, 20)
+        >>> # Let's assume to have an Ass object named "io" having a 20 fps video (i.e. frames are 50 ms long)
+        >>> FU = FrameUtility(0, 110, io.input_timestamps)
         >>> for s, e, i, n in FU:
         >>>     print(f"Frame {i}/{n}: {s} - {e}")
         >>>
         >>> Frame 1/3: 0 - 25
         >>> Frame 2/3: 25 - 75
         >>> Frame 3/3: 75 - 125
+
+    Note:
+        In the following we try to cover at our best the knowledge behind FrameUtility.
+
+        Say we have an .mkv file containing a video file and a subtitle file.
+        When reproducing the .mkv in a player, a line is rendered on the current frame
+        if the current time of the player is in between the line's start and end time.
+
+        Depending on the video file, the frames' duration can either be constant (CFR) or
+        variable (VFR).
+
+        Let's now walk through an example.
+        Say we have a CFR video having fps = 20 (i.e. the individual frame duration = 50 ms).
+
+        The player will then seek for frames at the following times: 0, 50, 100, 150, ...
+
+        We now want to generate a subtitle line for each frame. Which start time and end time should we generate?
+        Based on the theory above, there are multiple answers to make our lines appear.
+
+        FrameUtility implements what should be the safest answer: it generates the start and end times such that
+        the mid time will always be the closest to the player's seek times. Therefore:
+        - FRAME NUMBER : START TIME - END TIME
+        - Frame 0: 0-25
+        - Frame 1: 25-75
+        - Frame 2: 75-125
+        - Frame 3: 125-175
+        - ...
     """
 
     def __init__(
