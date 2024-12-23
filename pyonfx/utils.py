@@ -17,8 +17,8 @@
 
 from __future__ import annotations
 import re
-from fractions import Fraction
 from typing import List, Union, TYPE_CHECKING
+from video_timestamps import ABCTimestamps, TimeType
 
 from .convert import Convert, ColorModel
 
@@ -167,7 +167,7 @@ class FrameUtility:
     Parameters:
         start_ms (positive int): Initial time in ms.
         end_ms (positive int): Final time in ms.
-        fps (positive int, float or Fraction, optional): Frames per second.
+        timestamps (ABCTimestamps): A timestamps object from [VideoTimestamps](https://github.com/moi15moi/VideoTimestamps/).
         n_fr (positive int, optional): Number of frames covered by each iteration.
 
     Returns:
@@ -187,7 +187,7 @@ class FrameUtility:
         self,
         start_ms: int,
         end_ms: int,
-        fps: Union[int, float, Fraction] = Fraction(24000, 1001),
+        timestamps: ABCTimestamps,
         n_fr: int = 1,
     ):
         # Check for invalid values
@@ -195,16 +195,16 @@ class FrameUtility:
             raise ValueError("Parameters 'start_ms' and 'start_ms' must be >= 0.")
         if end_ms < start_ms:
             raise ValueError("Parameter 'start_ms' is expected to be <= 'end_ms'.")
-        if fps <= 0 or n_fr <= 0:
-            raise ValueError("Parameters 'fps' and 'n_fr' must be > 0.")
+        if n_fr <= 0:
+            raise ValueError("Parameter 'n_fr' must be > 0.")
 
+        self.timestamps = timestamps
         self.start_ms = start_ms
         self.end_ms = end_ms
-        self.end_ms_snapped = Convert.move_ms_to_frame(end_ms, fps, False)
-        self.fps = fps
 
-        self.start_fr = self.curr_fr = Convert.ms_to_frames(start_ms, fps, True)
-        self.end_fr = Convert.ms_to_frames(end_ms, fps, False)
+        self.start_fr = self.curr_fr = timestamps.time_to_frame(start_ms, TimeType.START, 3)
+        self.end_fr = timestamps.time_to_frame(end_ms, TimeType.END, 3)
+        self.end_ms_snapped = timestamps.frame_to_time(self.end_fr, TimeType.END, 3, True)
         self.n_fr = n_fr
         self.i = 0
         self.n = self.end_fr - self.start_fr + 1
@@ -213,9 +213,9 @@ class FrameUtility:
         # Generate values for the frames on demand. The end time is always clamped to the end_ms value.
         for self.i in range(0, self.n, self.n_fr):
             yield (
-                Convert.frames_to_ms(self.curr_fr, self.fps, True),
+                self.timestamps.frame_to_time(self.curr_fr, TimeType.START, 3, True),
                 min(
-                    Convert.frames_to_ms(self.curr_fr + self.n_fr - 1, self.fps, False),
+                    self.timestamps.frame_to_time(self.curr_fr + self.n_fr - 1, TimeType.END, 3, True),
                     self.end_ms_snapped,
                 ),
                 self.i + 1,
@@ -264,7 +264,7 @@ class FrameUtility:
             >>> Frame 3/4: 125 - 175; fsc: 137.5
             >>> Frame 4/4: 175 - 225; fsc: 112.5
         """
-        curr_ms = Convert.frames_to_ms(self.i + (self.n_fr - 1) // 2, self.fps, False)
+        curr_ms = self.timestamps.frame_to_time(self.i + (self.n_fr - 1) // 2, TimeType.END, 3, True)
 
         if curr_ms <= start_time:
             return 0
