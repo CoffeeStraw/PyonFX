@@ -107,7 +107,11 @@ def romaji(line, l):
         # Jump-in to the first syl
         jump_height = 18
         if syl.i == 0:
-            FU = FrameUtility(line.start_time - line.leadin / 2, line.start_time)
+            FU = FrameUtility(
+                int(line.start_time - line.leadin / 2),
+                line.start_time,
+                io.input_timestamps,
+            )
             for s, e, i, n in FU:
                 l.start_time = s
                 l.end_time = e
@@ -133,7 +137,9 @@ def romaji(line, l):
             else syl.width
         )
         FU = FrameUtility(
-            line.start_time + syl.start_time, line.start_time + syl.end_time
+            line.start_time + syl.start_time,
+            line.start_time + syl.end_time,
+            io.input_timestamps,
         )
         for s, e, i, n in FU:
             l.start_time = s
