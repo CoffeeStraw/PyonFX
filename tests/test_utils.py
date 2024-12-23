@@ -1,6 +1,7 @@
 import os
 from fractions import Fraction
 from pyonfx import *
+from video_timestamps import FPSTimestamps, RoundingMethod
 
 # Get ass path
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -20,27 +21,29 @@ def test_interpolation():
 
 
 def test_frame_utility():
-    # All the outputs were checked with Aegisub DC 9214
-    FU = FrameUtility(0, 110, 20)
+    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction(20))
+    FU = FrameUtility(0, 110, timestamps)
     assert list(FU) == [(0, 25, 1, 3), (25, 75, 2, 3), (75, 125, 3, 3)]
 
-    FU = FrameUtility(0, 250, 20, 2)
+    FU = FrameUtility(0, 250, timestamps, 2)
     assert list(FU) == [(0, 75, 1, 5), (75, 175, 3, 5), (175, 225, 5, 5)]
 
-    FU = FrameUtility(0, 250, 20, 3)
+    FU = FrameUtility(0, 250, timestamps, 3)
     assert list(FU) == [(0, 125, 1, 5), (125, 225, 4, 5)]
 
-    FU = FrameUtility(424242, 424451, anime_fps)
+    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), anime_fps)
+    FU = FrameUtility(424242, 424451, timestamps)
     assert list(FU) == [
         (424236, 424278, 1, 5),
         (424278, 424320, 2, 5),
-        (424320, 424361, 3, 5),
-        (424361, 424403, 4, 5),
+        (424320, 424362, 3, 5),
+        (424362, 424403, 4, 5),
         (424403, 424445, 5, 5),
     ]
 
     # FU.add
-    FU = FrameUtility(25, 225, 20)
+    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction(20))
+    FU = FrameUtility(25, 225, timestamps)
     fsc_values = []
     for s, e, i, n in FU:
         fsc = 100
