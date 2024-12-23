@@ -39,7 +39,7 @@ jobs:
 
       - name: Cancelling pipeline (failed)
         if: failure()
-        uses: andymckay/cancel-action@0.2
+        uses: andymckay/cancel-action@0.5
 
       - name: Check formatting with black
         run: black --check .
