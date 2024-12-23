@@ -248,19 +248,30 @@ class FrameUtility:
         end_value: float,
         accelerator: float = 1.0,
     ) -> float:
-        """
-        You can see this function as a \"\\t\" tag usable in frame per frame operations.
+        """The corresponding of the ``\\t`` tag in the frame per frame environment.
+
+        The ``\\t`` tag performs a transformation from one style to another.
+        This function is more primitive: it allows to perform a transformation from a numeric value to another.
+        Which can then be used in tags defining styles, thus achieving the same results of the ``\\t`` tag.
+
         It must be used inside a for loop which iterates a FrameUtility object.
 
         Parameters:
             start_time (int): Initial time.
             end_time (int): Final time.
-            end_value (int or float): Value reached at end_time.
+            end_value (int or float): Numeric value reached at end_time.
             accelerator (float): Accelerator value.
 
+        Returns:
+            The transformed numeric value at the current frame of this FrameUtility object.
+
         Examples:
-            >>> FU = FrameUtility(25, 225, 20)
+            >>> # Let's assume to have an Ass object named "io" having a 20 fps video (i.e. frames are 50 ms long)
+            >>> FU = FrameUtility(25, 225, io.input_timestamps)
             >>> for s, e, i, n in FU:
+            >>>     # We would like to transform the fsc value
+            >>>     # from 100 up 150 for the first 100 ms,
+            >>>     # and then from 150 to 100 for the remaining 200 ms
             >>>     fsc = 100
             >>>     fsc += FU.add(0, 100, 50)
             >>>     fsc += FU.add(100, 200, -50)
