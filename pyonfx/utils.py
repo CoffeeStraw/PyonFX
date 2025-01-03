@@ -163,31 +163,31 @@ class FrameUtility:
         >>> Frame 3/3: 75 - 125
 
     Note:
-        In the following we try to cover at our best the knowledge behind FrameUtility.
+        Understanding FrameUtility:
 
-        Say we have an .mkv file containing a video file and a subtitle file.
-        When reproducing the .mkv in a player, a line is rendered on the current frame
-        if the current time of the player is in between the line's start and end time.
+        When playing a video with subtitles (e.g., an .mkv file):
+        - A subtitle line is displayed when the player's current time falls between the line's start and end times
+        - Videos can have either constant frame rates (CFR) or variable frame rates (VFR)
 
-        Depending on the video file, the frames' duration can either be constant (CFR) or
-        variable (VFR).
+        Example with a CFR video at 20 fps (50ms per frame):
+        - Player seeks frames at: 0ms, 50ms, 100ms, 150ms, ...
+        
+        When generating subtitle lines per frame, FrameUtility uses a "mid-point" approach:
+        - Each frame's timing is centered around the player's seek time
+        - This ensures the subtitle will be visible for the entire frame duration
+        
+        Frame timings example:
+        Frame # : Start - End (Mid-point)
+        Frame 0:   0 -  25 (mid: 12.5)
+        Frame 1:  25 -  75 (mid: 50)
+        Frame 2:  75 - 125 (mid: 100)
+        Frame 3: 125 - 175 (mid: 150)
+        ...
 
-        Let's now walk through an example.
-        Say we have a CFR video having fps = 20 (i.e. the individual frame duration = 50 ms).
-
-        The player will then seek for frames at the following times: 0, 50, 100, 150, ...
-
-        We now want to generate a subtitle line for each frame. Which start time and end time should we generate?
-        Based on the theory above, there are multiple answers to make our lines appear.
-
-        FrameUtility implements what should be the safest answer: it generates the start and end times such that
-        the mid time will always be the closest to the player's seek times. Therefore:
-        - FRAME NUMBER : START TIME - END TIME
-        - Frame 0: 0-25
-        - Frame 1: 25-75
-        - Frame 2: 75-125
-        - Frame 3: 125-175
-        - ...
+        This approach:
+        - Ensures smooth frame transitions
+        - Avoids flickering by avoiding gaps between frames
+        - Works reliably for both CFR and VFR videos
     """
 
     def __init__(
@@ -254,13 +254,15 @@ class FrameUtility:
         end_value: float,
         accelerator: float = 1.0,
     ) -> float:
-        """The corresponding of the ``\\t`` tag in the frame per frame environment.
+        """Frame-by-frame equivalent of the ASS ``\\t`` tag.
 
-        The ``\\t`` tag performs a transformation from one style to another.
-        This function is more primitive: it allows to perform a transformation from a numeric value to another.
-        Which can then be used in tags defining styles, thus achieving the same results of the ``\\t`` tag.
+        This function provides a frame-accurate way to transform numeric values over time,
+        similar to how the ASS ``\\t`` tag transforms styles. While ``\\t`` handles complete
+        style transformations, this method focuses on transforming individual numeric values
+        that can then be used within style tags.
 
-        It must be used inside a for loop which iterates a FrameUtility object.
+        Note:
+            Must be used within a for loop iterating a FrameUtility object.
 
         Parameters:
             start_time (int): Initial time.
