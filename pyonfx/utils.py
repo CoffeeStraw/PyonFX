@@ -171,11 +171,11 @@ class FrameUtility:
 
         Example with a CFR video at 20 fps (50ms per frame):
         - Player seeks frames at: 0ms, 50ms, 100ms, 150ms, ...
-        
+
         When generating subtitle lines per frame, FrameUtility uses a "mid-point" approach:
         - Each frame's timing is centered around the player's seek time
         - This ensures the subtitle will be visible for the entire frame duration
-        
+
         Frame timings example:
         Frame # : Start - End (Mid-point)
         Frame 0:   0 -  25 (mid: 12.5)
