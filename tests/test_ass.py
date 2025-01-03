@@ -1,7 +1,9 @@
 import os
 import sys
 import pytest_check as check
+from fractions import Fraction
 from pyonfx import *
+from video_timestamps import FPSTimestamps, RoundingMethod
 
 # Get ass path used for tests
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -124,3 +126,20 @@ def test_line_values():
     # Bold - Vertical Text
     check.almost_equal(lines[12].width, 31.546875, abs=max_deviation)
     check.almost_equal(lines[12].height, 396.0, abs=max_deviation)
+
+
+def test_ass_values():
+    check.is_true(os.path.samefile(io.path_input, path_ass))
+    check.equal(
+        os.path.realpath(io.path_output),
+        os.path.realpath(
+            os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "Output.ass")
+        ),
+    )
+    # io.meta is tested in test_meta_values()
+    # io.styles is tested in test_line_values()
+    # io.lines is tested in test_line_values()
+    check.equal(
+        io.input_timestamps,
+        FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction("23.976000")),
+    )

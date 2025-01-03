@@ -22,7 +22,10 @@ import sys
 import time
 import copy
 import subprocess
+from fractions import Fraction
+from pathlib import Path
 from typing import List, Tuple, Union, Optional
+from video_timestamps import FPSTimestamps, RoundingMethod, VideoTimestamps
 
 from .font_utility import Font
 from .convert import Convert
@@ -384,6 +387,16 @@ class Ass:
         extended (bool): Calculate more informations from lines (usually you will not have to touch this).
         vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically.
             Additionally, ``line`` fields will be re-calculated based on the re-positioned ``line.chars``.
+        video_index (int): Index of the video stream indicated in the `Video File` element from the `[Aegisub Project Garbage]` section.
+            Only used if the `Video File` is a file.
+        rounding_method (RoundingMethod): The rounding method used to round/floor the PTS (Presentation Time Stamp).
+            Only used if the `Video File` element from the `[Aegisub Project Garbage]` section is a Dummy Video.
+        time_scale (Fraction): Unit of time (in seconds) in terms of which frame timestamps are represented.
+            Important: Don't confuse time_scale with the time_base. As a reminder, time_base = 1 / time_scale.
+            Only used if the `Video File` element from the `[Aegisub Project Garbage]` section is a Dummy Video.
+        first_pts (int): PTS (Presentation Time Stamp) of the first frame of the video.
+            Only used if the `Video File` element from the `[Aegisub Project Garbage]` section is a Dummy Video.
+
 
     Attributes:
         path_input (str): Path for input file (absolute).
@@ -391,6 +404,7 @@ class Ass:
         meta (:class:`Meta`): Contains informations about the ASS given.
         styles (list of :class:`Style`): Contains all the styles in the ASS given.
         lines (list of :class:`Line`): Contains all the lines (events) in the ASS given.
+        input_timestamps (:class:`ABCTimestamps`, optional): The timestamps that represent the `Video File` element from the `[Aegisub Project Garbage]` section.
 
     .. _example:
     Example:
@@ -407,13 +421,17 @@ class Ass:
         keep_original: bool = True,
         extended: bool = True,
         vertical_kanji: bool = False,
+        video_index: int = 0,
+        rounding_method: RoundingMethod = RoundingMethod.ROUND,
+        time_scale: Fraction = Fraction(1000),
+        first_pts: int = 0,
     ):
         # Starting to take process time
         self.__saved = False
         self.__plines = 0
         self.__ptime = time.time()
 
-        self.meta, self.styles, self.lines = Meta(), {}, []
+        self.meta, self.styles, self.lines, self.input_timestamps = Meta(), {}, [], None
         # Getting absolute sub file path
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
         if not os.path.isabs(path_input):
@@ -485,6 +503,17 @@ class Ass:
                 elif re.match(r"Video File: *?(.*)$", line):
                     self.meta.video = get_media_abs_path(line[11:].strip())
                     line = "Video File: %s\n" % self.meta.video
+
+                    if os.path.isfile(self.meta.video):
+                        self.input_timestamps = VideoTimestamps.from_video_file(
+                            Path(self.meta.video), video_index
+                        )
+                    else:
+                        fps_str = line[11:].strip().split(":")[1]
+                        fps = Fraction(fps_str)
+                        self.input_timestamps = FPSTimestamps(
+                            rounding_method, time_scale, fps, first_pts
+                        )
 
                 # Appending line to output
                 self.__output.append(line)
