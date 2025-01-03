@@ -177,11 +177,11 @@ class FrameUtility:
         - This ensures the subtitle will be visible for the entire frame duration
 
         Frame timings example:
-        Frame # : Start - End (Mid-point)
-        Frame 0:   0 -  25 (mid: 12.5)
-        Frame 1:  25 -  75 (mid: 50)
-        Frame 2:  75 - 125 (mid: 100)
-        Frame 3: 125 - 175 (mid: 150)
+        Frame #: Start - End (Player's seek time)
+        Frame 0:   0 -  25 (0, special case)
+        Frame 1:  25 -  75 (50)
+        Frame 2:  75 - 125 (100)
+        Frame 3: 125 - 175 (150)
         ...
 
         This approach:
