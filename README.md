@@ -27,5 +27,6 @@ This project is licensed under the LGPL v3.0 License — see the [LICENSE](https
 
 * **[Youka](https://github.com/Youka)** for the original main functions ideas for **[NyuFX](https://github.com/Youka/NyuFX)**;
 * **[McWhite](https://github.com/BastianGanze)** for the original functions ideas of his library for **[NyuFX](https://github.com/Youka/NyuFX)**;
+* **[moi15moi](https://github.com/moi15moi)** for creating **[VideoTimestamps](https://github.com/moi15moi/VideoTimestamps)** and contributing significant improvements to the frame processing utilities;
 * **Siplas** for helping me out in the realization of the current logo for **PyonFX**;
 * **Preacer** for the name suggestion.
