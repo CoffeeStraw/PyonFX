@@ -198,12 +198,24 @@ class Font:
         if sys.platform == "win32":
             # TODO: Calcultating distance between origins of character cells (just in case of spacing)
 
-            # Add path to device context
-            win32gui.BeginPath(self.dc)
-            win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, text)
-            win32gui.EndPath(self.dc)
-            # Getting Path produced by Microsoft API
-            points, type_points = win32gui.GetPath(self.dc)
+            points = ()
+            type_points = ()
+            width = 0
+            for char in text:
+                cx, cy = win32gui.GetTextExtentPoint32(self.dc, char)
+
+                win32gui.BeginPath(self.dc)
+                win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, char)
+                win32gui.EndPath(self.dc)
+
+                cur_points, cur_types = win32gui.GetPath(self.dc)
+
+                # Shift the result for the spacing
+                for x, y in cur_points:
+                    points += ((x + width, y),)
+                type_points += tuple(cur_types)
+
+                width += cx + int(self.hspace)
 
             # Checking for errors
             if len(points) == 0 or len(points) != len(type_points):
