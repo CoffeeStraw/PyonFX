@@ -196,8 +196,6 @@ class Font:
 
     def text_to_shape(self, text: str) -> Shape:
         if sys.platform == "win32":
-            # TODO: Calcultating distance between origins of character cells (just in case of spacing)
-
             points = ()
             type_points = ()
             width = 0
