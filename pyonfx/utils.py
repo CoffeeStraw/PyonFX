@@ -33,7 +33,7 @@ class Utils:
 
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: List[Union[Line, Word, Syllable, Char]]
+        lines_chars_syls_or_words: List[Union[Line, Word, Syllable, Char]],
     ) -> List[Union[Line, Word, Syllable, Char]]:
         """
         Helps to not check everytime for text containing only spaces or object's duration equals to zero.

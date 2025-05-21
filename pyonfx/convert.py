@@ -309,7 +309,7 @@ class Convert:
     def color_rgb_to_ass(
         color_rgb: Union[
             str, Tuple[Union[int, float], Union[int, float], Union[int, float]]
-        ]
+        ],
     ) -> str:
         """Converts from RGB color to corresponding ASS color.
 
@@ -367,7 +367,7 @@ class Convert:
 
     @staticmethod
     def color_hsv_to_ass(
-        color_hsv: Tuple[Union[int, float], Union[int, float], Union[int, float]]
+        color_hsv: Tuple[Union[int, float], Union[int, float], Union[int, float]],
     ) -> str:
         """Converts from HSV color string to corresponding ASS color.
 
