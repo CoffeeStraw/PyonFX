@@ -50,7 +50,7 @@ jobs:
     runs-on: ${{matrix.os}}
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest] # Disable macos-latest
+        os: [ubuntu-latest, macos-latest, windows-latest]
         python-version: ['3.9', '3.10', '3.11', '3.12']
 
     steps:
@@ -68,7 +68,7 @@ jobs:
           sudo apt-get install libgirepository-2.0-dev gobject-introspection libcairo2-dev python3-dev build-essential gir1.2-gtk-3.0 python3-gi python3-gi-cairo
       - name: Install platform-specific requirements (macOS) # Note: brew is very slow sometimes. TODO: speedup brew by using caching.
         if: matrix.os == 'macos-latest'
-        run: brew install python py3cairo pygobject3 pango
+        run: brew install python py3cairo pygobject3 pango cairo
 
       - name: Setup Go
         uses: actions/setup-go@v5
