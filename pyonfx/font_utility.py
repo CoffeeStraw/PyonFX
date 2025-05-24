@@ -157,7 +157,7 @@ class Font:
             cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
             return (
-                (cx * self.downscale + self.hspace * (len(text) - 1)) * self.xscale,
+                (cx * self.downscale + self.hspace * len(text)) * self.xscale,
                 cy * self.downscale * self.yscale,
             )
         elif sys.platform == "linux" or sys.platform == "darwin":
@@ -181,10 +181,7 @@ class Font:
                 width += get_rect(char).width
 
             return (
-                (
-                    width * self.downscale * self.fonthack_scale
-                    + self.hspace * (len(text) - 1)
-                )
+                (width * self.downscale * self.fonthack_scale + self.hspace * len(text))
                 * self.xscale,
                 get_rect(text).height
                 * self.downscale
@@ -345,7 +342,7 @@ class Font:
             curr_width = 0
 
             for i, char in enumerate(text):
-                shape_from_text(char, curr_width + self.hspace * self.xscale * i)
+                shape_from_text(char, curr_width)
                 curr_width += self.get_text_extents(char)[0]
 
             return Shape(" ".join(shape))
