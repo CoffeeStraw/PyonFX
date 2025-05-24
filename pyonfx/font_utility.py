@@ -193,79 +193,63 @@ class Font:
 
     def text_to_shape(self, text: str) -> Shape:
         if sys.platform == "win32":
-            # TODO: Calcultating distance between origins of character cells (just in case of spacing)
 
-            # Add path to device context
-            win32gui.BeginPath(self.dc)
-            win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, text)
-            win32gui.EndPath(self.dc)
-            # Getting Path produced by Microsoft API
-            points, type_points = win32gui.GetPath(self.dc)
-
-            # Checking for errors
-            if len(points) == 0 or len(points) != len(type_points):
-                raise RuntimeError(
-                    "This should never happen: function win32gui.GetPath has returned something unexpected.\nPlease report this to the developer"
-                )
+            def _scale_and_format(x, y, x_add):
+                return Shape.format_value(
+                    x * self.xscale * self.downscale + x_add
+                ), Shape.format_value(y * self.yscale * self.downscale)
 
             # Defining variables
             shape, last_type = [], None
-            mult_x, mult_y = self.downscale * self.xscale, self.downscale * self.yscale
 
-            # Convert points to shape
-            i = 0
-            while i < len(points):
-                cur_point, cur_type = points[i], type_points[i]
+            def shape_from_text(new_text, x_add):
+                nonlocal shape, last_type
 
-                if cur_type == win32con.PT_MOVETO:
-                    if last_type != win32con.PT_MOVETO:
-                        # Avoid repetition of command tags
-                        shape.append("m")
-                        last_type = cur_type
-                    shape.extend(
-                        [
-                            Shape.format_value(cur_point[0] * mult_x),
-                            Shape.format_value(cur_point[1] * mult_y),
-                        ]
-                    )
-                    i += 1
-                elif cur_type == win32con.PT_LINETO or cur_type == (
-                    win32con.PT_LINETO | win32con.PT_CLOSEFIGURE
-                ):
-                    if last_type != win32con.PT_LINETO:
-                        # Avoid repetition of command tags
-                        shape.append("l")
-                        last_type = cur_type
-                    shape.extend(
-                        [
-                            Shape.format_value(cur_point[0] * mult_x),
-                            Shape.format_value(cur_point[1] * mult_y),
-                        ]
-                    )
-                    i += 1
-                elif cur_type == win32con.PT_BEZIERTO or cur_type == (
-                    win32con.PT_BEZIERTO | win32con.PT_CLOSEFIGURE
-                ):
-                    if last_type != win32con.PT_BEZIERTO:
-                        # Avoid repetition of command tags
-                        shape.append("b")
-                        last_type = cur_type
-                    shape.extend(
-                        [
-                            Shape.format_value(cur_point[0] * mult_x),
-                            Shape.format_value(cur_point[1] * mult_y),
-                            Shape.format_value(points[i + 1][0] * mult_x),
-                            Shape.format_value(points[i + 1][1] * mult_y),
-                            Shape.format_value(points[i + 2][0] * mult_x),
-                            Shape.format_value(points[i + 2][1] * mult_y),
-                        ]
-                    )
-                    i += 3
-                else:  # If there is an invalid type -> skip, for safeness
+                win32gui.BeginPath(self.dc)
+                win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, new_text)
+                win32gui.EndPath(self.dc)
+
+                points, type_points = win32gui.GetPath(self.dc)
+
+                # Clear device context path
+                win32gui.AbortPath(self.dc)
+
+                i = 0
+                while i < len(points):
+                    cur_point, cur_type = points[i], type_points[i]
+
+                    base_type = cur_type & ~win32con.PT_CLOSEFIGURE
+
+                    if base_type == win32con.PT_MOVETO:
+                        if last_type != base_type:  # Avoid repetition of command tags
+                            shape.append("m")
+                        shape.extend(_scale_and_format(*cur_point, x_add))
+                    elif base_type == win32con.PT_LINETO:
+                        if last_type != base_type:
+                            shape.append("l")
+                        shape.extend(_scale_and_format(*cur_point, x_add))
+                    elif base_type == win32con.PT_BEZIERTO:
+                        if last_type != base_type:
+                            shape.append("b")
+                        if i + 2 >= len(points):
+                            raise RuntimeError("Unexpected end of BEZIERTO points.")
+                        shape.extend(
+                            _scale_and_format(*points[i], x_add)
+                            + _scale_and_format(*points[i + 1], x_add)
+                            + _scale_and_format(*points[i + 2], x_add)
+                        )
+                        i += 2
                     i += 1
 
-            # Clear device context path
-            win32gui.AbortPath(self.dc)
+                    last_type = base_type
+
+            if self.hspace:
+                curr_width = 0.0
+                for i, char in enumerate(text):
+                    shape_from_text(char, curr_width)
+                    curr_width += self.get_text_extents(char)[0]
+            else:
+                shape_from_text(text, 0.0)
 
             return Shape(" ".join(shape))
         elif sys.platform == "linux" or sys.platform == "darwin":
