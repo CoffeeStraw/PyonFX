@@ -6,7 +6,7 @@ Quick Start Guide
 First things first, you must have a good idea of how to create your effects. You will need to learn (if you haven't already) the following:
 
 * **ASS format**. As PyonFX is an advanced tool for typesetting and karaoke, it is meant to be used by experienced typesetters who are familiar with the tags Libass supports, as well as how they function. Check the footnote [#f1]_ for a complete list of tags.
-* **Python3 scripting language**. A programming language like Python allows you to define a set of instructions to be executed by your computer. Compared to softwares with GUI it gives you much more freedom, as you aren't tied to buttons or sliders. **You only need to know the basics for this module**. Knowledge on how to use variable, functions, conditions, loops, comparisons, string formatting, lists, and dictionaries is more than enough. You can find a link to some good tutorials in the footnotes[#f2]_.
+* **Python3 scripting language**. A programming language like Python allows you to define a set of instructions to be executed by your computer. Compared to softwares with GUI it gives you much more freedom, as you aren't tied to buttons or sliders. **You only need to know the basics for this module**. Knowledge on how to use variable, functions, conditions, loops, comparisons, string formatting, lists, and dictionaries is more than enough. You can find a link to some good tutorials in the footnotes [#f2]_.
 
 To use PyonFX, you'll have to write a Python3 script. Within it you will fully define the process of your KFX or advanced typesetting creation.
 
@@ -39,7 +39,7 @@ Installation
    .. code-block:: sh
       :emphasize-lines: 1,2
 
-      sudo apt-get install libgirepository-2.0-dev gobject-introspection libcairo2-dev python3-dev build-essential gir1.2-gtk-3.0 python3-gi python3-gi-cairo
+      sudo apt install python3 python3-pip libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
       python3 -m pip install --upgrade pyonfx
 
 .. dropdown:: Fedora
@@ -92,7 +92,7 @@ Installation
    .. code-block:: sh
       :emphasize-lines: 1,2
 
-      brew install python py3cairo pygobject3 pango cairo glib
+      brew install python py3cairo pygobject3 pango
       python3 -m pip install --upgrade pyonfx
 
    ⚠️Warning: If you experience output not rendered correctly, you might need to change the PangoCairo backend to fontconfig.

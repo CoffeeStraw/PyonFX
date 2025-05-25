@@ -16,6 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
+from dataclasses import dataclass
 import re
 import os
 import sys
@@ -31,341 +32,318 @@ from .font_utility import Font
 from .convert import Convert
 
 
+@dataclass
 class Meta:
     """Meta object contains informations about the Ass.
 
     More info about each of them can be found on http://docs.aegisub.org/manual/Styles
-
-    Attributes:
-        wrap_style (int): Determines how line breaking is applied to the subtitle line
-        scaled_border_and_shadow (bool): Determines if it has to be used script resolution (*True*) or video resolution (*False*) to scale border and shadow
-        play_res_x (int): Video Width
-        play_res_y (int): Video Height
-        audio (str): Loaded audio path (absolute)
-        video (str): Loaded video path (absolute)
     """
 
-    wrap_style: int
-    scaled_border_and_shadow: bool
-    play_res_x: int
-    play_res_y: int
-    audio: str
-    video: str
+    wrap_style: Optional[int] = None
+    """Determines how line breaking is applied to the subtitle line."""
+
+    scaled_border_and_shadow: Optional[bool] = None
+    """Determines if script resolution (True) or video resolution (False) should be used to scale border and shadow."""
+
+    play_res_x: Optional[int] = None
+    """Video width resolution."""
+
+    play_res_y: Optional[int] = None
+    """Video height resolution."""
+
+    audio: Optional[str] = None
+    """Loaded audio file path (absolute)."""
+
+    video: Optional[str] = None
+    """Loaded video file path (absolute)."""
 
     def __repr__(self):
         return pretty_print(self)
 
 
+@dataclass
 class Style:
-    """Style object contains a set of typographic formatting rules that is applied to dialogue lines.
-
-    More info about styles can be found on http://docs.aegisub.org/3.2/ASS_Tags/.
-
-    Attributes:
-        fontname (str): Font name
-        fontsize (float): Font size in points
-        color1 (str): Primary color (fill)
-        alpha1 (str): Transparency of color1
-        color2 (str): Secondary color (secondary fill, for karaoke effect)
-        alpha2 (str): Transparency of color2
-        color3 (str): Outline (border) color
-        alpha3 (str): Transparency of color3
-        color4 (str): Shadow color
-        alpha4 (str): Transparency of color4
-        bold (bool): Font with bold
-        italic (bool): Font with italic
-        underline (bool): Font with underline
-        strikeout (bool): Font with strikeout
-        scale_x (float): Text stretching in the horizontal direction
-        scale_y (float): Text stretching in the vertical direction
-        spacing (float): Horizontal spacing between letters
-        angle (float): Rotation of the text
-        border_style (bool): *True* for opaque box, *False* for standard outline
-        outline (float): Border thickness value
-        shadow (float): How far downwards and to the right a shadow is drawn
-        alignment (int): Alignment of the text
-        margin_l (int): Distance from the left of the video frame
-        margin_r (int): Distance from the right of the video frame
-        margin_v (int): Distance from the bottom (or top if alignment >= 7) of the video frame
-        encoding (int): Codepage used to map codepoints to glyphs
-    """
+    """Style object contains a set of typographic formatting rules that is applied to dialogue lines."""
 
     fontname: str
+    """Font name."""
     fontsize: float
+    """Font size in points."""
     color1: str
+    """Primary color (fill)."""
     alpha1: str
+    """Transparency of color1."""
     color2: str
+    """Secondary color (for karaoke effect)."""
     alpha2: str
+    """Transparency of color2."""
     color3: str
+    """Outline (border) color."""
     alpha3: str
+    """Transparency of color3."""
     color4: str
+    """Shadow color."""
     alpha4: str
+    """Transparency of color4."""
     bold: bool
+    """Whether the font is bold."""
     italic: bool
+    """Whether the font is italic."""
     underline: bool
+    """Whether the font is underlined."""
     strikeout: bool
+    """Whether the font is struck out."""
     scale_x: float
+    """Horizontal text scaling (percentage)."""
     scale_y: float
+    """Vertical text scaling (percentage)."""
     spacing: float
+    """Horizontal spacing between letters."""
     angle: float
+    """Text rotation angle (degrees)."""
     border_style: bool
+    """True for opaque box, False for standard outline."""
     outline: float
+    """Border thickness."""
     shadow: float
+    """Shadow offset distance."""
     alignment: int
+    """Text alignment (ASS alignment code)."""
     margin_l: int
+    """Left margin (pixels)."""
     margin_r: int
+    """Right margin (pixels)."""
     margin_v: int
+    """Vertical margin (pixels)."""
     encoding: int
+    """Font encoding/codepage."""
 
     def __repr__(self):
         return pretty_print(self)
 
 
+@dataclass
 class Char:
-    """Char object contains informations about a single char of a line in the Ass.
-
-    A char is defined by some text between two karaoke tags (k, ko, kf).
-
-    Attributes:
-        i (int): Char index number
-        word_i (int): Char word index (e.g.: In line text ``Hello PyonFX users!``, letter "u" will have word_i=2).
-        syl_i (int): Char syl index (e.g.: In line text ``{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!``, letter "F" will have syl_i=3).
-        syl_char_i (int): Char invidual syl index (e.g.: In line text ``{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!``, letter "e" of "users" will have syl_char_i=2).
-        start_time (int): Char start time (in milliseconds).
-        end_time (int): Char end time (in milliseconds).
-        duration (int): Char duration (in milliseconds).
-        styleref (obj): Reference to the Style object of this object original line.
-        text (str): Char text.
-        inline_fx (str): Char inline effect (marked as \\-EFFECT in karaoke-time).
-        prespace (int): Char free space before text.
-        postspace (int): Char free space after text.
-        width (float): Char text width.
-        height (float): Char text height.
-        x (float): Char text position horizontal (depends on alignment).
-        y (float): Char text position vertical (depends on alignment).
-        left (float): Char text position left.
-        center (float): Char text position center.
-        right (float): Char text position right.
-        top (float): Char text position top.
-        middle (float): Char text position middle.
-        bottom (float): Char text position bottom.
-    """
+    """Char object contains information about a single character in a line."""
 
     i: int
+    """Character index in the line."""
     word_i: int
+    """Index of the word this character belongs to."""
     syl_i: int
+    """Index of the syllable this character belongs to."""
     syl_char_i: int
+    """Index of the character within its syllable."""
     start_time: int
+    """Start time (ms) of the character."""
     end_time: int
+    """End time (ms) of the character."""
     duration: int
+    """Duration (ms) of the character."""
     styleref: Style
+    """Reference to the Style object for this character's line."""
     text: str
+    """The character itself as a string."""
     inline_fx: str
-    prespace: int
-    postspace: int
+    """Inline effect for the character (from \\\\-EFFECT tag)."""
     width: float
+    """Width of the character (pixels)."""
     height: float
-    x: float
-    y: float
-    left: float
-    center: float
-    right: float
-    top: float
-    middle: float
-    bottom: float
+    """Height of the character (pixels)."""
+    x: Optional[float] = None
+    """Horizontal position of the character (pixels)."""
+    y: Optional[float] = None
+    """Vertical position of the character (pixels)."""
+    left: Optional[float] = None
+    """Left position of the character (pixels)."""
+    center: Optional[float] = None
+    """Center position of the character (pixels)."""
+    right: Optional[float] = None
+    """Right position of the character (pixels)."""
+    top: Optional[float] = None
+    """Top position of the character (pixels)."""
+    middle: Optional[float] = None
+    """Middle position of the character (pixels)."""
+    bottom: Optional[float] = None
+    """Bottom position of the character (pixels)."""
 
     def __repr__(self):
         return pretty_print(self)
 
 
+@dataclass
 class Syllable:
-    """Syllable object contains informations about a single syl of a line in the Ass.
-
-    A syl can be defined as some text after a karaoke tag (k, ko, kf)
-    (e.g.: In ``{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!``, "Pyon" and "FX" are distinct syllables),
-
-    Attributes:
-        i (int): Syllable index number
-        word_i (int): Syllable word index (e.g.: In line text ``{\\k0}Hel{\\k0}lo {\\k0}Pyon{\\k0}FX {\\k0}users!``, syl "Pyon" will have word_i=1).
-        start_time (int): Syllable start time (in milliseconds).
-        end_time (int): Syllable end time (in milliseconds).
-        duration (int): Syllable duration (in milliseconds).
-        styleref (obj): Reference to the Style object of this object original line.
-        text (str): Syllable text.
-        tags (str): All the remaining tags before syl text apart \\k ones.
-        inline_fx (str): Syllable inline effect (marked as \\-EFFECT in karaoke-time).
-        prespace (int): Syllable free space before text.
-        postspace (int): Syllable free space after text.
-        width (float): Syllable text width.
-        height (float): Syllable text height.
-        x (float): Syllable text position horizontal (depends on alignment).
-        y (float): Syllable text position vertical (depends on alignment).
-        left (float): Syllable text position left.
-        center (float): Syllable text position center.
-        right (float): Syllable text position right.
-        top (float): Syllable text position top.
-        middle (float): Syllable text position middle.
-        bottom (float): Syllable text position bottom.
-    """
+    """Syllable object contains information about a single syllable in a line."""
 
     i: int
+    """Syllable index in the line."""
     word_i: int
+    """Index of the word this syllable belongs to."""
     start_time: int
+    """Start time (ms) of the syllable."""
     end_time: int
+    """End time (ms) of the syllable."""
     duration: int
+    """Duration (ms) of the syllable."""
     styleref: Style
+    """Reference to the Style object for this syllable's line."""
     text: str
+    """Text of the syllable."""
     tags: str
+    """ASS override tags preceding the syllable text (excluding \\\\k tags)."""
     inline_fx: str
+    """Inline effect for the syllable (from \\\\-EFFECT tag)."""
     prespace: int
+    """Number of spaces before the syllable."""
     postspace: int
+    """Number of spaces after the syllable."""
     width: float
+    """Width of the syllable (pixels)."""
     height: float
-    x: float
-    y: float
-    left: float
-    center: float
-    right: float
-    top: float
-    middle: float
-    bottom: float
+    """Height of the syllable (pixels)."""
+    x: Optional[float] = None
+    """Horizontal position of the syllable (pixels)."""
+    y: Optional[float] = None
+    """Vertical position of the syllable (pixels)."""
+    left: Optional[float] = None
+    """Left position of the syllable (pixels)."""
+    center: Optional[float] = None
+    """Center position of the syllable (pixels)."""
+    right: Optional[float] = None
+    """Right position of the syllable (pixels)."""
+    top: Optional[float] = None
+    """Top position of the syllable (pixels)."""
+    middle: Optional[float] = None
+    """Middle position of the syllable (pixels)."""
+    bottom: Optional[float] = None
+    """Bottom position of the syllable (pixels)."""
 
     def __repr__(self):
         return pretty_print(self)
 
 
+@dataclass
 class Word:
-    """Word object contains informations about a single word of a line in the Ass.
-
-    A word can be defined as some text with some optional space before or after
-    (e.g.: In the string "What a beautiful world!", "beautiful" and "world" are both distinct words).
-
-    Attributes:
-        i (int): Word index number
-        start_time (int): Word start time (same as line start time) (in milliseconds).
-        end_time (int): Word end time (same as line end time) (in milliseconds).
-        duration (int): Word duration (same as line duration) (in milliseconds).
-        styleref (obj): Reference to the Style object of this object original line.
-        text (str): Word text.
-        prespace (int): Word free space before text.
-        postspace (int): Word free space after text.
-        width (float): Word text width.
-        height (float): Word text height.
-        x (float): Word text position horizontal (depends on alignment).
-        y (float): Word text position vertical (depends on alignment).
-        left (float): Word text position left.
-        center (float): Word text position center.
-        right (float): Word text position right.
-        top (float): Word text position top.
-        middle (float): Word text position middle.
-        bottom (float): Word text position bottom.
-    """
+    """Word object contains information about a single word in a line."""
 
     i: int
+    """Word index in the line."""
     start_time: int
+    """Start time (ms) of the word (same as line start)."""
     end_time: int
+    """End time (ms) of the word (same as line end)."""
     duration: int
+    """Duration (ms) of the word (same as line duration)."""
     styleref: Style
+    """Reference to the Style object for this word's line."""
     text: str
+    """Text of the word."""
     prespace: int
+    """Number of spaces before the word."""
     postspace: int
+    """Number of spaces after the word."""
     width: float
+    """Width of the word (pixels)."""
     height: float
-    x: float
-    y: float
-    left: float
-    center: float
-    right: float
-    top: float
-    middle: float
-    bottom: float
+    """Height of the word (pixels)."""
+    x: Optional[float] = None
+    """Horizontal position of the word (pixels)."""
+    y: Optional[float] = None
+    """Vertical position of the word (pixels)."""
+    left: Optional[float] = None
+    """Left position of the word (pixels)."""
+    center: Optional[float] = None
+    """Center position of the word (pixels)."""
+    right: Optional[float] = None
+    """Right position of the word (pixels)."""
+    top: Optional[float] = None
+    """Top position of the word (pixels)."""
+    middle: Optional[float] = None
+    """Middle position of the word (pixels)."""
+    bottom: Optional[float] = None
+    """Bottom position of the word (pixels)."""
 
     def __repr__(self):
         return pretty_print(self)
 
 
+@dataclass
 class Line:
-    """Line object contains informations about a single line in the Ass.
+    """Line object contains information about a single subtitle line in the ASS file."""
 
-    Note:
-        (*) = This field is available only if :class:`extended<Ass>` = True
-
-    Attributes:
-        i (int): Line index number
-        comment (bool): If *True*, this line will not be displayed on the screen.
-        layer (int): Layer for the line. Higher layer numbers are drawn on top of lower ones.
-        start_time (int): Line start time (in milliseconds).
-        end_time (int): Line end time (in milliseconds).
-        duration (int): Line duration (in milliseconds) (*).
-        leadin (float): Time between this line and the previous one (in milliseconds; first line = 1000.1) (*).
-        leadout (float): Time between this line and the next one (in milliseconds; first line = 1000.1) (*).
-        style (str): Style name used for this line.
-        styleref (obj): Reference to the Style object of this line (*).
-        actor (str): Actor field.
-        margin_l (int): Left margin for this line.
-        margin_r (int): Right margin for this line.
-        margin_v (int): Vertical margin for this line.
-        effect (str): Effect field.
-        raw_text (str): Line raw text.
-        text (str): Line stripped text (no tags).
-        width (float): Line text width (*).
-        height (float): Line text height (*).
-        ascent (float): Line font ascent (*).
-        descent (float): Line font descent (*).
-        internal_leading (float): Line font internal lead (*).
-        external_leading (float): Line font external lead (*).
-        x (float): Line text position horizontal (depends on alignment) (*).
-        y (float): Line text position vertical (depends on alignment) (*).
-        left (float): Line text position left (*).
-        center (float): Line text position center (*).
-        right (float): Line text position right (*).
-        top (float): Line text position top (*).
-        middle (float): Line text position middle (*).
-        bottom (float): Line text position bottom (*).
-        words (list): List containing objects :class:`Word` in this line (*).
-        syls (list): List containing objects :class:`Syllable` in this line (if available) (*).
-        chars (list): List containing objects :class:`Char` in this line (*).
-    """
-
-    i: int
     comment: bool
+    """True if this line is a comment, False if it is a dialogue."""
     layer: int
+    """Layer number for the line (higher layers are drawn above lower ones)."""
     start_time: int
+    """Start time (ms) of the line."""
     end_time: int
-    duration: int
-    leadin: float
-    leadout: float
+    """End time (ms) of the line."""
     style: str
-    styleref: Style
+    """Style name used for this line. Could be None in case of non-existing style name."""
+    styleref: Optional[Style]
+    """Reference to the Style object for this line."""
     actor: str
+    """Actor field."""
     margin_l: int
+    """Left margin for this line (pixels)."""
     margin_r: int
+    """Right margin for this line (pixels)."""
     margin_v: int
+    """Vertical margin for this line (pixels)."""
     effect: str
+    """Effect field."""
     raw_text: str
-    text: str
-    width: float
-    height: float
-    ascent: float
-    descent: float
-    internal_leading: float
-    external_leading: float
-    x: float
-    y: float
-    left: float
-    center: float
-    right: float
-    top: float
-    middle: float
-    bottom: float
-    words: List[Word]
-    syls: List[Syllable]
-    chars: List[Char]
+    """Raw text of the line (including tags)."""
+    text: Optional[str] = None
+    """Stripped text of the line (no tags)."""
+    i: Optional[int] = None
+    """Line index in the file."""
+    duration: Optional[int] = None
+    """Duration (ms) of the line."""
+    leadin: Optional[float] = None
+    """Time (ms) between this line and the previous one."""
+    leadout: Optional[float] = None
+    """Time (ms) between this line and the next one."""
+    width: Optional[float] = None
+    """Width of the line (pixels)."""
+    height: Optional[float] = None
+    """Height of the line (pixels)."""
+    ascent: Optional[float] = None
+    """Font ascent for the line."""
+    descent: Optional[float] = None
+    """Font descent for the line."""
+    internal_leading: Optional[float] = None
+    """Font internal leading for the line."""
+    external_leading: Optional[float] = None
+    """Font external leading for the line."""
+    x: Optional[float] = None
+    """Horizontal position of the line (pixels)."""
+    y: Optional[float] = None
+    """Vertical position of the line (pixels)."""
+    left: Optional[float] = None
+    """Left position of the line (pixels)."""
+    center: Optional[float] = None
+    """Center position of the line (pixels)."""
+    right: Optional[float] = None
+    """Right position of the line (pixels)."""
+    top: Optional[float] = None
+    """Top position of the line (pixels)."""
+    middle: Optional[float] = None
+    """Middle position of the line (pixels)."""
+    bottom: Optional[float] = None
+    """Bottom position of the line (pixels)."""
+    words: Optional[List[Word]] = None
+    """List of Word objects in this line."""
+    syls: Optional[List[Syllable]] = None
+    """List of Syllable objects in this line (if available)."""
+    chars: Optional[List[Char]] = None
+    """List of Char objects in this line."""
 
     def __repr__(self):
         return pretty_print(self)
 
-    def copy(self) -> Line:
+    def copy(self) -> "Line":
         """
         Returns:
             A deep copy of this object (line)
@@ -431,6 +409,10 @@ class Ass:
         self.__plines = 0
         self.__ptime = time.time()
 
+        self.meta: Meta
+        self.styles: dict[str, Style]
+        self.lines: list[Line]
+        self.input_timestamps: Optional[Union[VideoTimestamps, FPSTimestamps]]
         self.meta, self.styles, self.lines, self.input_timestamps = Meta(), {}, [], None
         # Getting absolute sub file path
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -529,39 +511,34 @@ class Ass:
                     # Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle,
                     # BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
                     style = [el for el in style[1].split(",")]
-                    tmp = Style()
-
-                    tmp.fontname = style[1]
-                    tmp.fontsize = float(style[2])
-
-                    tmp.color1, tmp.alpha1 = f"&H{style[3][4:]}&", f"{style[3][:4]}&"
-                    tmp.color2, tmp.alpha2 = f"&H{style[4][4:]}&", f"{style[4][:4]}&"
-                    tmp.color3, tmp.alpha3 = f"&H{style[5][4:]}&", f"{style[5][:4]}&"
-                    tmp.color4, tmp.alpha4 = f"&H{style[6][4:]}&", f"{style[6][:4]}&"
-
-                    tmp.bold = style[7] == "-1"
-                    tmp.italic = style[8] == "-1"
-                    tmp.underline = style[9] == "-1"
-                    tmp.strikeout = style[10] == "-1"
-
-                    tmp.scale_x = float(style[11])
-                    tmp.scale_y = float(style[12])
-
-                    tmp.spacing = float(style[13])
-                    tmp.angle = float(style[14])
-
-                    tmp.border_style = style[15] == "3"
-                    tmp.outline = float(style[16])
-                    tmp.shadow = float(style[17])
-
-                    tmp.alignment = int(style[18])
-                    tmp.margin_l = int(style[19])
-                    tmp.margin_r = int(style[20])
-                    tmp.margin_v = int(style[21])
-
-                    tmp.encoding = int(style[22])
-
-                    self.styles[style[0]] = tmp
+                    self.styles[style[0]] = Style(
+                        fontname=style[1],
+                        fontsize=float(style[2]),
+                        color1=f"&H{style[3][4:]}&",
+                        alpha1=f"{style[3][:4]}&",
+                        color2=f"&H{style[4][4:]}&",
+                        alpha2=f"{style[4][:4]}&",
+                        color3=f"&H{style[5][4:]}&",
+                        alpha3=f"{style[5][:4]}&",
+                        color4=f"&H{style[6][4:]}&",
+                        alpha4=f"{style[6][:4]}&",
+                        bold=style[7] == "-1",
+                        italic=style[8] == "-1",
+                        underline=style[9] == "-1",
+                        strikeout=style[10] == "-1",
+                        scale_x=float(style[11]),
+                        scale_y=float(style[12]),
+                        spacing=float(style[13]),
+                        angle=float(style[14]),
+                        border_style=style[15] == "3",
+                        outline=float(style[16]),
+                        shadow=float(style[17]),
+                        alignment=int(style[18]),
+                        margin_l=int(style[19]),
+                        margin_r=int(style[20]),
+                        margin_v=int(style[21]),
+                        encoding=int(style[22]),
+                    )
 
             # Parsing Dialogues
             elif section == "Events":
@@ -578,31 +555,25 @@ class Ass:
 
                 if line:
                     # Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-                    tmp = Line()
-
-                    tmp.i = li
+                    line_fields = [el for el in line[2].split(",")]
+                    self.lines.append(
+                        Line(
+                            comment=(line[1] == "Comment"),
+                            layer=int(line_fields[0]),
+                            start_time=Convert.time(line_fields[1]),
+                            end_time=Convert.time(line_fields[2]),
+                            style=line_fields[3],
+                            styleref=self.styles.get(line_fields[3]),
+                            actor=line_fields[4],
+                            margin_l=int(line_fields[5]),
+                            margin_r=int(line_fields[6]),
+                            margin_v=int(line_fields[7]),
+                            effect=line_fields[8],
+                            raw_text=",".join(line_fields[9:]),
+                            i=li,
+                        )
+                    )
                     li += 1
-
-                    tmp.comment = line[1] == "Comment"
-                    line = [el for el in line[2].split(",")]
-
-                    tmp.layer = int(line[0])
-
-                    tmp.start_time = Convert.time(line[1])
-                    tmp.end_time = Convert.time(line[2])
-
-                    tmp.style = line[3]
-                    tmp.actor = line[4]
-
-                    tmp.margin_l = int(line[5])
-                    tmp.margin_r = int(line[6])
-                    tmp.margin_v = int(line[7])
-
-                    tmp.effect = line[8]
-
-                    tmp.raw_text = ",".join(line[9:])
-
-                    self.lines.append(tmp)
 
             elif section == "Aegisub Extradata":
                 self.__output_extradata.append(line)
@@ -617,11 +588,6 @@ class Ass:
         lines_by_styles = {}
         # Let the fun begin (Pyon!)
         for li, line in enumerate(self.lines):
-            try:
-                line.styleref = self.styles[line.style]
-            except KeyError:
-                line.styleref = None
-
             # Append dialog to styles (for leadin and leadout later)
             if line.style not in lines_by_styles:
                 lines_by_styles[line.style] = []
@@ -714,30 +680,22 @@ class Ass:
                 for prespace, word_text, postspace in re.findall(
                     r"(\s*)([^\s]+)(\s*)", line.text
                 ):
-                    word = Word()
-
-                    word.i = wi
+                    width, height = font.get_text_extents(word_text)
+                    line.words.append(
+                        Word(
+                            i=wi,
+                            start_time=line.start_time,
+                            end_time=line.end_time,
+                            duration=line.duration,
+                            styleref=line.styleref,
+                            text=word_text,
+                            prespace=len(prespace),
+                            postspace=len(postspace),
+                            width=width,
+                            height=height,
+                        )
+                    )
                     wi += 1
-
-                    word.start_time = line.start_time
-                    word.end_time = line.end_time
-                    word.duration = line.duration
-
-                    word.styleref = line.styleref
-                    word.text = word_text
-
-                    word.prespace = len(prespace)
-                    word.postspace = len(postspace)
-
-                    word.width, word.height = font.get_text_extents(word.text)
-                    (
-                        word.ascent,
-                        word.descent,
-                        word.internal_leading,
-                        word.external_leading,
-                    ) = font_metrics
-
-                    line.words.append(word)
 
                 # Calculate word positions with all words data already available
                 if line.words and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
@@ -807,138 +765,155 @@ class Ass:
                             word.y = word.middle
                             cur_y = cur_y + word.height
 
-                # Search for dialog's text chunks, to later create syllables
-                # A text chunk is a text with one or more {tags} preceding it
-                # Tags can be some text or empty string
-                text_chunks = []
-                tag_pattern = re.compile(r"(\{.*?\})+")
-                tag = tag_pattern.search(line.raw_text)
-                word_i = 0
+                # Adding syls
+                line.syls = []
 
-                if not tag:
-                    # No tags found
-                    text_chunks.append({"tags": "", "text": line.raw_text})
-                else:
-                    # First chunk without tags?
-                    if tag.start() != 0:
-                        text_chunks.append(
-                            {"tags": "", "text": line.raw_text[0 : tag.start()]}
+                # Split raw_text into [('tags', ...), ('text', ...), ...]
+                token_pattern = re.compile(r"(\{.*?\})")
+                tokens = [
+                    (
+                        ("tags", part[1:-1])  # ASS override tags (without braces)
+                        if part.startswith("{") and part.endswith("}")
+                        else ("text", part)  # Plain text
+                    )
+                    for part in token_pattern.split(line.raw_text)
+                    if part
+                ]
+
+                # Parse syllable data from tokens
+                syllable_data = []
+                current_tags = ""
+                current_k_tag = None
+                current_k_duration = None
+                current_text = ""
+
+                for token_type, token_value in tokens:
+                    if token_type == "tags":
+                        # Find all karaoke tags (\k, \K, \kf, \ko, etc.) in the tag string
+                        k_tags = list(
+                            re.finditer(r"\\[kK][of]?(\d+)(\\-[^\\}]*)?", token_value)
                         )
 
-                    # Searching for other tags
-                    while True:
-                        next_tag = tag_pattern.search(line.raw_text, tag.end())
-                        tmp = {
-                            # Note that we're removing possibles '}{' caused by consecutive tags
-                            "tags": line.raw_text[
-                                tag.start() + 1 : tag.end() - 1
-                            ].replace("}{", ""),
-                            "text": line.raw_text[
-                                tag.end() : (next_tag.start() if next_tag else None)
-                            ],
-                            "word_i": word_i,
+                        last_end = 0
+                        for k_match in k_tags:
+                            # Add any non-karaoke tags before this \k tag
+                            non_k_tags = token_value[last_end : k_match.start()]
+                            if non_k_tags:
+                                current_tags += non_k_tags
+
+                            # If a previous \k tag was open, close the syllable
+                            if current_k_tag is not None:
+                                syllable_data.append(
+                                    {
+                                        "tags": current_tags,
+                                        "k_tag": current_k_tag,
+                                        "k_duration": current_k_duration,
+                                        "text": current_text,
+                                    }
+                                )
+                                current_tags = ""
+                                current_text = ""
+
+                            # Start a new \k tag
+                            k_tag_full = k_match.group(0)
+                            current_tags += k_tag_full
+                            current_k_tag = k_tag_full
+                            current_k_duration = k_match.group(1)
+
+                            last_end = k_match.end()
+
+                        # Add any remaining non-karaoke tags after the last \k tag
+                        if last_end < len(token_value):
+                            current_tags += token_value[last_end:]
+
+                    else:  # token_type == 'text'
+                        current_text += token_value
+                        # If a \k tag is active, close the syllable
+                        if current_k_tag is not None:
+                            syllable_data.append(
+                                {
+                                    "tags": current_tags,
+                                    "k_tag": current_k_tag,
+                                    "k_duration": current_k_duration,
+                                    "text": current_text,
+                                }
+                            )
+                            current_tags = ""
+                            current_k_tag = None
+                            current_k_duration = None
+                            current_text = ""
+
+                # Add any remaining syllable data
+                if current_k_tag is not None or current_text:
+                    syllable_data.append(
+                        {
+                            "tags": current_tags,
+                            "k_tag": current_k_tag,
+                            "k_duration": current_k_duration,
+                            "text": current_text,
                         }
-                        text_chunks.append(tmp)
+                    )
 
-                        # If there are some spaces after text, then we're at the end of the current word
-                        if re.match(r"(.*?)(\s+)$", tmp["text"]):
-                            word_i = word_i + 1
+                # Compute word boundaries for mapping syllables to words
+                word_boundaries = []  # Each entry: (start_idx, end_idx, word_i)
+                if line.words:
+                    idx = 0
+                    for w in line.words:
+                        prespace = w.prespace
+                        postspace = w.postspace
+                        word_text = w.text
+                        start = idx + prespace
+                        end = start + len(word_text)
+                        word_boundaries.append((start, end, w.i))
+                        idx = end + postspace
 
-                        if not next_tag:
-                            break
-                        tag = next_tag
-
-                # Adding syls
+                # Build Syllable objects from parsed syllable data
                 si = 0
                 last_time = 0
-                inline_fx = ""
-                syl_tags_pattern = re.compile(r"(.*?)\\[kK][of]?(\d+)(.*)")
+                syl_char_idx = 0
+                for syl_data in syllable_data:
+                    # Extract inline effect (\-EFFECT) if present
+                    curr_inline_fx = re.search(r"\\\-([^\s\\}]+)", syl_data["tags"])
+                    inline_fx_val = curr_inline_fx.group(1) if curr_inline_fx else ""
+                    prespace = len(syl_data["text"]) - len(syl_data["text"].lstrip())
+                    postspace = len(syl_data["text"]) - len(syl_data["text"].rstrip())
+                    text_stripped = syl_data["text"].strip()
 
-                line.syls = []
-                for tc in text_chunks:
-                    # If we don't have at least one \k tag, everything is invalid
-                    if not syl_tags_pattern.match(tc["tags"]):
-                        line.syls.clear()
-                        break
+                    # Calculate timing for the syllable
+                    if syl_data["k_tag"] is not None:
+                        duration = int(syl_data["k_duration"]) * 10
+                        end_time = last_time + duration
+                    else:
+                        duration = 0
+                        end_time = last_time
 
-                    posttags = tc["tags"]
-                    syls_in_text_chunk = []
-                    while True:
-                        # Are there \k in posttags?
-                        tags_syl = syl_tags_pattern.match(posttags)
-
-                        if not tags_syl:
-                            # Append all the temporary syls, except last one
-                            for syl in syls_in_text_chunk[:-1]:
-                                curr_inline_fx = re.search(r"\\\-([^\\]+)", syl.tags)
-                                if curr_inline_fx:
-                                    inline_fx = curr_inline_fx[1]
-                                syl.inline_fx = inline_fx
-
-                                # Hidden syls are treated like empty syls
-                                syl.prespace, syl.text, syl.postspace = 0, "", 0
-
-                                syl.width, syl.height = font.get_text_extents("")
-                                (
-                                    syl.ascent,
-                                    syl.descent,
-                                    syl.internal_leading,
-                                    syl.external_leading,
-                                ) = font_metrics
-
-                                line.syls.append(syl)
-
-                            # Append last syl
-                            syl = syls_in_text_chunk[-1]
-                            syl.tags += posttags
-
-                            curr_inline_fx = re.search(r"\\\-([^\\]+)", syl.tags)
-                            if curr_inline_fx:
-                                inline_fx = curr_inline_fx[1]
-                            syl.inline_fx = inline_fx
-
-                            if tc["text"].isspace():
-                                syl.prespace, syl.text, syl.postspace = 0, tc["text"], 0
-                            else:
-                                syl.prespace, syl.text, syl.postspace = re.match(
-                                    r"(\s*)(.*?)(\s*)$", tc["text"]
-                                ).groups()
-                                syl.prespace, syl.postspace = (
-                                    len(syl.prespace),
-                                    len(syl.postspace),
-                                )
-
-                            syl.width, syl.height = font.get_text_extents(syl.text)
-                            (
-                                syl.ascent,
-                                syl.descent,
-                                syl.internal_leading,
-                                syl.external_leading,
-                            ) = font_metrics
-
-                            line.syls.append(syl)
+                    # Map syllable to its word index
+                    syl_start = syl_char_idx + prespace
+                    syl_word_i = 0
+                    for start, end, w_i in word_boundaries:
+                        if start <= syl_start < end:
+                            syl_word_i = w_i
                             break
+                    syl_char_idx += prespace + len(text_stripped) + postspace
 
-                        pretags, kdur, posttags = tags_syl.groups()
-
-                        # Create a Syllable object
-                        syl = Syllable()
-
-                        syl.start_time = last_time
-                        syl.end_time = last_time + int(kdur) * 10
-                        syl.duration = int(kdur) * 10
-
-                        syl.styleref = line.styleref
-                        syl.tags = pretags
-
-                        syl.i = si
-                        syl.word_i = tc["word_i"]
-
-                        syls_in_text_chunk.append(syl)
-
-                        # Update working variable
-                        si += 1
-                        last_time = syl.end_time
+                    syl = Syllable(
+                        i=si,
+                        word_i=syl_word_i,
+                        start_time=last_time,
+                        end_time=end_time,
+                        duration=duration,
+                        styleref=line.styleref,
+                        text=text_stripped,
+                        tags=syl_data["tags"],
+                        inline_fx=inline_fx_val,
+                        prespace=prespace,
+                        postspace=postspace,
+                        width=font.get_text_extents(text_stripped)[0],
+                        height=font.get_text_extents(text_stripped)[1],
+                    )
+                    line.syls.append(syl)
+                    si += 1
+                    last_time = end_time
 
                 # Calculate syllables positions with all syllables data already available
                 if line.syls and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
@@ -1025,35 +1000,23 @@ class Ass:
                         " " * el.prespace, el.text, " " * el.postspace
                     )
                     for ci, char_text in enumerate(list(el_text)):
-                        char = Char()
-                        char.i = ci
+                        width, height = font.get_text_extents(char_text)
 
-                        # If we're working with syls, we can add some indexes
-                        char.i = char_index
+                        char = Char(
+                            i=char_index,
+                            word_i=el.word_i if line.syls else el.i,
+                            syl_i=el.i if line.syls else None,
+                            syl_char_i=ci,
+                            start_time=el.start_time,
+                            end_time=el.end_time,
+                            duration=el.duration,
+                            styleref=line.styleref,
+                            text=char_text,
+                            inline_fx=el.inline_fx if line.syls else "",
+                            width=width,
+                            height=height,
+                        )
                         char_index += 1
-                        if line.syls:
-                            char.word_i = el.word_i
-                            char.syl_i = el.i
-                            char.syl_char_i = ci
-                        else:
-                            char.word_i = el.i
-
-                        # Adding last fields based on the existance of syls or not
-                        char.start_time = el.start_time
-                        char.end_time = el.end_time
-                        char.duration = el.duration
-
-                        char.styleref = line.styleref
-                        char.text = char_text
-
-                        char.width, char.height = font.get_text_extents(char.text)
-                        (
-                            char.ascent,
-                            char.descent,
-                            char.internal_leading,
-                            char.external_leading,
-                        ) = font_metrics
-
                         line.chars.append(char)
 
                 # Calculate character positions with all characters data already available
