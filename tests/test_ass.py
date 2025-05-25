@@ -62,7 +62,7 @@ def test_line_values():
 
     check.equal(
         lines[11].raw_text,
-        "{\\k56}{\\1c&HFFFFFF&}su{\\k13}re{\\k22}chi{\\k36}ga{\\k48}u {\\k25\\-Pyon}{\\k34}ko{\\k33}to{\\k50}ba {\\k15}no {\\k17}u{\\k34}ra {\\k46}ni{\\k33} {\\k28}to{\\k36}za{\\k65}sa{\\1c&HFFFFFF&\\k33\\1c&HFFFFFF&\\k30\\1c&HFFFFFF&}re{\\k51\\-FX}ta{\\k16} {\\k33}ko{\\k33}ko{\\k78}ro {\\k15}no {\\k24}ka{\\k95}gi",
+        "{\\k56}{\\1c&HFFFFFF&}su{\\k13}re{\\k22}chi{\\k36}ga{\\k48}u {\\k25\\-Pyon}{\\k34}ko{\\-Pyon\\k33}to{\\k50}ba {\\k15}no {\\k17}u{\\k34}ra {\\k46}ni{\\k33} {\\k28}to{\\k36}za{\\k65}sa{\\1c&HFFFFFF&\\k33\\1c&HFFFFFF&\\k30\\1c&HFFFFFF&}re{\\k51\\-FX}ta{\\k16} {\\k33}ko{\\k33}ko{\\k78}ro {\\k15}no {\\k24}ka{\\k95}gi",
     )
     check.equal(lines[11].text, "surechigau kotoba no ura ni tozasareta kokoro no kagi")
 
@@ -134,6 +134,89 @@ def test_line_values():
     # Bold - Vertical Text
     check.almost_equal(lines[12].width, 31.546875, abs=max_deviation)
     check.almost_equal(lines[12].height, 396.0, abs=max_deviation)
+
+
+def test_syllable_values():
+    # Test syllable parsing and field values for a line with karaoke (lines[11])
+    syls = lines[11].syls
+
+    # Check number of syllables
+    check.equal(len(syls), 27)
+
+    # Check syllables sub-division, including tags and inline_fx
+    expected = [
+        ("\\k56\\1c&HFFFFFF&", "", "su"),
+        ("\\k13", "", "re"),
+        ("\\k22", "", "chi"),
+        ("\\k36", "", "ga"),
+        ("\\k48", "", "u"),
+        ("\\k25\\-Pyon", "Pyon", ""),
+        ("\\k34", "", "ko"),
+        ("\\-Pyon\\k33", "Pyon", "to"),
+        ("\\k50", "", "ba"),
+        ("\\k15", "", "no"),
+        ("\\k17", "", "u"),
+        ("\\k34", "", "ra"),
+        ("\\k46", "", "ni"),
+        ("\\k33", "", ""),
+        ("\\k28", "", "to"),
+        ("\\k36", "", "za"),
+        ("\\k65", "", "sa"),
+        ("\\1c&HFFFFFF&\\k33\\1c&HFFFFFF&", "", ""),
+        ("\\k30\\1c&HFFFFFF&", "", "re"),
+        ("\\k51\\-FX", "FX", "ta"),
+        ("\\k16", "", ""),
+        ("\\k33", "", "ko"),
+        ("\\k33", "", "ko"),
+        ("\\k78", "", "ro"),
+        ("\\k15", "", "no"),
+        ("\\k24", "", "ka"),
+        ("\\k95", "", "gi"),
+    ]
+    actual = [(syl.tags, syl.inline_fx, syl.text) for syl in syls]
+    assert (
+        actual == expected
+    ), f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
+
+    # Check first syllable in detail
+    syl = syls[0]
+    check.equal(syl.i, 0)
+    check.equal(syl.word_i, 0)
+    check.equal(syl.start_time, 0)
+    check.equal(syl.end_time, 560)
+    check.equal(syl.duration, 560)
+    check.equal(syl.styleref, styles[lines[11].style])
+    check.equal(syl.text, "su")
+    check.equal(syl.tags, "\\k56\\1c&HFFFFFF&")
+    check.equal(syl.inline_fx, "")
+    check.equal(syl.prespace, 0)
+    check.equal(syl.postspace, 0)
+    check.almost_equal(syl.width, 38.359, abs=max_deviation)
+    check.almost_equal(syl.height, 48.0, abs=max_deviation)
+    check.almost_equal(syl.x, syl.center, abs=max_deviation)
+    check.almost_equal(syl.y, syl.top, abs=max_deviation)
+    check.almost_equal(syl.left, 169.007, abs=max_deviation)
+    check.almost_equal(syl.center, 188.187, abs=max_deviation)
+    check.almost_equal(syl.right, 207.367, abs=max_deviation)
+    check.almost_equal(syl.top, 650.0, abs=max_deviation)
+    check.almost_equal(syl.middle, 674.0, abs=max_deviation)
+    check.almost_equal(syl.bottom, 698.0, abs=max_deviation)
+
+    # Check a syllable with inline_fx (e.g., 7th syllable: {\k33\-Pyon}to)
+    syl_fx = syls[7]
+    check.equal(syl_fx.i, 7)
+    check.equal(syl_fx.word_i, 1)
+    check.equal(syl_fx.start_time, 2340)
+    check.equal(syl_fx.end_time, 2670)
+    check.equal(syl_fx.duration, 330)
+    check.equal(syl_fx.styleref, styles[lines[11].style])
+    check.equal(syl_fx.text, "to")
+    check.equal(syl_fx.tags, "\\-Pyon\\k33")
+    check.equal(syl_fx.inline_fx, "Pyon")
+    check.equal(syl_fx.prespace, 0)
+    check.equal(syl_fx.postspace, 0)
+    check.almost_equal(syl_fx.width, 38.468, abs=max_deviation)
+    check.almost_equal(syl_fx.height, 48.0, abs=max_deviation)
 
 
 def test_ass_values():
