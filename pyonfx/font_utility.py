@@ -192,143 +192,124 @@ class Font:
             raise NotImplementedError
 
     def text_to_shape(self, text: str) -> Shape:
-        if sys.platform == "win32":
+        """Convert text to a shape in libass format."""
+        if sys.platform not in ("win32", "linux", "darwin"):
+            raise NotImplementedError(f"Platform {sys.platform} not supported")
 
-            def _scale_and_format(x, y, x_add):
-                return Shape.format_value(
-                    x * self.xscale * self.downscale + x_add
-                ), Shape.format_value(y * self.yscale * self.downscale)
+        shape_parts = []
+        last_cmd = None
 
-            # Defining variables
-            shape, last_type = [], None
+        def add_command(cmd):
+            nonlocal last_cmd
+            if last_cmd != cmd:
+                shape_parts.append(cmd)
+                last_cmd = cmd
 
-            def shape_from_text(new_text, x_add):
-                nonlocal shape, last_type
+        def format_point(x, y, x_off=0):
+            return [
+                Shape.format_value(x * self.xscale * self.downscale + x_off),
+                Shape.format_value(y * self.yscale * self.downscale),
+            ]
 
-                win32gui.BeginPath(self.dc)
-                win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, new_text)
-                win32gui.EndPath(self.dc)
+        def process_win32_text(text, x_off):
+            """Process Windows text using GDI path API."""
+            # Create a path in the device context by rendering text
+            win32gui.BeginPath(self.dc)
+            win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, text)
+            win32gui.EndPath(self.dc)
 
-                points, type_points = win32gui.GetPath(self.dc)
+            # Extract the path as points and curve types
+            points, types = win32gui.GetPath(self.dc)
+            win32gui.AbortPath(self.dc)  # Clear the path from DC
 
-                # Clear device context path
-                win32gui.AbortPath(self.dc)
+            cmd_map = {
+                win32con.PT_MOVETO: "m",
+                win32con.PT_LINETO: "l",
+                win32con.PT_BEZIERTO: "b",
+            }
 
-                i = 0
-                while i < len(points):
-                    cur_point, cur_type = points[i], type_points[i]
+            i = 0
+            while i < len(points):
+                # Remove close figure flag to get base point type
+                pt_type = types[i] & ~win32con.PT_CLOSEFIGURE
 
-                    base_type = cur_type & ~win32con.PT_CLOSEFIGURE
+                if pt_type in cmd_map:
+                    add_command(cmd_map[pt_type])
 
-                    if base_type == win32con.PT_MOVETO:
-                        if last_type != base_type:  # Avoid repetition of command tags
-                            shape.append("m")
-                        shape.extend(_scale_and_format(*cur_point, x_add))
-                    elif base_type == win32con.PT_LINETO:
-                        if last_type != base_type:
-                            shape.append("l")
-                        shape.extend(_scale_and_format(*cur_point, x_add))
-                    elif base_type == win32con.PT_BEZIERTO:
-                        if last_type != base_type:
-                            shape.append("b")
+                    if pt_type in (win32con.PT_MOVETO, win32con.PT_LINETO):
+                        shape_parts.extend(format_point(*points[i], x_off))
+                    elif pt_type == win32con.PT_BEZIERTO:
+                        # Bezier curves use 3 consecutive points
                         if i + 2 >= len(points):
-                            raise RuntimeError("Unexpected end of BEZIERTO points.")
-                        shape.extend(
-                            _scale_and_format(*points[i], x_add)
-                            + _scale_and_format(*points[i + 1], x_add)
-                            + _scale_and_format(*points[i + 2], x_add)
-                        )
-                        i += 2
-                    i += 1
+                            raise RuntimeError("Unexpected end of BEZIERTO points")
+                        for j in range(3):
+                            shape_parts.extend(format_point(*points[i + j], x_off))
+                        i += 2  # Skip next 2 points as we processed them
+                i += 1
 
-                    last_type = base_type
+        def process_unix_text(text, x_off):
+            """Process Unix text using Pango/Cairo rendering."""
+            # Create markup with styling attributes
+            markup = (
+                f'<span strikethrough="{str(self.strikeout).lower()}" '
+                f'underline="{"single" if self.underline else "none"}">'
+                f"{html.escape(text)}</span>"
+            )
 
-            if self.hspace:
-                curr_width = 0.0
-                for i, char in enumerate(text):
-                    shape_from_text(char, curr_width)
-                    curr_width += self.get_text_extents(char)[0]
-            else:
-                shape_from_text(text, 0.0)
+            self.layout.set_markup(markup, -1)
 
-            return Shape(" ".join(shape))
-        elif sys.platform == "linux" or sys.platform == "darwin":
-            # Defining variables
-            shape, last_type = [], None
+            # Apply scaling and render text to Cairo path
+            scale = self.downscale * self.fonthack_scale
+            self.context.save()
+            self.context.scale(scale * self.xscale, scale * self.yscale)
+            PangoCairo.layout_path(self.context, self.layout)  # Render text as path
+            self.context.restore()
 
-            def shape_from_text(new_text, x_add):
-                nonlocal shape, last_type
+            # Extract the path data
+            path = self.context.copy_path()
+            self.context.new_path()  # Clear the path
 
-                self.layout.set_markup(
-                    f"<span "
-                    f'strikethrough="{str(self.strikeout).lower()}" '
-                    f'underline="{"single" if self.underline else "none"}"'
-                    f">"
-                    f"{html.escape(new_text)}"
-                    f"</span>",
-                    -1,
-                )
+            # Cairo path types: 0=MOVE_TO, 1=LINE_TO, 2=CURVE_TO
+            cmd_map = {0: "m", 1: "l", 2: "b"}
 
-                self.context.save()
-                self.context.scale(
-                    self.downscale * self.xscale * self.fonthack_scale,
-                    self.downscale * self.yscale * self.fonthack_scale,
-                )
-                PangoCairo.layout_path(self.context, self.layout)
-                self.context.restore()
-                path = self.context.copy_path()
+            for path_type, coords in path:
+                if path_type in cmd_map:
+                    add_command(cmd_map[path_type])
 
-                # Convert points to shape
-                for current_entry in path:
-                    current_type = current_entry[0]
-                    current_path = current_entry[1]
-
-                    if current_type == 0:  # MOVE_TO
-                        if last_type != current_type:
-                            # Avoid repetition of command tags
-                            shape.append("m")
-                            last_type = current_type
-                        shape.extend(
+                    if path_type in (0, 1):  # MOVE_TO, LINE_TO
+                        shape_parts.extend(
                             [
-                                Shape.format_value(current_path[0] + x_add),
-                                Shape.format_value(current_path[1]),
+                                Shape.format_value(coords[0] + x_off),
+                                Shape.format_value(coords[1]),
                             ]
                         )
-                    elif current_type == 1:  # LINE_TO
-                        if last_type != current_type:
-                            # Avoid repetition of command tags
-                            shape.append("l")
-                            last_type = current_type
-                        shape.extend(
+                    elif (
+                        path_type == 2
+                    ):  # CURVE_TO (cubic bezier with 3 control points)
+                        shape_parts.extend(
                             [
-                                Shape.format_value(current_path[0] + x_add),
-                                Shape.format_value(current_path[1]),
-                            ]
-                        )
-                    elif current_type == 2:  # CURVE_TO
-                        if last_type != current_type:
-                            # Avoid repetition of command tags
-                            shape.append("b")
-                            last_type = current_type
-                        shape.extend(
-                            [
-                                Shape.format_value(current_path[0] + x_add),
-                                Shape.format_value(current_path[1]),
-                                Shape.format_value(current_path[2] + x_add),
-                                Shape.format_value(current_path[3]),
-                                Shape.format_value(current_path[4] + x_add),
-                                Shape.format_value(current_path[5]),
+                                Shape.format_value(coords[0] + x_off),
+                                Shape.format_value(coords[1]),
+                                Shape.format_value(coords[2] + x_off),
+                                Shape.format_value(coords[3]),
+                                Shape.format_value(coords[4] + x_off),
+                                Shape.format_value(coords[5]),
                             ]
                         )
 
-                self.context.new_path()
+        # Process text segments
+        process_text = (
+            process_win32_text if sys.platform == "win32" else process_unix_text
+        )
 
-            curr_width = 0
-
-            for i, char in enumerate(text):
-                shape_from_text(char, curr_width)
-                curr_width += self.get_text_extents(char)[0]
-
-            return Shape(" ".join(shape))
+        if sys.platform == "win32" and not self.hspace:
+            # Windows: render entire text at once when no horizontal spacing needed
+            process_text(text, 0.0)
         else:
-            raise NotImplementedError
+            # Character-by-character processing with proper spacing
+            x_pos = 0.0
+            for char in text:
+                process_text(char, x_pos)
+                x_pos += self.get_text_extents(char)[0]
+
+        return Shape(" ".join(shape_parts))
