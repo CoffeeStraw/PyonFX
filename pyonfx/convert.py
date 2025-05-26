@@ -20,7 +20,7 @@ import colorsys
 import math
 import re
 from enum import Enum
-from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING, Optional, cast
+from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING, Optional, cast, overload
 
 from .font_utility import Font
 
@@ -47,6 +47,16 @@ class Convert:
     This class is a collection of static methods that will help
     the user to convert everything needed to the ASS format.
     """
+
+    @overload
+    @staticmethod
+    def time(ass_ms: int) -> str:
+        ...
+
+    @overload
+    @staticmethod
+    def time(ass_ms: str) -> int:
+        ...
 
     @staticmethod
     def time(ass_ms: Union[int, str]) -> Union[str, int]:
