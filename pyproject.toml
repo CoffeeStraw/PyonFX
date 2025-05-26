@@ -5,7 +5,7 @@ description = "An easy way to create KFX (Karaoke Effects) and complex typesetti
 authors = [
     { name = "Antonio Strippoli", email = "clarantonio98@gmail.com" },
 ]
-license = { file = "LICENSE" }
+license = "LGPL-3.0-or-later"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
@@ -24,7 +24,7 @@ classifiers=[
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
-    "License :: OSI Approved :: GNU Lesser General Public License v3 or later (LGPLv3+)",
+    "Programming Language :: Python :: 3.13",
 ]
 keywords = ["typesetting", "ass", "subtitle", "aegisub", "karaoke", "kfx", "advanced-substation-alpha", "karaoke-effect"]
 
