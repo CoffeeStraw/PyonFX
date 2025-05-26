@@ -214,10 +214,10 @@ class Font:
                 last_cmd = cmd
 
         def format_point(x, y, x_off=0):
-            return [
+            return (
                 Shape.format_value(x * self.xscale * self.downscale + x_off),
                 Shape.format_value(y * self.yscale * self.downscale),
-            ]
+            )
 
         def process_win32_text(text, x_off):
             """Process Windows text using GDI path API."""
