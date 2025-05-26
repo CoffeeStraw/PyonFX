@@ -31,10 +31,34 @@ class Utils:
     This class is a collection of static methods that will help the user in some tasks.
     """
 
+    @overload
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: List[Union[Line, Word, Syllable, Char]],
-    ) -> List[Union[Line, Word, Syllable, Char]]:
+        lines_chars_syls_or_words: List[Line],
+    ) -> List[Line]: ...
+
+    @overload
+    @staticmethod
+    def all_non_empty(
+        lines_chars_syls_or_words: List[Word],
+    ) -> List[Word]: ...
+
+    @overload
+    @staticmethod
+    def all_non_empty(
+        lines_chars_syls_or_words: List[Syllable],
+    ) -> List[Syllable]: ...
+
+    @overload
+    @staticmethod
+    def all_non_empty(
+        lines_chars_syls_or_words: List[Char],
+    ) -> List[Char]: ...
+
+    @staticmethod
+    def all_non_empty(
+        lines_chars_syls_or_words: List[Line] | List[Word] | List[Syllable] | List[Char],
+    ) -> List[Line] | List[Word] | List[Syllable] | List[Char]:
         """
         Helps to not check everytime for text containing only spaces or object's duration equals to zero.
 
@@ -281,8 +305,8 @@ class FrameUtility:
 
     def add(
         self,
-        start_time: int,
-        end_time: int,
+        start_time: float,
+        end_time: float,
         end_value: float,
         accelerator: float = 1.0,
     ) -> float:
@@ -297,9 +321,9 @@ class FrameUtility:
             Must be used within a for loop iterating a FrameUtility object.
 
         Parameters:
-            start_time (int): Initial time.
-            end_time (int): Final time.
-            end_value (int or float): Numeric value reached at end_time.
+            start_time (float): Initial time.
+            end_time (float): Final time.
+            end_value (float): Numeric value reached at end_time.
             accelerator (float): Accelerator value.
 
         Returns:
