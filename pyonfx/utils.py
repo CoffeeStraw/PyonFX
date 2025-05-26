@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 import re
-from typing import List, Union, TYPE_CHECKING
+from typing import List, Union, Optional, overload, TYPE_CHECKING
 from video_timestamps import ABCTimestamps, TimeType
 
 from .convert import Convert, ColorModel
@@ -46,6 +46,8 @@ class Utils:
         """
         out = []
         for obj in lines_chars_syls_or_words:
+            if obj.text is None or obj.duration is None:
+                raise ValueError("Object has no text or duration")
             if obj.text.strip() and obj.duration > 0:
                 out.append(obj)
         return out
@@ -53,13 +55,31 @@ class Utils:
     @staticmethod
     def clean_tags(text: str) -> str:
         # TODO: Cleans up ASS subtitle lines of badly-formed override. Returns a cleaned up text.
-        pass
+        return ""
 
     @staticmethod
     def accelerate(pct: float, accelerator: float) -> float:
         # Modifies pct according to the acceleration provided.
         # TODO: Implement acceleration based on bezier's curve
         return pct**accelerator
+
+    @overload
+    @staticmethod
+    def interpolate(
+        pct: float,
+        val1: float,
+        val2: float,
+        acc: float = 1.0,
+    ) -> float: ...
+
+    @overload
+    @staticmethod
+    def interpolate(
+        pct: float,
+        val1: str,
+        val2: str,
+        acc: float = 1.0,
+    ) -> str: ...
 
     @staticmethod
     def interpolate(
@@ -100,37 +120,51 @@ class Utils:
         # Calculating acceleration (if requested)
         pct = Utils.accelerate(pct, acc) if acc != 1.0 else pct
 
-        def interpolate_numbers(val1, val2):
+        def interpolate_numbers(val1: float, val2: float) -> float:
             nonlocal pct
             return val1 + (val2 - val1) * pct
 
         # Interpolating
-        if type(val1) is str and type(val2) is str:
+        if isinstance(val1, str) and isinstance(val2, str):
             if len(val1) != len(val2):
                 raise ValueError(
                     "ASS values must have the same type (either two alphas, two colors or two colors+alpha)."
                 )
             if len(val1) == len("&HXX&"):
-                val1 = Convert.alpha_ass_to_dec(val1)
-                val2 = Convert.alpha_ass_to_dec(val2)
-                a = interpolate_numbers(val1, val2)
+                val1_dec = Convert.alpha_ass_to_dec(val1)
+                val2_dec = Convert.alpha_ass_to_dec(val2)
+                a = interpolate_numbers(val1_dec, val2_dec)
                 return Convert.alpha_dec_to_ass(a)
             elif len(val1) == len("&HBBGGRR&"):
-                val1 = Convert.color_ass_to_rgb(val1)
-                val2 = Convert.color_ass_to_rgb(val2)
-                rgb = tuple(map(interpolate_numbers, val1, val2))
-                return Convert.color_rgb_to_ass(rgb)
+                val1_rgb = Convert.color_ass_to_rgb(val1)
+                val2_rgb = Convert.color_ass_to_rgb(val2)
+                if isinstance(val1_rgb, tuple) and isinstance(val2_rgb, tuple):
+                    rgb = tuple(
+                        interpolate_numbers(v1, v2)
+                        for v1, v2 in zip(val1_rgb, val2_rgb)
+                    )
+                    if len(rgb) == 3:
+                        return Convert.color_rgb_to_ass(rgb)
+                raise ValueError("Invalid RGB color conversion")
             elif len(val1) == len("&HAABBGGRR"):
-                val1 = Convert.color(val1, ColorModel.ASS, ColorModel.RGBA)
-                val2 = Convert.color(val2, ColorModel.ASS, ColorModel.RGBA)
-                rgba = tuple(map(interpolate_numbers, val1, val2))
-                return Convert.color(rgba, ColorModel.RGBA, ColorModel.ASS)
+                val1_rgba = Convert.color(val1, ColorModel.ASS, ColorModel.RGBA)
+                val2_rgba = Convert.color(val2, ColorModel.ASS, ColorModel.RGBA)
+                if isinstance(val1_rgba, tuple) and isinstance(val2_rgba, tuple):
+                    rgba = tuple(
+                        interpolate_numbers(v1, v2)
+                        for v1, v2 in zip(val1_rgba, val2_rgba)
+                    )
+                    if len(rgba) == 4:
+                        result = Convert.color(rgba, ColorModel.RGBA, ColorModel.ASS)
+                        if isinstance(result, str):
+                            return result
+                raise ValueError("Invalid RGBA color conversion")
             else:
                 raise ValueError(
                     f"Provided inputs '{val1}' and '{val2}' are not valid ASS strings."
                 )
-        elif type(val1) in [int, float] and type(val2) in [int, float]:
-            return interpolate_numbers(val1, val2)
+        elif isinstance(val1, (int, float)) and isinstance(val2, (int, float)):
+            return interpolate_numbers(float(val1), float(val2))
         else:
             raise TypeError(
                 "Invalid input(s) type, either pass two strings or two numbers."
@@ -455,7 +489,11 @@ class ColorUtility:
                     )
 
     def get_color_change(
-        self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None
+        self,
+        line: Line,
+        c1: Optional[bool] = None,
+        c3: Optional[bool] = None,
+        c4: Optional[bool] = None,
     ) -> str:
         """Returns all the color_changes in the object that fit (in terms of time) between line.start_time and line.end_time.
 
@@ -486,12 +524,12 @@ class ColorUtility:
 
         # If we don't have user's settings, we set c values
         # to the ones that we previously saved
-        if c1 is None:
-            c1 = self.c1_req
-        if c3 is None:
-            c3 = self.c3_req
-        if c4 is None:
-            c4 = self.c4_req
+        c1 = self.c1_req if c1 is None else c1
+        c3 = self.c3_req if c3 is None else c3
+        c4 = self.c4_req if c4 is None else c4
+
+        if line.styleref is None:
+            raise ValueError("Line has no styleref")
 
         # Reading default colors
         base_c1 = "\\1c" + line.styleref.color1
@@ -542,7 +580,11 @@ class ColorUtility:
         return transform
 
     def get_fr_color_change(
-        self, line: Line, c1: bool = None, c3: bool = None, c4: bool = None
+        self,
+        line: Line,
+        c1: Optional[bool] = None,
+        c3: Optional[bool] = None,
+        c4: Optional[bool] = None,
     ) -> str:
         """Returns the single color(s) in the color_changes that fit the current frame (line.start_time) in your frame loop.
 
@@ -570,12 +612,12 @@ class ColorUtility:
         """
         # If we don't have user's settings, we set c values
         # to the ones that we previously saved
-        if c1 is None:
-            c1 = self.c1_req
-        if c3 is None:
-            c3 = self.c3_req
-        if c4 is None:
-            c4 = self.c4_req
+        c1 = self.c1_req if c1 is None else c1
+        c3 = self.c3_req if c3 is None else c3
+        c4 = self.c4_req if c4 is None else c4
+
+        if line.styleref is None:
+            raise ValueError("Line has no styleref")
 
         # Reading default colors
         base_c1 = "\\1c" + line.styleref.color1
