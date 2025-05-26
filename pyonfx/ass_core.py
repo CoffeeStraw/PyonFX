@@ -1081,7 +1081,7 @@ class Ass:
 
                         char = Char(
                             i=char_index,
-                            word_i=getattr(el, 'word_i', el.i),
+                            word_i=getattr(el, "word_i", el.i),
                             syl_i=el.i if line.syls else -1,  # -1 means no syllable
                             syl_char_i=ci,
                             start_time=el.start_time,
@@ -1089,7 +1089,7 @@ class Ass:
                             duration=el.duration,
                             styleref=line.styleref,
                             text=char_text,
-                            inline_fx=getattr(el, 'inline_fx', ""),
+                            inline_fx=getattr(el, "inline_fx", ""),
                             width=width,
                             height=height,
                         )

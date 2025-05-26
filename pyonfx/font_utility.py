@@ -20,7 +20,8 @@ to help getting informations from a specific font
 """
 from __future__ import annotations
 import sys
-from typing import Tuple, TYPE_CHECKING
+import html
+from typing import Any, Tuple, TYPE_CHECKING
 
 from .shape import Shape
 
@@ -36,7 +37,6 @@ elif sys.platform in ["linux", "darwin"] and not "sphinx" in sys.modules:
     gi.require_version("PangoCairo", "1.0")
 
     from gi.repository import Pango, PangoCairo  # pylint: disable=import-error
-    import html
 
 if TYPE_CHECKING:
     from .ass_core import Style
@@ -65,6 +65,14 @@ class Font:
         self.upscale = FONT_PRECISION
         self.downscale = 1 / FONT_PRECISION
 
+        # Platform-specific attributes (for type checking)
+        self.dc: int = 0
+        self.pycfont: Any = None
+        self.metrics: Any = None
+        self.context: Any = None
+        self.layout: Any = None
+        self.fonthack_scale: float = 0.0
+
         if sys.platform == "win32":
             # Create device context
             self.dc = win32gui.CreateCompatibleDC(None)
@@ -92,7 +100,7 @@ class Font:
             self.pycfont = win32ui.CreateFont(font_spec)
             win32gui.SelectObject(self.dc, self.pycfont.GetSafeHandle())
             # Calculate metrics
-            self.metrics = win32gui.GetTextMetrics(self.dc)
+            self.metrics = win32gui.GetTextMetrics(self.dc)  # type: ignore
         elif sys.platform == "linux" or sys.platform == "darwin":
             surface = cairo.ImageSurface(cairo.Format.A8, 1, 1)
 
@@ -215,7 +223,7 @@ class Font:
             """Process Windows text using GDI path API."""
             # Create a path in the device context by rendering text
             win32gui.BeginPath(self.dc)
-            win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, text)
+            win32gui.ExtTextOut(self.dc, 0, 0, 0x0, None, text)  # type: ignore
             win32gui.EndPath(self.dc)
 
             # Extract the path as points and curve types
@@ -237,13 +245,17 @@ class Font:
                     add_command(cmd_map[pt_type])
 
                     if pt_type in (win32con.PT_MOVETO, win32con.PT_LINETO):
-                        shape_parts.extend(format_point(*points[i], x_off))
+                        shape_parts.extend(
+                            format_point(points[i][0], points[i][1], x_off)
+                        )
                     elif pt_type == win32con.PT_BEZIERTO:
                         # Bezier curves use 3 consecutive points
                         if i + 2 >= len(points):
                             raise RuntimeError("Unexpected end of BEZIERTO points")
                         for j in range(3):
-                            shape_parts.extend(format_point(*points[i + j], x_off))
+                            shape_parts.extend(
+                                format_point(points[i + j][0], points[i + j][1], x_off)
+                            )
                         i += 2  # Skip next 2 points as we processed them
                 i += 1
 
@@ -262,7 +274,7 @@ class Font:
             scale = self.downscale * self.fonthack_scale
             self.context.save()
             self.context.scale(scale * self.xscale, scale * self.yscale)
-            PangoCairo.layout_path(self.context, self.layout)  # Render text as path
+            PangoCairo.layout_path(self.context, self.layout)  # type: ignore
             self.context.restore()
 
             # Extract the path data
