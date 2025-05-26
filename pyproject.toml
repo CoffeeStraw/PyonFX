@@ -6,6 +6,7 @@ authors = [
     { name = "Antonio Strippoli", email = "clarantonio98@gmail.com" },
 ]
 license = "LGPL-3.0-or-later"
+license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
