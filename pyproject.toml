@@ -14,7 +14,7 @@ dependencies = [
     "pywin32; platform_system=='Windows'",
     "pycairo; platform_system=='Linux' or platform_system=='Darwin'",
     "PyGObject; platform_system=='Linux' or platform_system=='Darwin'",
-    "VideoTimestamps>=0.1.1",
+    "VideoTimestamps>=0.2",
 ]
 classifiers=[
     "Development Status :: 4 - Beta",

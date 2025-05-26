@@ -402,7 +402,7 @@ class Ass:
         video_index: int = 0,
         rounding_method: RoundingMethod = RoundingMethod.ROUND,
         time_scale: Fraction = Fraction(1000),
-        first_pts: int = 0,
+        first_timestamps: Fraction = Fraction(0),
     ):
         # Starting to take process time
         self.__saved = False
@@ -436,159 +436,216 @@ class Ass:
         self.__output = []
         self.__output_extradata = []
 
-        section = ""
-        li = 0
-        for line in open(self.path_input, "r", encoding="utf-8-sig"):
-            # Getting section
-            section_pattern = re.compile(r"^\[([^\]]*)")
-            if section_pattern.match(line):
-                # Updating section
-                section = section_pattern.match(line)[1]
-                # Appending line to output
-                if section != "Aegisub Extradata":
-                    self.__output.append(line)
+        # Parse the ASS file
+        current_section = ""
+        line_index = 0
 
-            # Parsing Meta data
-            elif section == "Script Info" or section == "Aegisub Project Garbage":
-                # Internal function that tries to get the absolute path for media files in meta
-                def get_media_abs_path(mediafile):
-                    # If this is not a dummy video, let's try to get the absolute path for the video
-                    if not mediafile.startswith("?dummy"):
-                        tmp = mediafile
-                        media_dir = os.path.dirname(self.path_input)
+        with open(self.path_input, "r", encoding="utf-8-sig") as file:
+            for line in file:
+                # New section?
+                section_match = re.match(r"^\[([^\]]*)\]", line)
+                if section_match:
+                    current_section = section_match.group(1)
+                    if current_section != "Aegisub Extradata":
+                        self.__output.append(line)
+                    continue
 
-                        while mediafile.startswith("../"):
-                            media_dir = os.path.dirname(media_dir)
-                            mediafile = mediafile[3:]
-
-                        mediafile = os.path.normpath(
-                            "%s%s%s" % (media_dir, os.sep, mediafile)
-                        )
-
-                        if not os.path.isfile(mediafile):
-                            mediafile = tmp
-
-                    return mediafile
-
-                # Switch
-                if re.match(r"WrapStyle: *?(\d+)$", line):
-                    self.meta.wrap_style = int(line[11:].strip())
-                elif re.match(r"ScaledBorderAndShadow: *?(.+)$", line):
-                    self.meta.scaled_border_and_shadow = line[23:].strip() == "yes"
-                elif re.match(r"PlayResX: *?(\d+)$", line):
-                    self.meta.play_res_x = int(line[10:].strip())
-                elif re.match(r"PlayResY: *?(\d+)$", line):
-                    self.meta.play_res_y = int(line[10:].strip())
-                elif re.match(r"Audio File: *?(.*)$", line):
-                    self.meta.audio = get_media_abs_path(line[11:].strip())
-                    line = "Audio File: %s\n" % self.meta.audio
-                elif re.match(r"Video File: *?(.*)$", line):
-                    self.meta.video = get_media_abs_path(line[11:].strip())
-                    line = "Video File: %s\n" % self.meta.video
-
-                    if os.path.isfile(self.meta.video):
-                        self.input_timestamps = VideoTimestamps.from_video_file(
-                            Path(self.meta.video), video_index
-                        )
-                    else:
-                        fps_str = line[11:].strip().split(":")[1]
-                        fps = Fraction(fps_str)
-                        self.input_timestamps = FPSTimestamps(
-                            rounding_method, time_scale, fps, first_pts
-                        )
-
-                # Appending line to output
-                self.__output.append(line)
-
-            # Parsing Styles
-            elif section == "V4+ Styles":
-                # Appending line to output
-                self.__output.append(line)
-                style = re.match(r"Style: (.+?)$", line)
-
-                if style:
-                    # Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour,
-                    # Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle,
-                    # BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
-                    style = [el for el in style[1].split(",")]
-                    self.styles[style[0]] = Style(
-                        fontname=style[1],
-                        fontsize=float(style[2]),
-                        color1=f"&H{style[3][4:]}&",
-                        alpha1=f"{style[3][:4]}&",
-                        color2=f"&H{style[4][4:]}&",
-                        alpha2=f"{style[4][:4]}&",
-                        color3=f"&H{style[5][4:]}&",
-                        alpha3=f"{style[5][:4]}&",
-                        color4=f"&H{style[6][4:]}&",
-                        alpha4=f"{style[6][:4]}&",
-                        bold=style[7] == "-1",
-                        italic=style[8] == "-1",
-                        underline=style[9] == "-1",
-                        strikeout=style[10] == "-1",
-                        scale_x=float(style[11]),
-                        scale_y=float(style[12]),
-                        spacing=float(style[13]),
-                        angle=float(style[14]),
-                        border_style=style[15] == "3",
-                        outline=float(style[16]),
-                        shadow=float(style[17]),
-                        alignment=int(style[18]),
-                        margin_l=int(style[19]),
-                        margin_r=int(style[20]),
-                        margin_v=int(style[21]),
-                        encoding=int(style[22]),
+                # Sections parsers
+                if current_section in ("Script Info", "Aegisub Project Garbage"):
+                    self._parse_meta_section_line(
+                        line, video_index, rounding_method, time_scale, first_timestamps
+                    )
+                elif current_section == "V4+ Styles":
+                    self._parse_styles_section_line(line)
+                elif current_section == "Events":
+                    self._parse_events_section_line(line, line_index, keep_original)
+                    line_index += 1
+                elif current_section == "Aegisub Extradata":
+                    self.__output_extradata.append(line)
+                elif (
+                    current_section and line.strip()
+                ):  # Non-empty line in unknown section
+                    raise ValueError(
+                        f"Unexpected section in the input file: [{current_section}]"
                     )
 
-            # Parsing Dialogues
-            elif section == "Events":
-                # Appending line to output (commented) if keep_original is True
-                if keep_original:
-                    self.__output.append(
-                        re.sub(r"^(Dialogue|Comment):", "Comment:", line, count=1)
+        # Add extended information to lines and meta?
+        if extended:
+            self._process_extended_line_data(vertical_kanji)
+
+    def _get_media_absolute_path(self, mediafile: str) -> str:
+        """Attempt to convert relative media file paths defined in the meta section to absolute paths."""
+        if mediafile.startswith("?dummy"):
+            return mediafile
+
+        original_path = mediafile
+        media_dir = os.path.dirname(self.path_input)
+
+        # Handle relative paths
+        while mediafile.startswith("../"):
+            media_dir = os.path.dirname(media_dir)
+            mediafile = mediafile[3:]
+
+        absolute_path = os.path.normpath(os.path.join(media_dir, mediafile))
+
+        return absolute_path if os.path.isfile(absolute_path) else original_path
+
+    def _parse_meta_section_line(
+        self,
+        line: str,
+        video_index: int,
+        rounding_method: RoundingMethod,
+        time_scale: Fraction,
+        first_timestamps: Fraction,
+    ) -> None:
+        """Parse Script Info and Aegisub Project Garbage sections."""
+        line = line.strip()
+        if not line:
+            self.__output.append(line + "\n")
+            return
+
+        # Parse different meta fields
+        if match := re.match(r"WrapStyle:\s*(\d+)$", line):
+            self.meta.wrap_style = int(match.group(1))
+        elif match := re.match(r"ScaledBorderAndShadow:\s*(.+)$", line):
+            self.meta.scaled_border_and_shadow = match.group(1).strip().lower() == "yes"
+        elif match := re.match(r"PlayResX:\s*(\d+)$", line):
+            self.meta.play_res_x = int(match.group(1))
+        elif match := re.match(r"PlayResY:\s*(\d+)$", line):
+            self.meta.play_res_y = int(match.group(1))
+        elif match := re.match(r"Audio File:\s*(.*)$", line):
+            self.meta.audio = self._get_media_absolute_path(match.group(1).strip())
+            line = f"Audio File: {self.meta.audio}"
+        elif match := re.match(r"Video File:\s*(.*)$", line):
+            self.meta.video = self._get_media_absolute_path(match.group(1).strip())
+            line = f"Video File: {self.meta.video}"
+
+            # Set up timestamps based on video file
+            if os.path.isfile(self.meta.video):
+                self.input_timestamps = VideoTimestamps.from_video_file(
+                    Path(self.meta.video), video_index
+                )
+            elif self.meta.video.startswith("?dummy"):
+                # Parse dummy video format: ?dummy:fps:duration
+                parts = self.meta.video.split(":")
+                if len(parts) >= 2:
+                    fps_str = parts[1]
+                    fps = Fraction(fps_str)
+                    self.input_timestamps = FPSTimestamps(
+                        rounding_method, time_scale, fps, Fraction(first_timestamps)
                     )
-                elif line.startswith("Format"):
-                    self.__output.append(line.strip())
 
-                # Analyzing line
-                line = re.match(r"(Dialogue|Comment): (.+?)$", line)
+        self.__output.append(line + "\n")
 
-                if line:
-                    # Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
-                    line_fields = [el for el in line[2].split(",")]
-                    self.lines.append(
-                        Line(
-                            comment=(line[1] == "Comment"),
-                            layer=int(line_fields[0]),
-                            start_time=Convert.time(line_fields[1]),
-                            end_time=Convert.time(line_fields[2]),
-                            style=line_fields[3],
-                            styleref=self.styles.get(line_fields[3]),
-                            actor=line_fields[4],
-                            margin_l=int(line_fields[5]),
-                            margin_r=int(line_fields[6]),
-                            margin_v=int(line_fields[7]),
-                            effect=line_fields[8],
-                            raw_text=",".join(line_fields[9:]),
-                            i=li,
-                        )
-                    )
-                    li += 1
+    def _parse_styles_section_line(self, line: str) -> None:
+        """Parse V4+ Styles section."""
+        self.__output.append(line)
 
-            elif section == "Aegisub Extradata":
-                self.__output_extradata.append(line)
+        style_match = re.match(r"Style:\s*(.+)$", line)
+        if not style_match:
+            return
 
-            else:
-                raise ValueError(f"Unexpected section in the input file: [{section}]")
+        # Parse style fields
+        #   Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour,
+        #   Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle,
+        #   BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+        style_fields = [field.strip() for field in style_match.group(1).split(",")]
+        style_name = style_fields[0]
 
-        # Adding informations to lines and meta?
-        if not extended:
-            return None
+        self.styles[style_name] = Style(
+            fontname=style_fields[1],
+            fontsize=float(style_fields[2]),
+            color1=f"&H{style_fields[3][4:]}&",
+            alpha1=f"{style_fields[3][:4]}&",
+            color2=f"&H{style_fields[4][4:]}&",
+            alpha2=f"{style_fields[4][:4]}&",
+            color3=f"&H{style_fields[5][4:]}&",
+            alpha3=f"{style_fields[5][:4]}&",
+            color4=f"&H{style_fields[6][4:]}&",
+            alpha4=f"{style_fields[6][:4]}&",
+            bold=style_fields[7] == "-1",
+            italic=style_fields[8] == "-1",
+            underline=style_fields[9] == "-1",
+            strikeout=style_fields[10] == "-1",
+            scale_x=float(style_fields[11]),
+            scale_y=float(style_fields[12]),
+            spacing=float(style_fields[13]),
+            angle=float(style_fields[14]),
+            border_style=style_fields[15] == "3",
+            outline=float(style_fields[16]),
+            shadow=float(style_fields[17]),
+            alignment=int(style_fields[18]),
+            margin_l=int(style_fields[19]),
+            margin_r=int(style_fields[20]),
+            margin_v=int(style_fields[21]),
+            encoding=int(style_fields[22]),
+        )
 
+    def _parse_events_section_line(
+        self, line: str, line_index: int, keep_original: bool
+    ):
+        """Parse Events section and return updated line index."""
+
+        # Line for section's header
+        if line.startswith("Format"):
+            self.__output.append(line)
+            return
+
+        # Handle original line preservation
+        if keep_original:
+            self.__output.append(
+                re.sub(r"^(Dialogue|Comment):", "Comment:", line, count=1)
+            )
+
+        # Parse dialogue/comment lines
+        event_match = re.match(r"(Dialogue|Comment):\s*(.+)$", line)
+        if not event_match:
+            raise ValueError(
+                f"Invalid event line. Line index: {line_index}, Line: {line}."
+            )
+
+        # Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+        event_type = event_match.group(1)
+        event_data = event_match.group(2)
+
+        # Parse event fields
+        event_fields = [field for field in event_data.split(",")]
+
+        # Convert time fields safely
+        start_time_result = Convert.time(event_fields[1])
+        end_time_result = Convert.time(event_fields[2])
+
+        # Handle potential conversion errors
+        if not isinstance(start_time_result, int) or not isinstance(
+            end_time_result, int
+        ):
+            raise ValueError("Invalid time fields in the event line.")
+
+        self.lines.append(
+            Line(
+                comment=(event_type == "Comment"),
+                layer=int(event_fields[0]),
+                start_time=start_time_result,
+                end_time=end_time_result,
+                style=event_fields[3],
+                styleref=self.styles.get(event_fields[3]),
+                actor=event_fields[4],
+                margin_l=int(event_fields[5]),
+                margin_r=int(event_fields[6]),
+                margin_v=int(event_fields[7]),
+                effect=event_fields[8],
+                raw_text=",".join(event_fields[9:]),
+                i=line_index,
+            )
+        )
+
+    def _process_extended_line_data(self, vertical_kanji: bool) -> None:
+        """Process extended line data including positioning, words, syllables, and characters."""
         lines_by_styles = {}
+
         # Let the fun begin (Pyon!)
-        for li, line in enumerate(self.lines):
-            # Append dialog to styles (for leadin and leadout later)
+        for line in self.lines:
+            # Group lines by style for leadin/leadout calculation
             if line.style not in lines_by_styles:
                 lines_by_styles[line.style] = []
             lines_by_styles[line.style].append(line)
@@ -610,7 +667,12 @@ class Ass:
                     line.external_leading,
                 ) = font_metrics
 
-                if self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+                if (
+                    self.meta.play_res_x is not None
+                    and self.meta.play_res_x > 0
+                    and self.meta.play_res_y is not None
+                    and self.meta.play_res_y > 0
+                ):
                     # Horizontal position
                     tmp_margin_l = (
                         line.margin_l if line.margin_l != 0 else line.styleref.margin_l
@@ -676,9 +738,8 @@ class Ass:
                 # Adding words
                 line.words = []
 
-                wi = 0
-                for prespace, word_text, postspace in re.findall(
-                    r"(\s*)([^\s]+)(\s*)", line.text
+                for wi, (prespace, word_text, postspace) in enumerate(
+                    re.findall(r"(\s*)([^\s]+)(\s*)", line.text)
                 ):
                     width, height = font.get_text_extents(word_text)
                     line.words.append(
@@ -695,10 +756,17 @@ class Ass:
                             height=height,
                         )
                     )
-                    wi += 1
 
                 # Calculate word positions with all words data already available
-                if line.words and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+                if (
+                    line.words
+                    and line.left
+                    and line.right
+                    and self.meta.play_res_x is not None
+                    and self.meta.play_res_x > 0
+                    and self.meta.play_res_y is not None
+                    and self.meta.play_res_y > 0
+                ):
                     if line.styleref.alignment > 6 or line.styleref.alignment < 4:
                         cur_x = line.left
                         for word in line.words:
@@ -916,7 +984,16 @@ class Ass:
                     last_time = end_time
 
                 # Calculate syllables positions with all syllables data already available
-                if line.syls and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+                if (
+                    line.syls
+                    and line.left
+                    and line.center
+                    and line.right
+                    and self.meta.play_res_x is not None
+                    and self.meta.play_res_x > 0
+                    and self.meta.play_res_y is not None
+                    and self.meta.play_res_y > 0
+                ):
                     if (
                         line.styleref.alignment > 6
                         or line.styleref.alignment < 4
@@ -1004,15 +1081,15 @@ class Ass:
 
                         char = Char(
                             i=char_index,
-                            word_i=el.word_i if line.syls else el.i,
-                            syl_i=el.i if line.syls else None,
+                            word_i=getattr(el, 'word_i', el.i),
+                            syl_i=el.i if line.syls else -1,  # -1 means no syllable
                             syl_char_i=ci,
                             start_time=el.start_time,
                             end_time=el.end_time,
                             duration=el.duration,
                             styleref=line.styleref,
                             text=char_text,
-                            inline_fx=el.inline_fx if line.syls else "",
+                            inline_fx=getattr(el, 'inline_fx', ""),
                             width=width,
                             height=height,
                         )
@@ -1020,7 +1097,16 @@ class Ass:
                         line.chars.append(char)
 
                 # Calculate character positions with all characters data already available
-                if line.chars and self.meta.play_res_x > 0 and self.meta.play_res_y > 0:
+                if (
+                    line.chars
+                    and line.left
+                    and line.center
+                    and line.right
+                    and self.meta.play_res_x is not None
+                    and self.meta.play_res_x > 0
+                    and self.meta.play_res_y is not None
+                    and self.meta.play_res_y > 0
+                ):
                     if (
                         line.styleref.alignment > 6
                         or line.styleref.alignment < 4
@@ -1112,7 +1198,7 @@ class Ass:
                     else lines_by_styles[style][li + 1].start_time - line.end_time
                 )
 
-    def get_data(self) -> Tuple[Meta, Style, List[Line]]:
+    def get_data(self) -> Tuple[Meta, dict[str, Style], List[Line]]:
         """Utility function to retrieve easily meta styles and lines.
 
         Returns:
@@ -1129,26 +1215,23 @@ class Ass:
         Parameters:
             line (:class:`Line`): A line object. If not valid, TypeError is raised.
         """
-        if isinstance(line, Line):
-            self.__output.append(
-                "\n%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s"
-                % (
-                    "Comment" if line.comment else "Dialogue",
-                    line.layer,
-                    Convert.time(max(0, int(line.start_time))),
-                    Convert.time(max(0, int(line.end_time))),
-                    line.style,
-                    line.actor,
-                    line.margin_l,
-                    line.margin_r,
-                    line.margin_v,
-                    line.effect,
-                    line.text,
-                )
+        self.__output.append(
+            "\n%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s"
+            % (
+                "Comment" if line.comment else "Dialogue",
+                line.layer,
+                Convert.time(max(0, int(line.start_time))),
+                Convert.time(max(0, int(line.end_time))),
+                line.style,
+                line.actor,
+                line.margin_l,
+                line.margin_r,
+                line.margin_v,
+                line.effect,
+                line.text,
             )
-            self.__plines += 1
-        else:
-            raise TypeError("Expected Line object, got %s." % type(line))
+        )
+        self.__plines += 1
 
     def save(self, quiet: bool = False) -> None:
         """Write everything inside the private output list to a file.
@@ -1221,7 +1304,7 @@ class Ass:
             return -1
 
         # Check if mpv is usable
-        if self.meta.video.startswith("?dummy") and not video_path:
+        if self.meta.video and self.meta.video.startswith("?dummy") and not video_path:
             print(
                 "[WARNING] Cannot use MPV (if you have it in your PATH) for file preview, since your .ass contains a dummy video.\n"
                 "You can specify a new video source using video_path parameter, check the documentation of the function."
@@ -1232,7 +1315,11 @@ class Ass:
         cmd = ["mpv"]
 
         if not video_path:
-            cmd.append(self.meta.video)
+            if self.meta.video:
+                cmd.append(self.meta.video)
+            else:
+                print("[ERROR] No video file specified and meta.video is None.")
+                return -1
         else:
             cmd.append(video_path)
         if video_start:
