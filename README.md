@@ -3,7 +3,7 @@
 <h4 align="center">An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).</h4>
 <p align="center">Powered by <b>Python3</b>, PyonFX aims to offer <b>stability</b>, <b>efficiency</b>, and <b>ease of use</b> to anyone who wants to create something more visually complex within ASS.</p>
 
-<p align="center"><a href="https://www.python.org/"><img src="https://forthebadge.com/images/badges/made-with-python.svg" height="28" alt="Python3"></a><a href="https://discord.gg/Xxy3YAv"><img src="https://img.shields.io/discord/562766544061595650.svg?label=Discord%20Server&logo=discord&style=for-the-badge" alt="Discord Official Server"></a></p>
+<p align="center"><a href="https://www.python.org/"><img src="https://forthebadge.com/images/badges/made-with-python.svg" height="28" alt="Python3"></a><a href="https://discord.gg/Xxy3YAv"><img src="https://img.shields.io/pypi/v/pyonfx?style=for-the-badge" alt="PyPI - Version"><img src="https://img.shields.io/pypi/pyversions/pyonfx?style=for-the-badge" alt="PyPI - Python Version"><img src="https://img.shields.io/discord/562766544061595650.svg?label=Discord%20Server&logo=discord&style=for-the-badge" alt="Discord Official Server"></a></p>
 
 <p align="center"><img src="https://github.com/CoffeeStraw/PyonFX/blob/master/docs/source/_static/PyonFX_Showcase.jpg?raw=true" alt="Showcase of Effects doable with PyonFX"></p>
 
