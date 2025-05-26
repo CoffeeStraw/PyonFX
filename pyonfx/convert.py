@@ -20,7 +20,16 @@ import colorsys
 import math
 import re
 from enum import Enum
-from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING, Optional, cast, overload
+from typing import (
+    List,
+    NamedTuple,
+    Tuple,
+    Union,
+    TYPE_CHECKING,
+    Optional,
+    cast,
+    overload,
+)
 
 from .font_utility import Font
 
@@ -50,13 +59,11 @@ class Convert:
 
     @overload
     @staticmethod
-    def time(ass_ms: int) -> str:
-        ...
+    def time(ass_ms: int) -> str: ...
 
     @overload
     @staticmethod
-    def time(ass_ms: str) -> int:
-        ...
+    def time(ass_ms: str) -> int: ...
 
     @staticmethod
     def time(ass_ms: Union[int, str]) -> Union[str, int]:
@@ -480,7 +487,7 @@ class Convert:
                 line.text = "{\\\\an7\\\\pos(%.3f,%.3f)\\\\p1}%s" % (line.left, line.top, Convert.text_to_shape(line))
                 io.write_line(line)
         """
-        if obj.styleref is None or obj.text is None:
+        if obj.styleref is None:
             raise ValueError("Object must have a style reference and text content")
 
         # Obtaining information and editing values of style if requested
@@ -536,16 +543,8 @@ class Convert:
                 line.text = "{\\\\an5\\\\pos(%.3f,%.3f)\\\\clip(%s)}%s" % (line.center, line.middle, Convert.text_to_clip(line), line.text)
                 io.write_line(line)
         """
-        if (
-            obj.styleref is None
-            or obj.left is None
-            or obj.top is None
-            or obj.width is None
-            or obj.height is None
-        ):
-            raise ValueError(
-                "Object must have a style reference and position and dimension information"
-            )
+        if obj.styleref is None:
+            raise ValueError("Object must have a style reference")
 
         # Checking for errors
         if an < 1 or an > 9:
@@ -625,9 +624,6 @@ class Convert:
                     l.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, p_sh)
                     io.write_line(l)
         """
-        if obj.left is None or obj.top is None:
-            raise ValueError("Object must have position information")
-
         shape = Convert.text_to_shape(obj).move(obj.left % 1, obj.top % 1)
         return Convert.shape_to_pixels(shape, supersampling)
 

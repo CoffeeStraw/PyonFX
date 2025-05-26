@@ -46,8 +46,6 @@ class Utils:
         """
         out = []
         for obj in lines_chars_syls_or_words:
-            if obj.text is None or obj.duration is None:
-                raise ValueError("Object has no text or duration")
             if obj.text.strip() and obj.duration > 0:
                 out.append(obj)
         return out

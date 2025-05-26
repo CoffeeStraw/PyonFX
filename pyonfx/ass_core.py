@@ -150,21 +150,21 @@ class Char:
     """Width of the character (pixels)."""
     height: float
     """Height of the character (pixels)."""
-    x: Optional[float] = None
+    x: float
     """Horizontal position of the character (pixels)."""
-    y: Optional[float] = None
+    y: float
     """Vertical position of the character (pixels)."""
-    left: Optional[float] = None
+    left: float
     """Left position of the character (pixels)."""
-    center: Optional[float] = None
+    center: float
     """Center position of the character (pixels)."""
-    right: Optional[float] = None
+    right: float
     """Right position of the character (pixels)."""
-    top: Optional[float] = None
+    top: float
     """Top position of the character (pixels)."""
-    middle: Optional[float] = None
+    middle: float
     """Middle position of the character (pixels)."""
-    bottom: Optional[float] = None
+    bottom: float
     """Bottom position of the character (pixels)."""
 
     def __repr__(self):
@@ -201,21 +201,21 @@ class Syllable:
     """Width of the syllable (pixels)."""
     height: float
     """Height of the syllable (pixels)."""
-    x: Optional[float] = None
+    x: float
     """Horizontal position of the syllable (pixels)."""
-    y: Optional[float] = None
+    y: float
     """Vertical position of the syllable (pixels)."""
-    left: Optional[float] = None
+    left: float
     """Left position of the syllable (pixels)."""
-    center: Optional[float] = None
+    center: float
     """Center position of the syllable (pixels)."""
-    right: Optional[float] = None
+    right: float
     """Right position of the syllable (pixels)."""
-    top: Optional[float] = None
+    top: float
     """Top position of the syllable (pixels)."""
-    middle: Optional[float] = None
+    middle: float
     """Middle position of the syllable (pixels)."""
-    bottom: Optional[float] = None
+    bottom: float
     """Bottom position of the syllable (pixels)."""
 
     def __repr__(self):
@@ -246,21 +246,21 @@ class Word:
     """Width of the word (pixels)."""
     height: float
     """Height of the word (pixels)."""
-    x: Optional[float] = None
+    x: float
     """Horizontal position of the word (pixels)."""
-    y: Optional[float] = None
+    y: float
     """Vertical position of the word (pixels)."""
-    left: Optional[float] = None
+    left: float
     """Left position of the word (pixels)."""
-    center: Optional[float] = None
+    center: float
     """Center position of the word (pixels)."""
-    right: Optional[float] = None
+    right: float
     """Right position of the word (pixels)."""
-    top: Optional[float] = None
+    top: float
     """Top position of the word (pixels)."""
-    middle: Optional[float] = None
+    middle: float
     """Middle position of the word (pixels)."""
-    bottom: Optional[float] = None
+    bottom: float
     """Bottom position of the word (pixels)."""
 
     def __repr__(self):
@@ -281,7 +281,7 @@ class Line:
     """End time (ms) of the line."""
     style: str
     """Style name used for this line. Could be None in case of non-existing style name."""
-    styleref: Optional[Style]
+    styleref: Style
     """Reference to the Style object for this line."""
     actor: str
     """Actor field."""
@@ -295,49 +295,49 @@ class Line:
     """Effect field."""
     raw_text: str
     """Raw text of the line (including tags)."""
-    text: Optional[str] = None
+    text: str
     """Stripped text of the line (no tags)."""
-    i: Optional[int] = None
+    i: int
     """Line index in the file."""
-    duration: Optional[int] = None
+    duration: int
     """Duration (ms) of the line."""
-    leadin: Optional[float] = None
+    leadin: float
     """Time (ms) between this line and the previous one."""
-    leadout: Optional[float] = None
+    leadout: float
     """Time (ms) between this line and the next one."""
-    width: Optional[float] = None
+    width: float
     """Width of the line (pixels)."""
-    height: Optional[float] = None
+    height: float
     """Height of the line (pixels)."""
-    ascent: Optional[float] = None
+    ascent: float
     """Font ascent for the line."""
-    descent: Optional[float] = None
+    descent: float
     """Font descent for the line."""
-    internal_leading: Optional[float] = None
+    internal_leading: float
     """Font internal leading for the line."""
-    external_leading: Optional[float] = None
+    external_leading: float
     """Font external leading for the line."""
-    x: Optional[float] = None
+    x: float
     """Horizontal position of the line (pixels)."""
-    y: Optional[float] = None
+    y: float
     """Vertical position of the line (pixels)."""
-    left: Optional[float] = None
+    left: float
     """Left position of the line (pixels)."""
-    center: Optional[float] = None
+    center: float
     """Center position of the line (pixels)."""
-    right: Optional[float] = None
+    right: float
     """Right position of the line (pixels)."""
-    top: Optional[float] = None
+    top: float
     """Top position of the line (pixels)."""
-    middle: Optional[float] = None
+    middle: float
     """Middle position of the line (pixels)."""
-    bottom: Optional[float] = None
+    bottom: float
     """Bottom position of the line (pixels)."""
-    words: Optional[List[Word]] = None
+    words: List[Word]
     """List of Word objects in this line."""
-    syls: Optional[List[Syllable]] = None
+    syls: List[Syllable]
     """List of Syllable objects in this line (if available)."""
-    chars: Optional[List[Char]] = None
+    chars: List[Char]
     """List of Char objects in this line."""
 
     def __repr__(self):
@@ -628,14 +628,35 @@ class Ass:
                 start_time=start_time_result,
                 end_time=end_time_result,
                 style=event_fields[3],
-                styleref=self.styles.get(event_fields[3]),
+                styleref=self.styles[event_fields[3]],
                 actor=event_fields[4],
                 margin_l=int(event_fields[5]),
                 margin_r=int(event_fields[6]),
                 margin_v=int(event_fields[7]),
                 effect=event_fields[8],
                 raw_text=",".join(event_fields[9:]),
+                text="",
                 i=line_index,
+                duration=-1,
+                leadin=float("nan"),
+                leadout=float("nan"),
+                width=float("nan"),
+                height=float("nan"),
+                ascent=float("nan"),
+                descent=float("nan"),
+                internal_leading=float("nan"),
+                external_leading=float("nan"),
+                x=float("nan"),
+                y=float("nan"),
+                left=float("nan"),
+                center=float("nan"),
+                right=float("nan"),
+                top=float("nan"),
+                middle=float("nan"),
+                bottom=float("nan"),
+                words=[],
+                syls=[],
+                chars=[],
             )
         )
 
@@ -754,6 +775,14 @@ class Ass:
                             postspace=len(postspace),
                             width=width,
                             height=height,
+                            x=float("nan"),
+                            y=float("nan"),
+                            left=float("nan"),
+                            center=float("nan"),
+                            right=float("nan"),
+                            top=float("nan"),
+                            middle=float("nan"),
+                            bottom=float("nan"),
                         )
                     )
 
@@ -978,6 +1007,14 @@ class Ass:
                         postspace=postspace,
                         width=font.get_text_extents(text_stripped)[0],
                         height=font.get_text_extents(text_stripped)[1],
+                        x=float("nan"),
+                        y=float("nan"),
+                        left=float("nan"),
+                        center=float("nan"),
+                        right=float("nan"),
+                        top=float("nan"),
+                        middle=float("nan"),
+                        bottom=float("nan"),
                     )
                     line.syls.append(syl)
                     si += 1
@@ -1092,6 +1129,14 @@ class Ass:
                             inline_fx=getattr(el, "inline_fx", ""),
                             width=width,
                             height=height,
+                            x=float("nan"),
+                            y=float("nan"),
+                            left=float("nan"),
+                            center=float("nan"),
+                            right=float("nan"),
+                            top=float("nan"),
+                            middle=float("nan"),
+                            bottom=float("nan"),
                         )
                         char_index += 1
                         line.chars.append(char)

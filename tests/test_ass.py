@@ -139,8 +139,6 @@ def test_line_values():
 def test_syllable_values():
     # Test syllable parsing and field values for a line with karaoke (lines[11])
     syls = lines[11].syls
-    if syls is None:
-        raise ValueError("Syllables are not available for this line")
 
     # Check number of syllables
     check.equal(len(syls), 27)
