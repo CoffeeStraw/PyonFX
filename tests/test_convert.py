@@ -180,6 +180,9 @@ def test_coloralpha():
 
 
 def test_text_to_shape():
+    if lines[1].syls is None:
+        raise ValueError("Syllables are not available for this line")
+
     shape = Convert.text_to_shape(lines[1].syls[0])
 
     if sys.platform == "win32":
