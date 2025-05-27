@@ -25,7 +25,6 @@ import copy
 import subprocess
 from fractions import Fraction
 from pathlib import Path
-from typing import List, Tuple, Union, Optional
 from video_timestamps import FPSTimestamps, RoundingMethod, VideoTimestamps
 
 from .font_utility import Font
@@ -39,22 +38,22 @@ class Meta:
     More info about each of them can be found on http://docs.aegisub.org/manual/Styles
     """
 
-    wrap_style: Optional[int] = None
+    wrap_style: int | None = None
     """Determines how line breaking is applied to the subtitle line."""
 
-    scaled_border_and_shadow: Optional[bool] = None
+    scaled_border_and_shadow: bool | None = None
     """Determines if script resolution (True) or video resolution (False) should be used to scale border and shadow."""
 
-    play_res_x: Optional[int] = None
+    play_res_x: int | None = None
     """Video width resolution."""
 
-    play_res_y: Optional[int] = None
+    play_res_y: int | None = None
     """Video height resolution."""
 
-    audio: Optional[str] = None
+    audio: str | None = None
     """Loaded audio file path (absolute)."""
 
-    video: Optional[str] = None
+    video: str | None = None
     """Loaded video file path (absolute)."""
 
     def __repr__(self):
@@ -333,11 +332,11 @@ class Line:
     """Middle position of the line (pixels)."""
     bottom: float
     """Bottom position of the line (pixels)."""
-    words: List[Word]
+    words: list[Word]
     """List of Word objects in this line."""
-    syls: List[Syllable]
+    syls: list[Syllable]
     """List of Syllable objects in this line (if available)."""
-    chars: List[Char]
+    chars: list[Char]
     """List of Char objects in this line."""
 
     def __repr__(self):
@@ -412,7 +411,7 @@ class Ass:
         self.meta: Meta
         self.styles: dict[str, Style]
         self.lines: list[Line]
-        self.input_timestamps: Optional[Union[VideoTimestamps, FPSTimestamps]]
+        self.input_timestamps: VideoTimestamps | FPSTimestamps | None
         self.meta, self.styles, self.lines, self.input_timestamps = Meta(), {}, [], None
         # Getting absolute sub file path
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
@@ -1243,7 +1242,7 @@ class Ass:
                     else lines_by_styles[style][li + 1].start_time - line.end_time
                 )
 
-    def get_data(self) -> Tuple[Meta, dict[str, Style], List[Line]]:
+    def get_data(self) -> tuple[Meta, dict[str, Style], list[Line]]:
         """Utility function to retrieve easily meta styles and lines.
 
         Returns:
@@ -1251,7 +1250,7 @@ class Ass:
         """
         return self.meta, self.styles, self.lines
 
-    def write_line(self, line: Line) -> Optional[TypeError]:
+    def write_line(self, line: Line) -> None:
         """Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
 
         Use it whenever you've prepared a line, it will not impact performance since you
@@ -1387,7 +1386,7 @@ class Ass:
 
 
 def pretty_print(
-    obj: Union[Meta, Style, Line, Word, Syllable, Char], indent: int = 0, name: str = ""
+    obj: Meta | Style | Line | Word | Syllable | Char, indent: int = 0, name: str = ""
 ) -> str:
     # Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
     if type(obj) == Line:

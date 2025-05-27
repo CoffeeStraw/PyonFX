@@ -21,22 +21,22 @@ to help getting informations from a specific font
 from __future__ import annotations
 import sys
 import html
-from typing import Any, Tuple, TYPE_CHECKING
+from typing import Any, TYPE_CHECKING
 
 from .shape import Shape
 
 if sys.platform == "win32":
-    import win32gui  # pylint: disable=import-error
-    import win32ui  # pylint: disable=import-error
-    import win32con  # pylint: disable=import-error
+    import win32gui  # type: ignore
+    import win32ui  # type: ignore
+    import win32con  # type: ignore
 elif sys.platform in ["linux", "darwin"] and not "sphinx" in sys.modules:
-    import cairo  # pylint: disable=import-error
-    import gi  # pylint: disable=import-error
+    import cairo  # type: ignore
+    import gi  # type: ignore
 
     gi.require_version("Pango", "1.0")
     gi.require_version("PangoCairo", "1.0")
 
-    from gi.repository import Pango, PangoCairo  # pylint: disable=import-error
+    from gi.repository import Pango, PangoCairo  # type: ignore
 
 if TYPE_CHECKING:
     from .ass_core import Style
@@ -138,7 +138,7 @@ class Font:
             win32gui.DeleteObject(self.pycfont.GetSafeHandle())
             win32gui.DeleteDC(self.dc)
 
-    def get_metrics(self) -> Tuple[float, float, float, float]:
+    def get_metrics(self) -> tuple[float, float, float, float]:
         if sys.platform == "win32":
             const = self.downscale * self.yscale
             return (
@@ -160,7 +160,7 @@ class Font:
         else:
             raise NotImplementedError
 
-    def get_text_extents(self, text: str) -> Tuple[float, float]:
+    def get_text_extents(self, text: str) -> tuple[float, float]:
         if sys.platform == "win32":
             cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 

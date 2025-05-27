@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 import re
-from typing import List, Union, Optional, overload, TYPE_CHECKING
+from typing import overload, TYPE_CHECKING
 from video_timestamps import ABCTimestamps, TimeType
 
 from .convert import Convert, ColorModel
@@ -34,31 +34,33 @@ class Utils:
     @overload
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: List[Line],
-    ) -> List[Line]: ...
+        lines_chars_syls_or_words: list[Line],
+    ) -> list[Line]: ...
 
     @overload
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: List[Word],
-    ) -> List[Word]: ...
+        lines_chars_syls_or_words: list[Word],
+    ) -> list[Word]: ...
 
     @overload
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: List[Syllable],
-    ) -> List[Syllable]: ...
+        lines_chars_syls_or_words: list[Syllable],
+    ) -> list[Syllable]: ...
 
     @overload
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: List[Char],
-    ) -> List[Char]: ...
+        lines_chars_syls_or_words: list[Char],
+    ) -> list[Char]: ...
 
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: List[Line] | List[Word] | List[Syllable] | List[Char],
-    ) -> List[Line] | List[Word] | List[Syllable] | List[Char]:
+        lines_chars_syls_or_words: (
+            list[Line] | list[Word] | list[Syllable] | list[Char]
+        ),
+    ) -> list[Line] | list[Word] | list[Syllable] | list[Char]:
         """
         Helps to not check everytime for text containing only spaces or object's duration equals to zero.
 
@@ -106,10 +108,10 @@ class Utils:
     @staticmethod
     def interpolate(
         pct: float,
-        val1: Union[float, str],
-        val2: Union[float, str],
+        val1: float | str,
+        val2: float | str,
         acc: float = 1.0,
-    ) -> Union[str, float]:
+    ) -> str | float:
         """
         | Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value as decimal number.
         | You can also provide a http://cubic-bezier.com to accelerate based on bezier curves. (TO DO)
@@ -408,7 +410,7 @@ class ColorUtility:
             CU = ColorUtility([ line[0] ])
     """
 
-    def __init__(self, lines: List[Line], offset: int = 0):
+    def __init__(self, lines: list[Line], offset: int = 0):
         self.color_changes = []
         self.c1_req = False
         self.c3_req = False
@@ -513,9 +515,9 @@ class ColorUtility:
     def get_color_change(
         self,
         line: Line,
-        c1: Optional[bool] = None,
-        c3: Optional[bool] = None,
-        c4: Optional[bool] = None,
+        c1: bool | None = None,
+        c3: bool | None = None,
+        c4: bool | None = None,
     ) -> str:
         """Returns all the color_changes in the object that fit (in terms of time) between line.start_time and line.end_time.
 
@@ -604,9 +606,9 @@ class ColorUtility:
     def get_fr_color_change(
         self,
         line: Line,
-        c1: Optional[bool] = None,
-        c3: Optional[bool] = None,
-        c4: Optional[bool] = None,
+        c1: bool | None = None,
+        c3: bool | None = None,
+        c4: bool | None = None,
     ) -> str:
         """Returns the single color(s) in the color_changes that fit the current frame (line.start_time) in your frame loop.
 

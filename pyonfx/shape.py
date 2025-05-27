@@ -17,7 +17,7 @@
 
 from __future__ import annotations
 import math
-from typing import Callable, Optional, Tuple, Union, cast
+from typing import Callable, cast
 from pyquaternion import Quaternion
 from inspect import signature
 
@@ -52,7 +52,7 @@ class Shape:
         # Utility function to properly format values for shapes also returning them as a string
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
-    def has_error(self) -> Union[bool, str]:
+    def has_error(self) -> bool | str:
         """Utility function that checks if the shape is valid.
 
         Returns:
@@ -152,10 +152,10 @@ class Shape:
 
     def map(
         self,
-        fun: Union[
-            Callable[[float, float], Tuple[float, float]],
-            Callable[[float, float, str], Tuple[float, float]],
-        ],
+        fun: (
+            Callable[[float, float], tuple[float, float]]
+            | Callable[[float, float, str], tuple[float, float]]
+        ),
     ) -> Shape:
         """Sends every point of a shape through given transformation function to change them.
 
@@ -188,7 +188,7 @@ class Shape:
             while i < n:
                 try:
                     # Applying transformation
-                    fun = cast(Callable[[float, float], Tuple[float, float]], fun)
+                    fun = cast(Callable[[float, float], tuple[float, float]], fun)
                     x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i + 1]))
                 except TypeError:
                     # Values weren't returned, so we don't need to modify them
@@ -212,7 +212,7 @@ class Shape:
             while i < n:
                 try:
                     # Applying transformation
-                    fun = cast(Callable[[float, float, str], Tuple[float, float]], fun)
+                    fun = cast(Callable[[float, float, str], tuple[float, float]], fun)
                     x, y = fun(
                         float(cmds_and_points[i]), float(cmds_and_points[i + 1]), typ
                     )
@@ -239,7 +239,7 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def bounding(self) -> Tuple[float, float, float, float]:
+    def bounding(self) -> tuple[float, float, float, float]:
         """Calculates shape bounding box.
 
         **Tips:** *Using this you can get more precise information about a shape (width, height, position).*
@@ -272,7 +272,7 @@ class Shape:
         self.map(compute_edges)
         return x0, y0, x1, y1
 
-    def move(self, x: Optional[float] = None, y: Optional[float] = None) -> Shape:
+    def move(self, x: float | None = None, y: float | None = None) -> Shape:
         """Moves shape coordinates in given direction.
 
         | If neither x and y are passed, it will automatically center the shape to the origin (0,0).
