@@ -24,7 +24,12 @@ import copy
 import subprocess
 from fractions import Fraction
 from pathlib import Path
-from video_timestamps import FPSTimestamps, RoundingMethod, VideoTimestamps
+from video_timestamps import (
+    ABCTimestamps,
+    FPSTimestamps,
+    RoundingMethod,
+    VideoTimestamps,
+)
 
 from .font_utility import Font
 from .convert import Convert
@@ -410,7 +415,7 @@ class Ass:
         self.meta: Meta
         self.styles: dict[str, Style]
         self.lines: list[Line]
-        self.input_timestamps: VideoTimestamps | FPSTimestamps
+        self.input_timestamps: ABCTimestamps
         self.meta, self.styles, self.lines = Meta(), {}, []
 
         # Getting absolute sub file path
