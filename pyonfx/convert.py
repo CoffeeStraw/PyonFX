@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
 # Copyright (C) 2019 Antonio Strippoli (CoffeeStraw/YellowFlash)
 #

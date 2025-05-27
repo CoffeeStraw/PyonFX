@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
 # Copyright (C) 2019 Antonio Strippoli (CoffeeStraw/YellowFlash)
 #
@@ -342,7 +341,7 @@ class Line:
     def __repr__(self):
         return pretty_print(self)
 
-    def copy(self) -> "Line":
+    def copy(self) -> Line:
         """
         Returns:
             A deep copy of this object (line)
@@ -440,7 +439,7 @@ class Ass:
         current_section = ""
         line_index = 0
 
-        with open(self.path_input, "r", encoding="utf-8-sig") as file:
+        with open(self.path_input, encoding="utf-8-sig") as file:
             for line in file:
                 # New section?
                 section_match = re.match(r"^\[([^\]]*)\]", line)

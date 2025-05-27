@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
 # Copyright (C) 2019 Antonio Strippoli (CoffeeStraw/YellowFlash)
 #
@@ -293,7 +292,7 @@ class Shape:
             >>> m -5 10 l 25 10 25 30 -5 30
         """
         if x is None and y is None:
-            x, y = [-1 * el for el in self.bounding()[0:2]]
+            x, y = (-1 * el for el in self.bounding()[0:2])
         if x is None:
             x = 0
         if y is None:
@@ -884,7 +883,7 @@ class Shape:
             return Quaternion(axis=[0, 0, 1], angle=theta).rotate(point)
 
         # Building shape
-        shape = ["m 0 %s %s" % (-outer_size, g_or_s)]
+        shape = [f"m 0 {-outer_size} {g_or_s}"]
         inner_p, outer_p = 0, 0
 
         for i in range(1, edges + 1):
@@ -963,7 +962,7 @@ class Shape:
         """
         try:
             f = Shape.format_value
-            return Shape("m 0 0 l %s 0 %s %s 0 %s 0 0" % (f(w), f(w), f(h), f(h)))
+            return Shape(f"m 0 0 l {f(w)} 0 {f(w)} {f(h)} 0 {f(h)} 0 0")
         except TypeError:
             raise TypeError("Number(s) expected")
 
