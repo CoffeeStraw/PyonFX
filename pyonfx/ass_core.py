@@ -381,7 +381,7 @@ class Ass:
         meta (:class:`Meta`): Contains informations about the ASS given.
         styles (list of :class:`Style`): Contains all the styles in the ASS given.
         lines (list of :class:`Line`): Contains all the lines (events) in the ASS given.
-        input_timestamps (:class:`ABCTimestamps`, optional): The timestamps that represent the `Video File` element from the `[Aegisub Project Garbage]` section.
+        input_timestamps (:class:`ABCTimestamps`): The timestamps that represent the `Video File` element from the `[Aegisub Project Garbage]` section.
 
     .. _example:
     Example:
@@ -411,8 +411,9 @@ class Ass:
         self.meta: Meta
         self.styles: dict[str, Style]
         self.lines: list[Line]
-        self.input_timestamps: VideoTimestamps | FPSTimestamps | None
-        self.meta, self.styles, self.lines, self.input_timestamps = Meta(), {}, [], None
+        self.input_timestamps: VideoTimestamps | FPSTimestamps
+        self.meta, self.styles, self.lines = Meta(), {}, []
+
         # Getting absolute sub file path
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
         if not os.path.isabs(path_input):
