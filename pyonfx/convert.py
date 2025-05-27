@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
 # Copyright (C) 2019 Antonio Strippoli (CoffeeStraw/YellowFlash)
 #
@@ -20,7 +19,12 @@ import colorsys
 import math
 import re
 from enum import Enum
-from typing import List, NamedTuple, Tuple, Union, TYPE_CHECKING
+from typing import (
+    NamedTuple,
+    TYPE_CHECKING,
+    cast,
+    overload,
+)
 
 from .font_utility import Font
 
@@ -48,8 +52,16 @@ class Convert:
     the user to convert everything needed to the ASS format.
     """
 
+    @overload
     @staticmethod
-    def time(ass_ms: Union[int, str]) -> Union[str, int, ValueError]:
+    def time(ass_ms: int) -> str: ...
+
+    @overload
+    @staticmethod
+    def time(ass_ms: str) -> int: ...
+
+    @staticmethod
+    def time(ass_ms: int | str) -> int | str:
         """Converts between milliseconds and ASS timestamp.
 
         You can probably ignore that function, you will not make use of it for KFX or typesetting generation.
@@ -61,7 +73,7 @@ class Convert:
             If milliseconds -> ASS timestamp, else if ASS timestamp -> milliseconds, else ValueError will be raised.
         """
         # Milliseconds?
-        if type(ass_ms) is int and ass_ms >= 0:
+        if isinstance(ass_ms, int) and ass_ms >= 0:
             # It round ms to cs. From https://github.com/Aegisub/Aegisub/blob/6f546951b4f004da16ce19ba638bf3eedefb9f31/libaegisub/include/libaegisub/ass/time.h#L32
             # Ex: 49 ms to 50 ms
             ass_ms = (ass_ms + 5) - (ass_ms + 5) % 10
@@ -73,7 +85,7 @@ class Convert:
                 math.floor(ass_ms % 1000 / 10),
             )
         # ASS timestamp?
-        elif type(ass_ms) is str and re.fullmatch(r"\d:\d+:\d+\.\d+", ass_ms):
+        elif isinstance(ass_ms, str) and re.fullmatch(r"\d:\d+:\d+\.\d+", ass_ms):
             return (
                 int(ass_ms[0]) * 3600000
                 + int(ass_ms[2:4]) * 60000
@@ -100,20 +112,15 @@ class Convert:
 
             >>> 255
         """
-        try:
-            match = re.fullmatch(r"&H([0-9A-F]{2})&", alpha_ass)
-            return int(match.group(1), 16)
-        except TypeError as e:
-            raise TypeError(
-                f"Provided ASS alpha was expected of type 'str', but you provided a '{type(alpha_ass)}'."
-            ) from e
-        except AttributeError as e:
+        match = re.fullmatch(r"&H([0-9A-F]{2})&", alpha_ass)
+        if match is None:
             raise ValueError(
                 f"Provided ASS alpha string '{alpha_ass}' is not in the expected format '&HXX&'."
-            ) from e
+            )
+        return int(match.group(1), 16)
 
     @staticmethod
-    def alpha_dec_to_ass(alpha_dec: Union[int, float]) -> str:
+    def alpha_dec_to_ass(alpha_dec: int | float) -> str:
         """Converts from decimal value to corresponding ASS alpha string.
 
         Parameters:
@@ -144,32 +151,21 @@ class Convert:
 
     @staticmethod
     def color(
-        c: Union[
-            str,
-            Union[
-                Tuple[
-                    Union[int, float],
-                    Union[int, float],
-                    Union[int, float],
-                ],
-                Tuple[
-                    Union[int, float],
-                    Union[int, float],
-                    Union[int, float],
-                    Union[int, float],
-                ],
-            ],
-        ],
+        c: (
+            str
+            | tuple[int | float, int | float, int | float]
+            | tuple[int | float, int | float, int | float, int | float]
+        ),
         input_format: ColorModel,
         output_format: ColorModel,
         round_output: bool = True,
-    ) -> Union[
-        str,
-        Tuple[int, int, int],
-        Tuple[int, int, int, int],
-        Tuple[float, float, float],
-        Tuple[float, float, float, float],
-    ]:
+    ) -> (
+        str
+        | tuple[int, int, int]
+        | tuple[int, int, int, int]
+        | tuple[float, float, float]
+        | tuple[float, float, float, float]
+    ):
         """Converts a provided color from a color model to another.
 
         Parameters:
@@ -194,31 +190,54 @@ class Convert:
 
             # Parse input, obtaining its corresponding (r,g,b,a) values
             if input_format == ColorModel.ASS:
+                if not isinstance(c, str):
+                    raise TypeError("ASS color format requires string input")
                 match = re.fullmatch(r"&H([0-9A-F]{2})([0-9A-F]{2})([0-9A-F]{2})&", c)
+                if match is None:
+                    raise ValueError(f"Invalid ASS color format: {c}")
                 (b, g, r), a = map(lambda x: int(x, 16), match.groups()), 255
             elif input_format == ColorModel.ASS_STYLE:
+                if not isinstance(c, str):
+                    raise TypeError("ASS_STYLE color format requires string input")
                 match = re.fullmatch("&H" + r"([0-9A-F]{2})" * 4, c)
+                if match is None:
+                    raise ValueError(f"Invalid ASS_STYLE color format: {c}")
                 a, b, g, r = map(lambda x: int(x, 16), match.groups())
             elif input_format == ColorModel.RGB:
+                if not isinstance(c, tuple) or len(c) != 3:
+                    raise TypeError("RGB color format requires tuple of 3 values")
                 if not all(0 <= n <= 255 for n in c):
                     raise ValueError(input_range_e + "[0, 255].")
                 (r, g, b), a = c, 255
             elif input_format == ColorModel.RGB_STR:
+                if not isinstance(c, str):
+                    raise TypeError("RGB_STR color format requires string input")
                 match = re.fullmatch("#" + r"([0-9A-F]{2})" * 3, c)
+                if match is None:
+                    raise ValueError(f"Invalid RGB_STR color format: {c}")
                 (r, g, b), a = map(lambda x: int(x, 16), match.groups()), 255
             elif input_format == ColorModel.RGBA:
+                if not isinstance(c, tuple) or len(c) != 4:
+                    raise TypeError("RGBA color format requires tuple of 4 values")
                 if not all(0 <= n <= 255 for n in c):
                     raise ValueError(input_range_e + "[0, 255].")
                 r, g, b, a = c
             elif input_format == ColorModel.RGBA_STR:
+                if not isinstance(c, str):
+                    raise TypeError("RGBA_STR color format requires string input")
                 match = re.fullmatch("#" + r"([0-9A-F]{2})" * 4, c)
+                if match is None:
+                    raise ValueError(f"Invalid RGBA_STR color format: {c}")
                 r, g, b, a = map(lambda x: int(x, 16), match.groups())
             elif input_format == ColorModel.HSV:
-                if not (0 <= c[0] < 360 and 0 <= c[1] <= 100 and 0 <= c[2] <= 100):
+                if not isinstance(c, tuple) or len(c) != 3:
+                    raise TypeError("HSV color format requires tuple of 3 values")
+                h, s, v = c
+                if not (0 <= h < 360 and 0 <= s <= 100 and 0 <= v <= 100):
                     raise ValueError(
                         input_range_e + "( [0, 360), [0, 100], [0, 100] )."
                     )
-                h, s, v = c[0] / 360, c[1] / 100, c[2] / 100
+                h, s, v = h / 360, s / 100, v / 100
                 (r, g, b), a = map(lambda x: 255 * x, colorsys.hsv_to_rgb(h, s, v)), 255
         except (AttributeError, ValueError, TypeError) as e:
             # AttributeError -> re.fullmatch failed
@@ -236,27 +255,28 @@ class Convert:
                 return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(r):02X}"
             elif output_format == ColorModel.RGB:
                 method = round if round_output else float
-                return tuple(map(method, (r, g, b)))
+                return cast(tuple[int, int, int], tuple(map(method, (r, g, b))))
             elif output_format == ColorModel.RGB_STR:
                 return f"#{round(r):02X}{round(g):02X}{round(b):02X}"
             elif output_format == ColorModel.RGBA:
                 method = round if round_output else float
-                return tuple(map(method, (r, g, b, a)))
+                return cast(tuple[int, int, int, int], tuple(map(method, (r, g, b, a))))
             elif output_format == ColorModel.RGBA_STR:
                 return f"#{round(r):02X}{round(g):02X}{round(b):02X}{round(a):02X}"
             elif output_format == ColorModel.HSV:
                 method = round if round_output else float
                 h, s, v = colorsys.rgb_to_hsv(r / 255, g / 255, b / 255)
-                return method(h * 360) % 360, method(s * 100), method(v * 100)
-            else:
-                raise ValueError(f"Unsupported output_format ('{output_format}').")
+                return cast(
+                    tuple[float, float, float],
+                    (method(h * 360) % 360, method(s * 100), method(v * 100)),
+                )
         except NameError as e:
             raise ValueError(f"Unsupported input_format ('{input_format}').") from e
 
     @staticmethod
     def color_ass_to_rgb(
         color_ass: str, as_str: bool = False
-    ) -> Union[str, Tuple[int, int, int]]:
+    ) -> str | tuple[int, int, int]:
         """Converts from ASS color string to corresponding RGB color.
 
         Parameters:
@@ -276,14 +296,17 @@ class Convert:
             >>> (239, 205, 171)
             >>> "#EFCDAB"
         """
-        return Convert.color(
+        result = Convert.color(
             color_ass, ColorModel.ASS, ColorModel.RGB_STR if as_str else ColorModel.RGB
         )
+        if as_str:
+            return cast(str, result)
+        return cast(tuple[int, int, int], result)
 
     @staticmethod
     def color_ass_to_hsv(
         color_ass: str, round_output: bool = True
-    ) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
+    ) -> tuple[int, int, int] | tuple[float, float, float]:
         """Converts from ASS color string to corresponding HSV color.
 
         Parameters:
@@ -303,13 +326,12 @@ class Convert:
             >>> (30, 28, 94)
             >>> (30.000000000000014, 28.451882845188294, 93.72549019607843)
         """
-        return Convert.color(color_ass, ColorModel.ASS, ColorModel.HSV, round_output)
+        result = Convert.color(color_ass, ColorModel.ASS, ColorModel.HSV, round_output)
+        return cast(tuple[int, int, int] | tuple[float, float, float], result)
 
     @staticmethod
     def color_rgb_to_ass(
-        color_rgb: Union[
-            str, Tuple[Union[int, float], Union[int, float], Union[int, float]]
-        ],
+        color_rgb: str | tuple[int | float, int | float, int | float],
     ) -> str:
         """Converts from RGB color to corresponding ASS color.
 
@@ -326,19 +348,18 @@ class Convert:
 
             >>> "&HEFCDAB&"
         """
-        return Convert.color(
+        result = Convert.color(
             color_rgb,
-            ColorModel.RGB_STR if type(color_rgb) is str else ColorModel.RGB,
+            ColorModel.RGB_STR if isinstance(color_rgb, str) else ColorModel.RGB,
             ColorModel.ASS,
         )
+        return cast(str, result)
 
     @staticmethod
     def color_rgb_to_hsv(
-        color_rgb: Union[
-            str, Tuple[Union[int, float], Union[int, float], Union[int, float]]
-        ],
+        color_rgb: str | tuple[int | float, int | float, int | float],
         round_output: bool = True,
-    ) -> Union[Tuple[int, int, int], Tuple[float, float, float]]:
+    ) -> tuple[int, int, int] | tuple[float, float, float]:
         """Converts from RGB color to corresponding HSV color.
 
         Parameters:
@@ -358,16 +379,17 @@ class Convert:
             >>> (210, 28, 94)
             >>> (210.0, 28.451882845188294, 93.72549019607843)
         """
-        return Convert.color(
+        result = Convert.color(
             color_rgb,
-            ColorModel.RGB_STR if type(color_rgb) is str else ColorModel.RGB,
+            ColorModel.RGB_STR if isinstance(color_rgb, str) else ColorModel.RGB,
             ColorModel.HSV,
             round_output,
         )
+        return cast(tuple[int, int, int] | tuple[float, float, float], result)
 
     @staticmethod
     def color_hsv_to_ass(
-        color_hsv: Tuple[Union[int, float], Union[int, float], Union[int, float]],
+        color_hsv: tuple[int | float, int | float, int | float],
     ) -> str:
         """Converts from HSV color string to corresponding ASS color.
 
@@ -384,14 +406,15 @@ class Convert:
 
             >>> "&H00FF55&"
         """
-        return Convert.color(color_hsv, ColorModel.HSV, ColorModel.ASS)
+        result = Convert.color(color_hsv, ColorModel.HSV, ColorModel.ASS)
+        return cast(str, result)
 
     @staticmethod
     def color_hsv_to_rgb(
-        color_hsv: Tuple[Union[int, float], Union[int, float], Union[int, float]],
+        color_hsv: tuple[int | float, int | float, int | float],
         as_str: bool = False,
         round_output: bool = True,
-    ) -> str:
+    ) -> str | tuple[int, int, int] | tuple[float, float, float]:
         """Converts from HSV color string to corresponding RGB color.
 
         Parameters:
@@ -415,16 +438,21 @@ class Convert:
             >>> "#55FF00"
             >>> (84.99999999999999, 255.0, 0.0)
         """
-        return Convert.color(
+        result = Convert.color(
             color_hsv,
             ColorModel.HSV,
             ColorModel.RGB_STR if as_str else ColorModel.RGB,
             round_output,
         )
+        if as_str:
+            return cast(str, result)
+        return cast(tuple[int, int, int] | tuple[float, float, float], result)
 
     @staticmethod
     def text_to_shape(
-        obj: Union[Line, Word, Syllable, Char], fscx: float = None, fscy: float = None
+        obj: Line | Word | Syllable | Char,
+        fscx: float | None = None,
+        fscy: float | None = None,
     ) -> Shape:
         """Converts text with given style information to an ASS shape.
 
@@ -445,6 +473,9 @@ class Convert:
                 line.text = "{\\\\an7\\\\pos(%.3f,%.3f)\\\\p1}%s" % (line.left, line.top, Convert.text_to_shape(line))
                 io.write_line(line)
         """
+        if obj.styleref is None:
+            raise ValueError("Object must have a style reference and text content")
+
         # Obtaining information and editing values of style if requested
         original_scale_x = obj.styleref.scale_x
         original_scale_y = obj.styleref.scale_y
@@ -470,10 +501,10 @@ class Convert:
 
     @staticmethod
     def text_to_clip(
-        obj: Union[Line, Word, Syllable, Char],
+        obj: Line | Word | Syllable | Char,
         an: int = 5,
-        fscx: float = None,
-        fscy: float = None,
+        fscx: float | None = None,
+        fscy: float | None = None,
     ) -> Shape:
         """Converts text with given style information to an ASS shape, applying some translation/scaling to it since
         it is not possible to position a shape with \\pos() once it is in a clip.
@@ -498,6 +529,9 @@ class Convert:
                 line.text = "{\\\\an5\\\\pos(%.3f,%.3f)\\\\clip(%s)}%s" % (line.center, line.middle, Convert.text_to_clip(line), line.text)
                 io.write_line(line)
         """
+        if obj.styleref is None:
+            raise ValueError("Object must have a style reference")
+
         # Checking for errors
         if an < 1 or an > 9:
             raise ValueError("Alignment value must be an integer between 1 and 9")
@@ -541,8 +575,9 @@ class Convert:
 
     @staticmethod
     def text_to_pixels(
-        obj: Union[Line, Word, Syllable, Char], supersampling: int = 8
-    ) -> List[Pixel]:
+        obj: Line | Word | Syllable | Char,
+        supersampling: int = 8,
+    ) -> list[Pixel]:
         """| Converts text with given style information to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
@@ -580,7 +615,7 @@ class Convert:
         return Convert.shape_to_pixels(shape, supersampling)
 
     @staticmethod
-    def shape_to_pixels(shape: Shape, supersampling: int = 8) -> List[Pixel]:
+    def shape_to_pixels(shape: Shape, supersampling: int = 8) -> list[Pixel]:
         """| Converts a Shape object to a list of pixel data.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
@@ -636,7 +671,7 @@ class Convert:
         # Renderer (on binary image with aliasing)
         lines, last_point, last_move = [], {}, {}
 
-        def collect_lines(x, y, typ):
+        def collect_lines(x: float, y: float, typ: str) -> tuple[float, float]:
             # Collect lines (points + vectors)
             nonlocal lines, last_point, last_move
             x, y = int(round(x)), int(round(y))  # Use integers to avoid rounding errors
@@ -678,6 +713,7 @@ class Convert:
 
             # Remember last point
             last_point = {"x": x, "y": y}
+            return (x, y)
 
         shape.flatten().map(collect_lines)
 
@@ -698,7 +734,9 @@ class Convert:
             )
 
         # Calculates line x horizontal line intersection
-        def line_x_hline(x, y, vx, vy, y2):
+        def line_x_hline(
+            x: float, y: float, vx: float, vy: float, y2: float
+        ) -> float | None:
             if vy != 0:
                 s = (y2 - y) / vy
                 if s >= 0 and s <= 1:

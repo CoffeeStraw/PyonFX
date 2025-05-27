@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
 # Copyright (C) 2019 Antonio Strippoli (CoffeeStraw/YellowFlash)
 #
@@ -17,7 +16,7 @@
 
 from __future__ import annotations
 import math
-from typing import Callable, Optional, List, Tuple, Union
+from typing import Callable, cast
 from pyquaternion import Quaternion
 from inspect import signature
 
@@ -52,7 +51,7 @@ class Shape:
         # Utility function to properly format values for shapes also returning them as a string
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
-    def has_error(self) -> Union[bool, str]:
+    def has_error(self) -> bool | str:
         """Utility function that checks if the shape is valid.
 
         Returns:
@@ -151,7 +150,11 @@ class Shape:
         return False
 
     def map(
-        self, fun: Callable[[float, float, Optional[str]], Tuple[float, float]]
+        self,
+        fun: (
+            Callable[[float, float], tuple[float, float]]
+            | Callable[[float, float, str], tuple[float, float]]
+        ),
     ) -> Shape:
         """Sends every point of a shape through given transformation function to change them.
 
@@ -184,6 +187,7 @@ class Shape:
             while i < n:
                 try:
                     # Applying transformation
+                    fun = cast(Callable[[float, float], tuple[float, float]], fun)
                     x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i + 1]))
                 except TypeError:
                     # Values weren't returned, so we don't need to modify them
@@ -207,6 +211,7 @@ class Shape:
             while i < n:
                 try:
                     # Applying transformation
+                    fun = cast(Callable[[float, float, str], tuple[float, float]], fun)
                     x, y = fun(
                         float(cmds_and_points[i]), float(cmds_and_points[i + 1]), typ
                     )
@@ -233,7 +238,7 @@ class Shape:
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def bounding(self) -> Tuple[float, float, float, float]:
+    def bounding(self) -> tuple[float, float, float, float]:
         """Calculates shape bounding box.
 
         **Tips:** *Using this you can get more precise information about a shape (width, height, position).*
@@ -251,15 +256,13 @@ class Shape:
         """
 
         # Bounding data
-        x0: float = None
-        y0: float = None
-        x1: float = None
-        y1: float = None
+        x0 = y0 = float("-inf")
+        x1 = y1 = float("inf")
 
         # Calculate minimal and maximal coordinates
         def compute_edges(x, y):
             nonlocal x0, y0, x1, y1
-            if x0 is not None:
+            if x0 != float("-inf"):
                 x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
             else:
                 x0, y0, x1, y1 = x, y, x, y
@@ -268,7 +271,7 @@ class Shape:
         self.map(compute_edges)
         return x0, y0, x1, y1
 
-    def move(self, x: float = None, y: float = None) -> Shape:
+    def move(self, x: float | None = None, y: float | None = None) -> Shape:
         """Moves shape coordinates in given direction.
 
         | If neither x and y are passed, it will automatically center the shape to the origin (0,0).
@@ -289,10 +292,10 @@ class Shape:
             >>> m -5 10 l 25 10 25 30 -5 30
         """
         if x is None and y is None:
-            x, y = [-1 * el for el in self.bounding()[0:2]]
-        elif x is None:
+            x, y = (-1 * el for el in self.bounding()[0:2])
+        if x is None:
             x = 0
-        elif y is None:
+        if y is None:
             y = 0
 
         # Update shape
@@ -545,7 +548,6 @@ class Shape:
 
         # Internal function to help splitting a line
         def line_split(x0: float, y0: float, x1: float, y1: float):
-            x0, y0, x1, y1 = float(x0), float(y0), float(x1), float(y1)
             # Line direction & length
             rel_x, rel_y = x1 - x0, y1 - y0
             distance = math.sqrt(rel_x * rel_x + rel_y * rel_y)
@@ -567,8 +569,8 @@ class Shape:
 
                 return " ".join(lines), lines[-1].split()
             else:  # No line split
-                x1, y1 = Shape.format_value(x1), Shape.format_value(y1)
-                return f"{x1} {y1}", [x1, y1]
+                x1_f, y1_f = Shape.format_value(x1), Shape.format_value(y1)
+                return f"{x1_f} {y1_f}", [x1_f, y1_f]
 
         # Getting all points and commands in a list
         cmds_and_points = self.flatten().drawing_cmds.split()
@@ -591,14 +593,7 @@ class Shape:
                 ):  # If we're not running into contiguous line, we need to save the previous two
                     previous_two = [cmds_and_points[i - 2], cmds_and_points[i - 1]]
                 i += 1
-            elif (
-                current == "m"
-                or current == "n"
-                or current == "b"
-                or current == "s"
-                or current == "p"
-                or current == "c"
-            ):
+            elif current in ["m", "n", "b", "s", "p", "c"]:
                 if current == "m":
                     if (
                         last_move
@@ -615,7 +610,13 @@ class Shape:
                             x0 == last_move[0] and y0 == last_move[1]
                         ):  # Closing last figure
                             cmds_and_points[i] = (
-                                line_split(x0, y0, last_move[0], last_move[1])[0] + " m"
+                                line_split(
+                                    float(x0),
+                                    float(y0),
+                                    float(last_move[0]),
+                                    float(last_move[1]),
+                                )[0]
+                                + " m"
                             )
                     last_move = [cmds_and_points[i + 1], cmds_and_points[i + 2]]
 
@@ -623,13 +624,13 @@ class Shape:
                 is_line = False
                 previous_two = None
                 i += 1
-            elif is_line:
+            elif is_line and previous_two:
                 # Do the work with the two points found and the previous two
                 cmds_and_points[i], previous_two = line_split(
-                    previous_two[0],
-                    previous_two[1],
-                    cmds_and_points[i],
-                    cmds_and_points[i + 1],
+                    float(previous_two[0]),
+                    float(previous_two[1]),
+                    float(cmds_and_points[i]),
+                    float(cmds_and_points[i + 1]),
                 )
                 del cmds_and_points[i + 1]
                 # Let's go to the next two points or tag
@@ -661,23 +662,25 @@ class Shape:
                     previous_two = [current, current_prev]
                     break
                 i -= 1
-        if not (
-            previous_two[0] == last_move[0] and previous_two[1] == last_move[1]
-        ):  # Split!
-            cmds_and_points.append(
-                "l "
-                + line_split(
-                    previous_two[0], previous_two[1], last_move[0], last_move[1]
-                )[0]
-            )
+        if previous_two is not None and last_move is not None:
+            if not (
+                previous_two[0] == last_move[0] and previous_two[1] == last_move[1]
+            ):  # Split!
+                cmds_and_points.append(
+                    "l "
+                    + line_split(
+                        float(previous_two[0]),
+                        float(previous_two[1]),
+                        float(last_move[0]),
+                        float(last_move[1]),
+                    )[0]
+                )
 
         # Sew up everything back and update shape
         self.drawing_cmds = " ".join(cmds_and_points)
         return self
 
-    def __to_outline(
-        self, bord_xy: float, bord_y: float = None, mode: str = "round"
-    ) -> Shape:
+    def __to_outline(self, bord_xy: float, bord_y: float, mode: str = "round") -> Shape:
         """Converts shape command for filling to a shape command for stroking.
 
         **Tips:** *You could use this for border textures.*
@@ -880,7 +883,7 @@ class Shape:
             return Quaternion(axis=[0, 0, 1], angle=theta).rotate(point)
 
         # Building shape
-        shape = ["m 0 %s %s" % (-outer_size, g_or_s)]
+        shape = [f"m 0 {-outer_size} {g_or_s}"]
         inner_p, outer_p = 0, 0
 
         for i in range(1, edges + 1):
@@ -959,7 +962,7 @@ class Shape:
         """
         try:
             f = Shape.format_value
-            return Shape("m 0 0 l %s 0 %s %s 0 %s 0 0" % (f(w), f(w), f(h), f(h)))
+            return Shape(f"m 0 0 l {f(w)} 0 {f(w)} {f(h)} 0 {f(h)} 0 0")
         except TypeError:
             raise TypeError("Number(s) expected")
 
