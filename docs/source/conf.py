@@ -10,7 +10,7 @@ import sphinx_rtd_theme
 sys.path.insert(0, os.path.abspath("..//.."))
 sys.setrecursionlimit(1500)
 
-from pyonfx import __version__
+from importlib.metadata import version as get_version
 
 # -- Project information -----------------------------------------------------
 
@@ -21,7 +21,7 @@ author = "Antonio Strippoli (CoffeeStraw/YellowFlash)"
 # The short X.Y version
 version = ""
 # The full version, including alpha/beta/rc tags
-release = __version__
+release = get_version("pyonfx")
 
 # -- General configuration ---------------------------------------------------
 autodoc_typehints = "signature"
