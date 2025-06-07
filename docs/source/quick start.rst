@@ -39,7 +39,7 @@ Installation
    .. code-block:: sh
       :emphasize-lines: 1,2
 
-      sudo apt install python3 python3-pip libgirepository1.0-dev gcc libcairo2-dev pkg-config python3-dev gir1.2-gtk-3.0 python3-gi python3-gi-cairo
+      sudo apt install python3 python3-pip libgirepository-2.0-dev gobject-introspection libcairo2-dev build-essential gir1.2-gtk-3.0 python3-gi python3-gi-cairo
       python3 -m pip install --upgrade pyonfx
 
 .. dropdown:: Fedora
@@ -92,7 +92,7 @@ Installation
    .. code-block:: sh
       :emphasize-lines: 1,2
 
-      brew install python py3cairo pygobject3 pango
+      brew install python py3cairo pygobject3 pango cairo glib
       python3 -m pip install --upgrade pyonfx
 
    ⚠️Warning: If you experience output not rendered correctly, you might need to change the PangoCairo backend to fontconfig.
