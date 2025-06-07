@@ -118,6 +118,10 @@ jobs:
 
     name: "Build and publish distributions to PyPI and TestPyPI"
     runs-on: ubuntu-latest
+
+    environment:
+      name: pypi
+      url: https://pypi.org/p/pyonfx
     permissions:
       id-token: write  # Trusted publishing
 
