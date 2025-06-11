@@ -752,7 +752,7 @@ class Shape:
                 return f"{x1_f} {y1_f}", [x1_f, y1_f]
 
         # Getting all points and commands in a list
-        cmds_and_points = self.flatten().drawing_cmds.split()
+        cmds_and_points = self.flatten(tolerance).drawing_cmds.split()
         i = 0
         n = len(cmds_and_points)
 
