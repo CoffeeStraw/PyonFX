@@ -270,97 +270,13 @@ class Shape:
         Returns:
             False if no error has been found, else a string with the first error encountered.
         """
-        # Obtain commands and points
-        cad = self.drawing_cmds.split()
-        n = len(cad)
-        mode = ""
-
-        # Prepare usefull lists
-        two_args_cmds = ["m", "n", "l", "p"]
-        six_args_cmds = ["b", "s"]
-
-        # Iterate over commands and points
-        i = 0
-        while i < n:
-            if cad[i] in two_args_cmds:
-                # Check if we have an unexpected and of the shape
-                if n - i < 3:
-                    return (
-                        f"Unexpected end of shape ('{cad[i]}' expect at least two args)"
-                    )
-
-                # Check if we have two numeric values after command
-                try:
-                    float(cad[i + 1])
-                    float(cad[i + 2])
-                except ValueError:
-                    return (
-                        f"Expected numeric value at: '{cad[i]} {cad[i+1]} {cad[i+2]}'"
-                    )
-
-                # Valid, go on
-                mode = cad[i]
-                i += 3
-            elif cad[i] in six_args_cmds:
-                # Check if we have an unexpected and of the shape
-                if n - i < 7:
-                    return (
-                        f"Unexpected end of shape ('{cad[i]}' expect at least six args)"
-                    )
-
-                # Check if we have six numeric values after command
-                try:
-                    for x in range(1, 7):
-                        float(cad[i + x])
-                except ValueError:
-                    return f"Expected numeric value at: '{cad[i]} {' '.join(cad[i+1:i+7])}'"
-
-                # Valid, go on
-                mode = cad[i]
-                i += 7
-            elif cad[i] == "c":
-                # 'c' expect no arguments, skip
-                mode = ""
-                i += 1
-            elif mode in two_args_cmds:
-                # Check if we have an unexpected and of the shape
-                if n - i < 2:
-                    return (
-                        f"Unexpected end of shape ('{cad[i]}' expect at least two args)"
-                    )
-
-                # Check if we have two numeric values
-                try:
-                    float(cad[i])
-                    float(cad[i + 1])
-                except ValueError:
-                    return (
-                        f"Expected numeric value at: '{mode} ... {cad[i]} {cad[i+1]}'"
-                    )
-
-                # Valid, go on
-                i += 2
-            elif mode in six_args_cmds:
-                # Check if we have an unexpected and of the shape
-                if n - i < 6:
-                    return (
-                        f"Unexpected end of shape ('{cad[i]}' expect at least six args)"
-                    )
-
-                # Check if we have six numeric values
-                try:
-                    for x in range(6):
-                        float(cad[i + x])
-                except ValueError:
-                    return f"Expected numeric value at: '{mode} ... {' '.join(cad[i:i+6])}'"
-
-                # Valid, go on
-                i += 6
-            else:
-                # Wtf is this?
-                return f"Unexpected command '{cad[i]}'"
-
-        return False
+        try:
+            list(self)
+            return False
+        except ValueError as e:
+            return str(e)
+        except Exception as e:
+            return f"Unexpected error: {str(e)}"
 
     def map(
         self,
@@ -439,15 +355,16 @@ class Shape:
         x1 = y1 = float("inf")
 
         # Calculate minimal and maximal coordinates
-        def compute_edges(x, y):
-            nonlocal x0, y0, x1, y1
-            if x0 != float("-inf"):
-                x0, y0, x1, y1 = min(x0, x), min(y0, y), max(x1, x), max(y1, y)
-            else:
-                x0, y0, x1, y1 = x, y, x, y
-            return x, y
+        for element in self:
+            for x, y in element.coordinates:
+                if x0 != float("-inf"):
+                    x0 = min(x0, x)
+                    y0 = min(y0, y)
+                    x1 = max(x1, x)
+                    y1 = max(y1, y)
+                else:
+                    x0, y0, x1, y1 = x, y, x, y
 
-        self.map(compute_edges)
         return x0, y0, x1, y1
 
     def move(self, x: float | None = None, y: float | None = None) -> Shape:
@@ -597,14 +514,12 @@ class Shape:
             y3,
         ):
             # Line points buffer
-            pts = ""
+            line_points = []
 
             # Conversion in recursive processing
             def convert_recursive(x0, y0, x1, y1, x2, y2, x3, y3):
                 if curve4_is_flat(x0, y0, x1, y1, x2, y2, x3, y3):
-                    nonlocal pts
-                    x3, y3 = Shape.format_value(x3), Shape.format_value(y3)
-                    pts += f"{x3} {y3} "
+                    line_points.append((x3, y3))
                     return
 
                 (
@@ -630,75 +545,43 @@ class Shape:
 
             # Splitting curve recursively until we're not satisfied (angle <= tolerance)
             convert_recursive(x0, y0, x1, y1, x2, y2, x3, y3)
-            # Return resulting points
-            return " ".join(
-                pts[:-1].split(" ")[:-2]
-            )  # Delete last space and last two float values
+            # Return resulting points, excluding the last point to avoid duplication
+            return line_points[:-1] if line_points else []
 
-        # Getting all points and commands in a list
-        cmds_and_points = self.drawing_cmds.split()
-        i = 0
-        n = len(cmds_and_points)
+        # Process elements
+        flattened_elements = []
+        last_point = None
 
-        # Scanning all commands and points (improvable)
-        while i < n:
-            if (
-                cmds_and_points[i] == "b"
-            ):  # We've found a curve, let's split it into lines
-                try:
-                    # Getting all the points: if we don't have exactly 8 points, shape is not valid
-                    x0, y0 = (
-                        float(cmds_and_points[i - 2]),
-                        float(cmds_and_points[i - 1]),
-                    )
-                    x1, y1 = (
-                        float(cmds_and_points[i + 1]),
-                        float(cmds_and_points[i + 2]),
-                    )
-                    x2, y2 = (
-                        float(cmds_and_points[i + 3]),
-                        float(cmds_and_points[i + 4]),
-                    )
-                    x3, y3 = (
-                        float(cmds_and_points[i + 5]),
-                        float(cmds_and_points[i + 6]),
-                    )
-                except IndexError:
-                    raise ValueError(
-                        "Shape providen is not valid (not enough points for a curve)"
-                    )
+        for element in self:
+            match element.command:
+                case "b":
+                    if last_point is None:
+                        raise ValueError("Bezier curve found without a starting point")
+                    
+                    x0, y0 = last_point
+                    (x1, y1), (x2, y2), (x3, y3) = element.coordinates
+                    
+                    # Convert curve to line points
+                    line_points = curve4_to_lines(x0, y0, x1, y1, x2, y2, x3, y3)
+                    
+                    # Add all line points as individual line elements
+                    for x, y in line_points:
+                        flattened_elements.append(ShapeElement("l", [(x, y)]))
+                    
+                    # Add the final point
+                    flattened_elements.append(ShapeElement("l", [(x3, y3)]))
+                    last_point = (x3, y3)
+                case "c":
+                    pass
+                case _:
+                    # Keep other commands as is and track last point
+                    flattened_elements.append(element)
+                    if element.coordinates:
+                        last_point = element.coordinates[-1]
 
-                # Obtaining the converted curve and saving it for later
-                cmds_and_points[i] = "l"
-                cmds_and_points[i + 1] = curve4_to_lines(x0, y0, x1, y1, x2, y2, x3, y3)
-
-                i += 2
-                n -= 3
-
-                # Deleting the remaining points
-                for _ in range(3):
-                    del cmds_and_points[i]
-
-                # Going to the next point
-                i += 2
-
-                # Check if we're at the end of the shape
-                if i < n:
-                    # Check for implicit bezier curve
-                    try:
-                        float(cmds_and_points[i])  # Next number is a float?
-                        cmds_and_points.insert(i, "b")
-                        n += 1
-                    except ValueError:
-                        pass
-            elif cmds_and_points[i] == "c":  # Deleting c tag?
-                del cmds_and_points[i]
-                n -= 1
-            else:
-                i += 1
-
-        # Update shape
-        self.drawing_cmds = " ".join(cmds_and_points)
+        # Reconstruct the shape from flattened elements
+        flattened_shape = Shape.from_elements(flattened_elements)
+        self.drawing_cmds = flattened_shape.drawing_cmds
         return self
 
     def split(self, max_len: float = 16, tolerance: float = 1.0) -> Shape:
@@ -726,137 +609,109 @@ class Shape:
             )
 
         # Internal function to help splitting a line
-        def line_split(x0: float, y0: float, x1: float, y1: float):
+        def line_split(x0: float, y0: float, x1: float, y1: float) -> list[tuple[float, float]]:
             # Line direction & length
             rel_x, rel_y = x1 - x0, y1 - y0
             distance = math.sqrt(rel_x * rel_x + rel_y * rel_y)
-            # If the line is too long -> split
-            if distance > max_len:
-                lines: list[str] = []
-                distance_rest = distance % max_len
-                cur_distance = distance_rest if distance_rest > 0 else max_len
+            
+            # If the line is too short, return just the end point
+            if distance <= max_len:
+                return [(x1, y1)]
+            
+            # Split the line into segments
+            segments = []
+            distance_rest = distance % max_len
+            cur_distance = distance_rest if distance_rest > 0 else max_len
 
-                while cur_distance <= distance:
-                    pct = cur_distance / distance
-                    x, y = (
-                        Shape.format_value(x0 + rel_x * pct),
-                        Shape.format_value(y0 + rel_y * pct),
-                    )
+            while cur_distance <= distance:
+                pct = cur_distance / distance
+                x = x0 + rel_x * pct
+                y = y0 + rel_y * pct
+                segments.append((x, y))
+                cur_distance += max_len
 
-                    lines.append(f"{x} {y}")
-                    cur_distance += max_len
+            return segments
 
-                return " ".join(lines), lines[-1].split()
-            else:  # No line split
-                x1_f, y1_f = Shape.format_value(x1), Shape.format_value(y1)
-                return f"{x1_f} {y1_f}", [x1_f, y1_f]
+        # First flatten the shape to convert bezier curves to lines
+        flattened_shape = Shape(self.drawing_cmds).flatten(tolerance)
+        
+        # Process elements using the iterator
+        split_elements = []
+        current_point = None
+        first_move_point = None
+        
+        for element in flattened_shape:
+            match element.command:
+                case "m":
+                    # Close previous contour if needed (implicit closing behavior)
+                    if current_point is not None and first_move_point is not None:
+                        x0, y0 = current_point
+                        x1, y1 = first_move_point
+                        
+                        # Only add closing line if points are different
+                        if (x0, y0) != (x1, y1):
+                            line_segments = line_split(x0, y0, x1, y1)
+                            for x, y in line_segments:
+                                split_elements.append(ShapeElement("l", [(x, y)]))
+                    
+                    # Move command - start new contour
+                    split_elements.append(element)
+                    current_point = element.coordinates[0]
+                    first_move_point = current_point
+                    
+                case "l":
+                    # Line command - split if necessary
+                    if current_point is None:
+                        raise ValueError("Line command found without a starting point")
+                    
+                    x0, y0 = current_point
+                    x1, y1 = element.coordinates[0]
+                    
+                    # Split the line into smaller segments
+                    line_segments = line_split(x0, y0, x1, y1)
+                    
+                    # Add each segment as a separate line element
+                    for x, y in line_segments:
+                        split_elements.append(ShapeElement("l", [(x, y)]))
+                    
+                    # Update current point to the last segment endpoint
+                    current_point = line_segments[-1] if line_segments else (x1, y1)
+                    
+                case "c":
+                    # Close command - connect back to first move point if needed
+                    if current_point is not None and first_move_point is not None:
+                        x0, y0 = current_point
+                        x1, y1 = first_move_point
+                        
+                        # Only add closing line if points are different
+                        if (x0, y0) != (x1, y1):
+                            line_segments = line_split(x0, y0, x1, y1)
+                            for x, y in line_segments:
+                                split_elements.append(ShapeElement("l", [(x, y)]))
+                    
+                    # Reset state for next contour
+                    current_point = None
+                    first_move_point = None
+                    
+                case _:
+                    # Other commands (n, p, s) - keep as is and update current point
+                    split_elements.append(element)
+                    if element.coordinates:
+                        current_point = element.coordinates[-1]
 
-        # Getting all points and commands in a list
-        cmds_and_points = self.flatten(tolerance).drawing_cmds.split()
-        i = 0
-        n = len(cmds_and_points)
+        # Close the last contour if needed
+        if current_point is not None and first_move_point is not None:
+            x0, y0 = current_point
+            x1, y1 = first_move_point
+            
+            if (x0, y0) != (x1, y1):
+                line_segments = line_split(x0, y0, x1, y1)
+                for x, y in line_segments:
+                    split_elements.append(ShapeElement("l", [(x, y)]))
 
-        # Utility variables
-        is_line = False
-        previous_two = None
-        last_move = None
-
-        # Splitting everything splittable, probably improvable
-        while i < n:
-            current = cmds_and_points[i]
-            if current == "l":
-                # Activate line mode, save previous two points
-                is_line = True
-                if (
-                    not previous_two
-                ):  # If we're not running into contiguous line, we need to save the previous two
-                    previous_two = [cmds_and_points[i - 2], cmds_and_points[i - 1]]
-                i += 1
-            elif current in ["m", "n", "b", "s", "p", "c"]:
-                if current == "m":
-                    if (
-                        last_move
-                    ):  # If we had a previous move, we need to close the previous figure before proceding
-                        x0, y0 = None, None
-                        if (
-                            previous_two
-                        ):  # If I don't have previous point, I can read them on cmds_and_points, else I wil take 'em
-                            x0, y0 = previous_two[0], previous_two[1]
-                        else:
-                            x0, y0 = cmds_and_points[i - 2], cmds_and_points[i - 1]
-
-                        if not (
-                            x0 == last_move[0] and y0 == last_move[1]
-                        ):  # Closing last figure
-                            cmds_and_points[i] = (
-                                line_split(
-                                    float(x0),
-                                    float(y0),
-                                    float(last_move[0]),
-                                    float(last_move[1]),
-                                )[0]
-                                + " m"
-                            )
-                    last_move = [cmds_and_points[i + 1], cmds_and_points[i + 2]]
-
-                # Disabling line mode, removing previous two points
-                is_line = False
-                previous_two = None
-                i += 1
-            elif is_line and previous_two:
-                # Do the work with the two points found and the previous two
-                cmds_and_points[i], previous_two = line_split(
-                    float(previous_two[0]),
-                    float(previous_two[1]),
-                    float(cmds_and_points[i]),
-                    float(cmds_and_points[i + 1]),
-                )
-                del cmds_and_points[i + 1]
-                # Let's go to the next two points or tag
-                i += 1
-                n -= 1
-            else:  # We're working with points that are not lines points, let's go forward
-                i += 2
-
-        # Close last figure of new shape, taking two last points and two last points of move
-        i = n
-        if not previous_two:
-            while i >= 0:
-                current = cmds_and_points[i]
-                current_prev = cmds_and_points[i - 1]
-                if (
-                    current != "m"
-                    and current != "n"
-                    and current != "b"
-                    and current != "s"
-                    and current != "p"
-                    and current != "c"
-                    and current_prev != "m"
-                    and current_prev != "n"
-                    and current_prev != "b"
-                    and current_prev != "s"
-                    and current_prev != "p"
-                    and current_prev != "c"
-                ):
-                    previous_two = [current, current_prev]
-                    break
-                i -= 1
-        if previous_two is not None and last_move is not None:
-            if not (
-                previous_two[0] == last_move[0] and previous_two[1] == last_move[1]
-            ):  # Split!
-                cmds_and_points.append(
-                    "l "
-                    + line_split(
-                        float(previous_two[0]),
-                        float(previous_two[1]),
-                        float(last_move[0]),
-                        float(last_move[1]),
-                    )[0]
-                )
-
-        # Sew up everything back and update shape
-        self.drawing_cmds = " ".join(cmds_and_points)
+        # Reconstruct the shape from split elements
+        split_shape = Shape.from_elements(split_elements)
+        self.drawing_cmds = split_shape.drawing_cmds
         return self
 
     def __to_outline(self, bord_xy: float, bord_y: float, mode: str = "round") -> Shape:
