@@ -200,6 +200,7 @@ def test_text_to_shape():
             check.almost_equal(x, expectedList[i], abs=max_deviation)
             check.almost_equal(y, expectedList[i + 1], abs=max_deviation)
             i += 2
+            return x, y
 
         shape.map(equal)
     else:
@@ -235,6 +236,7 @@ def test_text_to_shape_with_spacing():
             check.almost_equal(x, expectedList[i], abs=max_deviation)
             check.almost_equal(y, expectedList[i + 1], abs=max_deviation)
             i += 2
+            return x, y
 
         shape.map(equal)
     else:
