@@ -172,7 +172,7 @@ class Shape:
                     try:
                         x = float(cmds_and_points[coord_idx])
                         y = float(cmds_and_points[coord_idx + 1])
-                        
+
                         # Yield a separate ShapeElement for each coordinate pair
                         yield ShapeElement("l", [(x, y)])
                         coord_idx += 2
@@ -182,9 +182,7 @@ class Shape:
 
                 # If we didn't parse any coordinates at all, that's an error
                 if coord_idx == coord_start:
-                    raise ValueError(
-                        f"Command 'l' requires at least 1 coordinate pair"
-                    )
+                    raise ValueError(f"Command 'l' requires at least 1 coordinate pair")
 
                 i = coord_idx
                 continue  # Skip the normal yield since we already yielded in the loop
