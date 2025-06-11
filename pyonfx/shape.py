@@ -730,6 +730,121 @@ class Shape:
         """
         raise NotImplementedError
 
+    def morph(
+        self, target_shape: Shape, t: float, max_len: float = 16, tolerance: float = 1.0
+    ) -> Shape:
+        """
+        Morphs this shape into the target shape using linear interpolation.
+
+        Parameters:
+            target_shape (Shape): The target shape to morph towards.
+            t (float): Interpolation factor (0.0 = source shape, 1.0 = target shape).
+            max_len (float): Maximum length for segments when splitting.
+            tolerance (float): Tolerance for curve flattening.
+
+        Returns:
+            A new interpolated shape.
+        """
+        if not (0.0 <= t <= 1.0):
+            raise ValueError(f"t must be between 0.0 and 1.0, got {t}")
+        if t == 0.0:
+            return self
+        if t == 1.0:
+            return target_shape
+
+        def __resample_points_along_perimeter(
+            points: list[tuple[float, float]], target_count: int
+        ) -> list[tuple[float, float]]:
+            if len(points) == target_count:
+                return points
+            if len(points) == 0:
+                raise ValueError("Cannot morph shapes with no points")
+            if len(points) == 1:
+                return [points[0]] * target_count
+
+            # Calculate cumulative distances along perimeter
+            distances = [0.0]
+            total_distance = 0.0
+
+            for i in range(1, len(points)):
+                dx = points[i][0] - points[i - 1][0]
+                dy = points[i][1] - points[i - 1][1]
+                distance = math.sqrt(dx * dx + dy * dy)
+                total_distance += distance
+                distances.append(total_distance)
+
+            if total_distance == 0:
+                return [points[0]] * target_count
+
+            # Generate new points evenly distributed along perimeter
+            resampled = []
+            
+            for i in range(target_count):
+                target_distance = (i / max(1, target_count - 1)) * total_distance
+
+                # Find the segment containing this distance
+                segment_idx = 0
+                for j in range(len(distances) - 1):
+                    if distances[j] <= target_distance <= distances[j + 1]:
+                        segment_idx = j
+                        break
+
+                # Interpolate within the segment
+                if segment_idx >= len(points) - 1:
+                    resampled.append(points[-1])
+                else:
+                    segment_start = distances[segment_idx]
+                    segment_end = distances[segment_idx + 1]
+                    segment_length = segment_end - segment_start
+
+                    if segment_length == 0:
+                        t_segment = 0
+                    else:
+                        t_segment = (target_distance - segment_start) / segment_length
+
+                    p1 = points[segment_idx]
+                    p2 = points[segment_idx + 1]
+
+                    x = p1[0] + (p2[0] - p1[0]) * t_segment
+                    y = p1[1] + (p2[1] - p1[1]) * t_segment
+                    resampled.append((x, y))
+
+            return resampled
+
+        try:
+            # Normalize both shapes for morphing compatibility
+            normalized_source = Shape(self.drawing_cmds).split(max_len, tolerance)
+            normalized_target = Shape(target_shape.drawing_cmds).split(
+                max_len, tolerance
+            )
+
+            # Extract points using the iterator
+            source_points = [(x, y) for element in normalized_source for x, y in element.coordinates]
+            target_points = [(x, y) for element in normalized_target for x, y in element.coordinates]
+            if not source_points or not target_points:
+                raise ValueError("Cannot morph shapes with no points")
+
+            # Align point counts by resampling to the larger count
+            if len(source_points) != len(target_points):
+                target_count = max(len(source_points), len(target_points))
+                source_points = __resample_points_along_perimeter(source_points, target_count)
+                target_points = __resample_points_along_perimeter(target_points, target_count)
+
+            # Interpolate between corresponding points
+            morphed_points = [
+                (x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)
+                for (x1, y1), (x2, y2) in zip(source_points, target_points)
+            ]
+
+            # Create elements: first point as move, rest as lines
+            elements = [ShapeElement("m", [morphed_points[0]])]
+            elements.extend(ShapeElement("l", [point]) for point in morphed_points[1:])
+
+            return Shape.from_elements(elements)
+
+        except Exception as e:
+            raise ValueError(f"Failed to morph shapes: {str(e)}")
+
     @staticmethod
     def ring(out_r: float, in_r: float) -> Shape:
         """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
