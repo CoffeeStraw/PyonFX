@@ -752,17 +752,43 @@ class Shape:
         if t == 1.0:
             return target_shape
 
+        def __extract_key_points(shape: Shape) -> list[tuple[float, float]]:
+            """Extract key points from a shape (i.e. points that define the shape's structure and that are definitely rendered)."""
+            key_points = []
+            for element in shape:
+                if element.command in {"m", "l", "p"}:
+                    # These define actual key points
+                    key_points.extend(element.coordinates)
+                elif element.command == "b":
+                    # For bezier curves, only include the end point as a key point
+                    key_points.append(element.coordinates[-1])
+            return key_points
+
         def __resample_points_along_perimeter(
-            points: list[tuple[float, float]], target_count: int
+            points: list[tuple[float, float]], 
+            target_count: int,
+            preserve_points: list[tuple[float, float]] | None = None
         ) -> list[tuple[float, float]]:
-            if len(points) == target_count:
-                return points
+            """
+            Redistributes points along a shape's perimeter to achieve target_count points.
+            
+            The algorithm ensures key structural points (corners, vertices) are preserved
+            while maintaining relatively even spacing, preventing important shape features
+            from being lost during morphing operations.
+            
+            Algorithm:
+            1. Map the perimeter to distance values (0 to total_perimeter_length)
+            2. Find where key points should be positioned along this distance mapping
+            3. Generate sample points that include both key points and evenly distributed points
+            4. Convert distance values back to (x,y) coordinates
+            """
             if len(points) == 0:
                 raise ValueError("Cannot morph shapes with no points")
             if len(points) == 1:
                 return [points[0]] * target_count
 
-            # Calculate cumulative distances along perimeter
+            # STEP 1: Calculate cumulative distances along perimeter
+            # This creates a mapping from each point to its distance from the start
             distances = [0.0]
             total_distance = 0.0
 
@@ -776,12 +802,73 @@ class Shape:
             if total_distance == 0:
                 return [points[0]] * target_count
 
-            # Generate new points evenly distributed along perimeter
+            # STEP 2: Find where key points should be positioned along the flattened perimeter
+            # We can't just use key points directly because they need to be ordered correctly
+            # along the perimeter for smooth morphing. We map each key point to a distance
+            # value that represents its position along the shape's perimeter.
+            preserved_positions = []
+            if preserve_points:
+                for preserve_pt in preserve_points:
+                    best_distance = 0.0
+                    min_dist_to_perimeter = float('inf')
+                    
+                    # Find which segment of the flattened perimeter is closest to this key point
+                    for i in range(len(points) - 1):
+                        p1, p2 = points[i], points[i + 1]
+                        
+                        # Project the key point onto this line segment to find closest point
+                        dx, dy = p2[0] - p1[0], p2[1] - p1[1]
+                        segment_length_sq = dx * dx + dy * dy
+                        
+                        if segment_length_sq == 0:
+                            # Degenerate segment (same start/end point)
+                            closest_pt = p1
+                            t_on_segment = 0
+                        else:
+                            # Standard line projection: project preserve_pt onto line segment p1->p2
+                            t_on_segment = max(0, min(1, 
+                                ((preserve_pt[0] - p1[0]) * dx + (preserve_pt[1] - p1[1]) * dy) / segment_length_sq
+                            ))
+                            closest_pt = (
+                                p1[0] + t_on_segment * dx,
+                                p1[1] + t_on_segment * dy
+                            )
+                        
+                        # Check if this segment gives us the closest point so far
+                        dist_sq = (preserve_pt[0] - closest_pt[0])**2 + (preserve_pt[1] - closest_pt[1])**2
+                        
+                        if dist_sq < min_dist_to_perimeter:
+                            min_dist_to_perimeter = dist_sq
+                            # Convert the position on this segment to a distance along the full perimeter
+                            best_distance = distances[i] + t_on_segment * (distances[i + 1] - distances[i])
+                    
+                    preserved_positions.append(best_distance)
+
+            # STEP 3: Generate target sampling positions that include both key points and even distribution
+            # We want to preserve key points while still maintaining relatively even spacing
+            target_distances = set()
+            
+            # Ensure key points are included in our sample
+            if preserved_positions:
+                target_distances.update(preserved_positions)
+            
+            # Fill remaining slots with evenly distributed points
+            additional_points_needed = target_count - len(preserved_positions)
+            
+            if additional_points_needed > 0:
+                # Generate evenly spaced distances for the remaining points
+                for i in range(additional_points_needed):
+                    target_distance = (i / max(1, additional_points_needed - 1)) * total_distance
+                    target_distances.add(target_distance)
+            
+            # Sort all target distances to maintain proper order along perimeter
+            sorted_distances = sorted(target_distances)[:target_count]
+            
+            # STEP 4: Convert distance values back to (x,y) coordinates
+            # For each target distance, find which segment contains it and interpolate
             resampled = []
             
-            for i in range(target_count):
-                target_distance = (i / max(1, target_count - 1)) * total_distance
-
+            for target_distance in sorted_distances:
                 # Find the segment containing this distance
                 segment_idx = 0
                 for j in range(len(distances) - 1):
@@ -812,6 +899,10 @@ class Shape:
             return resampled
 
         try:
+            # Extract corner points from original shapes before any processing
+            source_key_points = __extract_key_points(self)
+            target_key_points = __extract_key_points(target_shape)
+            
             # Normalize both shapes for morphing compatibility
             normalized_source = Shape(self.drawing_cmds).split(max_len, tolerance)
             normalized_target = Shape(target_shape.drawing_cmds).split(
@@ -827,8 +918,8 @@ class Shape:
             # Align point counts by resampling to the larger count
             if len(source_points) != len(target_points):
                 target_count = max(len(source_points), len(target_points))
-                source_points = __resample_points_along_perimeter(source_points, target_count)
-                target_points = __resample_points_along_perimeter(target_points, target_count)
+                source_points = __resample_points_along_perimeter(source_points, target_count, source_key_points)
+                target_points = __resample_points_along_perimeter(target_points, target_count, target_key_points)
 
             # Interpolate between corresponding points
             morphed_points = [
