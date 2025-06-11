@@ -21,6 +21,33 @@ from pyquaternion import Quaternion
 from inspect import signature
 
 
+class ShapeElement:
+    """
+    Represents a single drawing command with its associated coordinates.
+
+    Attributes:
+        command (str): The drawing command (one of "m", "n", "l", "p", "b", "s", "c").
+        coordinates (list[tuple[float, float]]): List of (x, y) coordinate pairs for this command.
+    """
+
+    def __init__(self, command: str, coordinates: list[tuple[float, float]]):
+        if command not in {"m", "n", "l", "p", "b", "s", "c"}:
+            raise ValueError(f"Invalid command '{command}'")
+        self.command = command
+        self.coordinates = coordinates
+
+    def __repr__(self):
+        coord_strs = [f"({x}, {y})" for x, y in self.coordinates]
+        return f"ShapeElement('{self.command}', [{', '.join(coord_strs)}])"
+
+    def __eq__(self, other):
+        return (
+            isinstance(other, ShapeElement)
+            and self.command == other.command
+            and self.coordinates == other.coordinates
+        )
+
+
 class Shape:
     """
     This class can be used to define a Shape object (by passing its drawing commands)
@@ -43,8 +70,196 @@ class Shape:
         return self.drawing_cmds
 
     def __eq__(self, other: Shape):
-        # Method used to compare two shapes
         return type(other) is type(self) and self.drawing_cmds == other.drawing_cmds
+
+    def __iter__(self):
+        """
+        Iterate over the shape, yielding ShapeElement objects for each drawing command.
+
+        Yields:
+            ShapeElement: Objects containing the command and its associated coordinates.
+        """
+        cmds_and_points = self.drawing_cmds.split()
+        if not cmds_and_points:
+            return
+
+        all_commands = {"m", "n", "l", "p", "b", "s", "c"}
+
+        i = 0
+        n = len(cmds_and_points)
+
+        while i < n:
+            token = cmds_and_points[i]
+
+            # Check if this token is a command
+            if token not in all_commands:
+                raise ValueError(f"Unexpected command '{token}'")
+
+            # Handle command with no coordinates
+            if token == "c":
+                yield ShapeElement(token, [])
+                i += 1
+                continue
+
+            # Extract coordinates for this command
+            coordinates = []
+            coord_start = i + 1
+
+            if token in {"m", "n", "p"}:
+                # These commands take exactly 1 coordinate pair
+                if coord_start + 1 >= n:
+                    raise ValueError(
+                        f"Unexpected end of shape while parsing command '{token}'"
+                    )
+
+                try:
+                    x = float(cmds_and_points[coord_start])
+                    y = float(cmds_and_points[coord_start + 1])
+                    coordinates.append((x, y))
+                except ValueError:
+                    raise ValueError(
+                        f"Invalid coordinate values for command '{token}': {cmds_and_points[coord_start]}, {cmds_and_points[coord_start + 1]}"
+                    )
+
+                i = coord_start + 2
+
+            elif token == "b":
+                # Bezier curve takes exactly 3 coordinate pairs, but can have implicit continuations
+                coord_idx = coord_start
+
+                # Read sets of 3 coordinate pairs until we can't anymore
+                while coord_idx + 6 <= n:
+                    # Check if we have 6 consecutive numeric values (3 coordinate pairs)
+                    try:
+                        coordinates = []
+                        for pair_idx in range(3):
+                            x = float(cmds_and_points[coord_idx + pair_idx * 2])
+                            y = float(cmds_and_points[coord_idx + pair_idx * 2 + 1])
+                            coordinates.append((x, y))
+
+                        # Successfully parsed 3 coordinate pairs, yield this bezier
+                        yield ShapeElement("b", coordinates)
+                        coord_idx += 6
+
+                        # Check if the next token is a command - if so, we're done with bezier sequences
+                        if coord_idx < n and cmds_and_points[coord_idx] in all_commands:
+                            break
+
+                    except (ValueError, IndexError):
+                        # Can't parse more coordinates, we're done
+                        break
+
+                # If we didn't parse any coordinates at all, that's an error
+                if coord_idx == coord_start:
+                    raise ValueError(
+                        f"Command '{token}' requires at least 3 coordinate pairs"
+                    )
+
+                i = coord_idx
+                continue  # Skip the normal yield since we already yielded in the loop
+
+            elif token == "l":
+                # Line command takes variable number of coordinate pairs
+                coord_idx = coord_start
+
+                # Read coordinate pairs until we hit another command or end of data
+                while coord_idx + 2 <= n:
+                    # Check if the next token is a command
+                    if cmds_and_points[coord_idx] in all_commands:
+                        break
+
+                    # Try to parse as coordinate pair
+                    try:
+                        x = float(cmds_and_points[coord_idx])
+                        y = float(cmds_and_points[coord_idx + 1])
+                        
+                        # Yield a separate ShapeElement for each coordinate pair
+                        yield ShapeElement("l", [(x, y)])
+                        coord_idx += 2
+
+                    except (ValueError, IndexError):
+                        break
+
+                # If we didn't parse any coordinates at all, that's an error
+                if coord_idx == coord_start:
+                    raise ValueError(
+                        f"Command 'l' requires at least 1 coordinate pair"
+                    )
+
+                i = coord_idx
+                continue  # Skip the normal yield since we already yielded in the loop
+
+            elif token == "s":
+                # Spline command takes variable number of coordinate pairs (minimum 3)
+                # All coordinate pairs are grouped into a single ShapeElement
+                coord_idx = coord_start
+
+                # Read coordinates until we hit another command or end of data
+                while coord_idx + 1 < n:
+                    # Check if the next token is a command
+                    if cmds_and_points[coord_idx] in all_commands:
+                        break
+
+                    # Try to parse as coordinate pair
+                    try:
+                        x = float(cmds_and_points[coord_idx])
+                        y = float(cmds_and_points[coord_idx + 1])
+                        coordinates.append((x, y))
+                        coord_idx += 2
+                    except (ValueError, IndexError):
+                        break
+
+                # Validate minimum coordinate pairs for spline
+                if len(coordinates) < 3:
+                    raise ValueError(
+                        f"Command 's' requires at least 3 coordinate pairs, got {len(coordinates)}"
+                    )
+
+                i = coord_idx
+
+            yield ShapeElement(token, coordinates)
+
+    @classmethod
+    def from_elements(cls, elements: list[ShapeElement]) -> Shape:
+        """
+        Create a Shape from a list of ShapeElement objects.
+
+        Parameters:
+            elements (list[ShapeElement]): List of shape elements to convert to a shape string.
+
+        Returns:
+            Shape: A new Shape object created from the elements.
+        """
+        if not elements:
+            return cls("m 0 0")
+
+        parts = []
+        prev_command = None
+
+        for element in elements:
+            if element.command in {"c"}:
+                # Commands with no coordinates
+                parts.append(element.command)
+                prev_command = element.command
+            else:
+                # Commands with coordinates
+                coord_strs = []
+                for x, y in element.coordinates:
+                    coord_strs.extend([cls.format_value(x), cls.format_value(y)])
+
+                # Check if we can use implicit command (for consecutive "l" or "b" commands)
+                if (
+                    element.command in {"l", "b"}
+                    and element.command == prev_command
+                    and coord_strs
+                ):
+                    parts.append(" ".join(coord_strs))
+                else:
+                    parts.append(f"{element.command} {' '.join(coord_strs)}")
+
+                prev_command = element.command
+
+        return cls(" ".join(parts))
 
     @staticmethod
     def format_value(x: float, prec: int = 3) -> str:
@@ -177,65 +392,31 @@ class Shape:
         if not callable(fun):
             raise TypeError("(Lambda) function expected")
 
-        # Getting all points and commands in a list
-        cmds_and_points = self.drawing_cmds.split()
-        i = 0
-        n = len(cmds_and_points)
+        transformed_elements = []
+        for element in self:
+            if not element.coordinates:
+                # Commands like 'c' with no coordinates - keep as-is
+                transformed_elements.append(element)
+                continue
 
-        # Checking whether the function take the typ parameter or not
-        if len(signature(fun).parameters) == 2:
-            while i < n:
-                try:
-                    # Applying transformation
-                    fun = cast(Callable[[float, float], tuple[float, float]], fun)
-                    x, y = fun(float(cmds_and_points[i]), float(cmds_and_points[i + 1]))
-                except TypeError:
-                    # Values weren't returned, so we don't need to modify them
-                    i += 2
-                    continue
-                except ValueError:
-                    # We have found a string, let's skip this
-                    i += 1
-                    continue
-                except IndexError:
-                    raise ValueError("Unexpected end of the shape")
-
-                # Convert back to string the results for later
-                cmds_and_points[i : i + 2] = (
-                    Shape.format_value(x),
-                    Shape.format_value(y),
-                )
-                i += 2
-        else:
-            typ = ""
-            while i < n:
-                try:
-                    # Applying transformation
+            # Transform each coordinate pair in this element
+            transformed_coords = []
+            for x, y in element.coordinates:
+                if len(signature(fun).parameters) == 3:
                     fun = cast(Callable[[float, float, str], tuple[float, float]], fun)
-                    x, y = fun(
-                        float(cmds_and_points[i]), float(cmds_and_points[i + 1]), typ
-                    )
-                except TypeError:
-                    # Values weren't returned, so we don't need to modify them
-                    i += 2
-                    continue
-                except ValueError:
-                    # We have found a string, let's skip this
-                    typ = cmds_and_points[i]
-                    i += 1
-                    continue
-                except IndexError:
-                    raise ValueError("Unexpected end of the shape")
+                    new_x, new_y = fun(x, y, element.command)
+                else:
+                    fun = cast(Callable[[float, float], tuple[float, float]], fun)
+                    new_x, new_y = fun(x, y)
+                transformed_coords.append((new_x, new_y))
 
-                # Convert back to string the results for later
-                cmds_and_points[i : i + 2] = (
-                    Shape.format_value(x),
-                    Shape.format_value(y),
-                )
-                i += 2
+            transformed_elements.append(
+                ShapeElement(element.command, transformed_coords)
+            )
 
-        # Sew up everything back and update shape
-        self.drawing_cmds = " ".join(cmds_and_points)
+        # Reconstruct the shape from transformed elements
+        transformed_shape = Shape.from_elements(transformed_elements)
+        self.drawing_cmds = transformed_shape.drawing_cmds
         return self
 
     def bounding(self) -> tuple[float, float, float, float]:
