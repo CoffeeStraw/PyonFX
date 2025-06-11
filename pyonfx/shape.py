@@ -557,17 +557,17 @@ class Shape:
                 case "b":
                     if last_point is None:
                         raise ValueError("Bezier curve found without a starting point")
-                    
+
                     x0, y0 = last_point
                     (x1, y1), (x2, y2), (x3, y3) = element.coordinates
-                    
+
                     # Convert curve to line points
                     line_points = curve4_to_lines(x0, y0, x1, y1, x2, y2, x3, y3)
-                    
+
                     # Add all line points as individual line elements
                     for x, y in line_points:
                         flattened_elements.append(ShapeElement("l", [(x, y)]))
-                    
+
                     # Add the final point
                     flattened_elements.append(ShapeElement("l", [(x3, y3)]))
                     last_point = (x3, y3)
@@ -609,15 +609,17 @@ class Shape:
             )
 
         # Internal function to help splitting a line
-        def line_split(x0: float, y0: float, x1: float, y1: float) -> list[tuple[float, float]]:
+        def line_split(
+            x0: float, y0: float, x1: float, y1: float
+        ) -> list[tuple[float, float]]:
             # Line direction & length
             rel_x, rel_y = x1 - x0, y1 - y0
             distance = math.sqrt(rel_x * rel_x + rel_y * rel_y)
-            
+
             # If the line is too short, return just the end point
             if distance <= max_len:
                 return [(x1, y1)]
-            
+
             # Split the line into segments
             segments = []
             distance_rest = distance % max_len
@@ -634,12 +636,12 @@ class Shape:
 
         # First flatten the shape to convert bezier curves to lines
         flattened_shape = Shape(self.drawing_cmds).flatten(tolerance)
-        
+
         # Process elements using the iterator
         split_elements = []
         current_point = None
         first_move_point = None
-        
+
         for element in flattened_shape:
             match element.command:
                 case "m":
@@ -647,52 +649,52 @@ class Shape:
                     if current_point is not None and first_move_point is not None:
                         x0, y0 = current_point
                         x1, y1 = first_move_point
-                        
+
                         # Only add closing line if points are different
                         if (x0, y0) != (x1, y1):
                             line_segments = line_split(x0, y0, x1, y1)
                             for x, y in line_segments:
                                 split_elements.append(ShapeElement("l", [(x, y)]))
-                    
+
                     # Move command - start new contour
                     split_elements.append(element)
                     current_point = element.coordinates[0]
                     first_move_point = current_point
-                    
+
                 case "l":
                     # Line command - split if necessary
                     if current_point is None:
                         raise ValueError("Line command found without a starting point")
-                    
+
                     x0, y0 = current_point
                     x1, y1 = element.coordinates[0]
-                    
+
                     # Split the line into smaller segments
                     line_segments = line_split(x0, y0, x1, y1)
-                    
+
                     # Add each segment as a separate line element
                     for x, y in line_segments:
                         split_elements.append(ShapeElement("l", [(x, y)]))
-                    
+
                     # Update current point to the last segment endpoint
                     current_point = line_segments[-1] if line_segments else (x1, y1)
-                    
+
                 case "c":
                     # Close command - connect back to first move point if needed
                     if current_point is not None and first_move_point is not None:
                         x0, y0 = current_point
                         x1, y1 = first_move_point
-                        
+
                         # Only add closing line if points are different
                         if (x0, y0) != (x1, y1):
                             line_segments = line_split(x0, y0, x1, y1)
                             for x, y in line_segments:
                                 split_elements.append(ShapeElement("l", [(x, y)]))
-                    
+
                     # Reset state for next contour
                     current_point = None
                     first_move_point = None
-                    
+
                 case _:
                     # Other commands (n, p, s) - keep as is and update current point
                     split_elements.append(element)
@@ -703,7 +705,7 @@ class Shape:
         if current_point is not None and first_move_point is not None:
             x0, y0 = current_point
             x1, y1 = first_move_point
-            
+
             if (x0, y0) != (x1, y1):
                 line_segments = line_split(x0, y0, x1, y1)
                 for x, y in line_segments:
@@ -765,17 +767,17 @@ class Shape:
             return key_points
 
         def __resample_points_along_perimeter(
-            points: list[tuple[float, float]], 
+            points: list[tuple[float, float]],
             target_count: int,
-            preserve_points: list[tuple[float, float]] | None = None
+            preserve_points: list[tuple[float, float]] | None = None,
         ) -> list[tuple[float, float]]:
             """
             Redistributes points along a shape's perimeter to achieve target_count points.
-            
+
             The algorithm ensures key structural points (corners, vertices) are preserved
             while maintaining relatively even spacing, preventing important shape features
             from being lost during morphing operations.
-            
+
             Algorithm:
             1. Map the perimeter to distance values (0 to total_perimeter_length)
             2. Find where key points should be positioned along this distance mapping
@@ -810,64 +812,78 @@ class Shape:
             if preserve_points:
                 for preserve_pt in preserve_points:
                     best_distance = 0.0
-                    min_dist_to_perimeter = float('inf')
-                    
+                    min_dist_to_perimeter = float("inf")
+
                     # Find which segment of the flattened perimeter is closest to this key point
                     for i in range(len(points) - 1):
                         p1, p2 = points[i], points[i + 1]
-                        
+
                         # Project the key point onto this line segment to find closest point
                         dx, dy = p2[0] - p1[0], p2[1] - p1[1]
                         segment_length_sq = dx * dx + dy * dy
-                        
+
                         if segment_length_sq == 0:
                             # Degenerate segment (same start/end point)
                             closest_pt = p1
                             t_on_segment = 0
                         else:
                             # Standard line projection: project preserve_pt onto line segment p1->p2
-                            t_on_segment = max(0, min(1, 
-                                ((preserve_pt[0] - p1[0]) * dx + (preserve_pt[1] - p1[1]) * dy) / segment_length_sq
-                            ))
+                            t_on_segment = max(
+                                0,
+                                min(
+                                    1,
+                                    (
+                                        (preserve_pt[0] - p1[0]) * dx
+                                        + (preserve_pt[1] - p1[1]) * dy
+                                    )
+                                    / segment_length_sq,
+                                ),
+                            )
                             closest_pt = (
                                 p1[0] + t_on_segment * dx,
-                                p1[1] + t_on_segment * dy
+                                p1[1] + t_on_segment * dy,
                             )
-                        
+
                         # Check if this segment gives us the closest point so far
-                        dist_sq = (preserve_pt[0] - closest_pt[0])**2 + (preserve_pt[1] - closest_pt[1])**2
-                        
+                        dist_sq = (preserve_pt[0] - closest_pt[0]) ** 2 + (
+                            preserve_pt[1] - closest_pt[1]
+                        ) ** 2
+
                         if dist_sq < min_dist_to_perimeter:
                             min_dist_to_perimeter = dist_sq
                             # Convert the position on this segment to a distance along the full perimeter
-                            best_distance = distances[i] + t_on_segment * (distances[i + 1] - distances[i])
-                    
+                            best_distance = distances[i] + t_on_segment * (
+                                distances[i + 1] - distances[i]
+                            )
+
                     preserved_positions.append(best_distance)
 
             # STEP 3: Generate target sampling positions that include both key points and even distribution
             # We want to preserve key points while still maintaining relatively even spacing
             target_distances = set()
-            
+
             # Ensure key points are included in our sample
             if preserved_positions:
                 target_distances.update(preserved_positions)
-            
+
             # Fill remaining slots with evenly distributed points
             additional_points_needed = target_count - len(preserved_positions)
-            
+
             if additional_points_needed > 0:
                 # Generate evenly spaced distances for the remaining points
                 for i in range(additional_points_needed):
-                    target_distance = (i / max(1, additional_points_needed - 1)) * total_distance
+                    target_distance = (
+                        i / max(1, additional_points_needed - 1)
+                    ) * total_distance
                     target_distances.add(target_distance)
-            
+
             # Sort all target distances to maintain proper order along perimeter
             sorted_distances = sorted(target_distances)[:target_count]
-            
+
             # STEP 4: Convert distance values back to (x,y) coordinates
             # For each target distance, find which segment contains it and interpolate
             resampled = []
-            
+
             for target_distance in sorted_distances:
                 # Find the segment containing this distance
                 segment_idx = 0
@@ -902,7 +918,7 @@ class Shape:
             # Extract corner points from original shapes before any processing
             source_key_points = __extract_key_points(self)
             target_key_points = __extract_key_points(target_shape)
-            
+
             # Normalize both shapes for morphing compatibility
             normalized_source = Shape(self.drawing_cmds).split(max_len, tolerance)
             normalized_target = Shape(target_shape.drawing_cmds).split(
@@ -910,16 +926,24 @@ class Shape:
             )
 
             # Extract points using the iterator
-            source_points = [(x, y) for element in normalized_source for x, y in element.coordinates]
-            target_points = [(x, y) for element in normalized_target for x, y in element.coordinates]
+            source_points = [
+                (x, y) for element in normalized_source for x, y in element.coordinates
+            ]
+            target_points = [
+                (x, y) for element in normalized_target for x, y in element.coordinates
+            ]
             if not source_points or not target_points:
                 raise ValueError("Cannot morph shapes with no points")
 
             # Align point counts by resampling to the larger count
             if len(source_points) != len(target_points):
                 target_count = max(len(source_points), len(target_points))
-                source_points = __resample_points_along_perimeter(source_points, target_count, source_key_points)
-                target_points = __resample_points_along_perimeter(target_points, target_count, target_key_points)
+                source_points = __resample_points_along_perimeter(
+                    source_points, target_count, source_key_points
+                )
+                target_points = __resample_points_along_perimeter(
+                    target_points, target_count, target_key_points
+                )
 
             # Interpolate between corresponding points
             morphed_points = [
