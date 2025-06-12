@@ -17,8 +17,14 @@
 from __future__ import annotations
 import math
 from typing import Callable, cast
-from pyquaternion import Quaternion
 from inspect import signature
+from pyquaternion import Quaternion
+from shapely.geometry import Polygon
+from shapely.errors import TopologicalError
+from functools import lru_cache
+
+from . import geometry
+from .geometry import Point
 
 
 class ShapeElement:
@@ -27,10 +33,10 @@ class ShapeElement:
 
     Attributes:
         command (str): The drawing command (one of "m", "n", "l", "p", "b", "s", "c").
-        coordinates (list[tuple[float, float]]): List of (x, y) coordinate pairs for this command.
+        coordinates (list[Point]): List of (x, y) coordinate pairs for this command.
     """
 
-    def __init__(self, command: str, coordinates: list[tuple[float, float]]):
+    def __init__(self, command: str, coordinates: list[Point]):
         if command not in {"m", "n", "l", "p", "b", "s", "c"}:
             raise ValueError(f"Invalid command '{command}'")
         self.command = command
@@ -401,6 +407,8 @@ class Shape:
     def flatten(self, tolerance: float = 1.0) -> Shape:
         """Splits shape's bezier curves into lines.
 
+        TODO(coffeestraw): shapely.geometry.LineString(curve).simplify(tolerance)
+
         | This is a low level function. Instead, you should use :func:`split` which already calls this function.
 
         Parameters:
@@ -609,9 +617,7 @@ class Shape:
             )
 
         # Internal function to help splitting a line
-        def line_split(
-            x0: float, y0: float, x1: float, y1: float
-        ) -> list[tuple[float, float]]:
+        def line_split(x0: float, y0: float, x1: float, y1: float) -> list[Point]:
             # Line direction & length
             rel_x, rel_y = x1 - x0, y1 - y0
             distance = math.sqrt(rel_x * rel_x + rel_y * rel_y)
@@ -735,8 +741,7 @@ class Shape:
     def morph(
         self, target_shape: Shape, t: float, max_len: float = 16, tolerance: float = 1.0
     ) -> Shape:
-        """
-        Morphs this shape into the target shape using linear interpolation.
+        """Return an *interpolated* version of the current shape.
 
         Parameters:
             target_shape (Shape): The target shape to morph towards.
@@ -754,380 +759,345 @@ class Shape:
         if t == 1.0:
             return target_shape
 
-        def _extract_key_points(shape: Shape) -> list[tuple[float, float]]:
-            """Extract key points from a shape (i.e. points that define the shape's structure)."""
-            key_points = []
-            for element in shape:
-                if element.command in {"m", "l", "p"}:
-                    # These define actual key points
-                    key_points.extend(element.coordinates)
-                elif element.command == "b":
-                    # For bezier curves, only include the end point as a key point
-                    key_points.append(element.coordinates[-1])
-            return key_points
+        # Compute compounds
+        src_compounds = self._to_compounds(max_len, tolerance)
+        tgt_compounds = target_shape._to_compounds(max_len, tolerance)
 
-        @staticmethod
-        def _resample_points_along_perimeter(
-            points: list[tuple[float, float]],
-            target_count: int,
-            preserve_points: list[tuple[float, float]] | None = None,
-        ) -> list[tuple[float, float]]:
-            """
-            Redistributes points along a shape's perimeter to achieve target_count points.
-            
-            The algorithm ensures key structural points (corners, vertices) are preserved
-            while maintaining relatively even spacing, preventing important shape features
-            from being lost during morphing operations.
-            """
-            if len(points) == 0:
-                raise ValueError("Cannot morph shapes with no points")
-            if len(points) == 1:
-                return [points[0]] * target_count
+        # Pre-compute centroids for later (used for unmatched compounds drift).
+        src_centroids_list = [c.centroid() for c in src_compounds]
+        tgt_centroids_list = [c.centroid() for c in tgt_compounds]
 
-            # STEP 1: Calculate cumulative distances along perimeter
-            distances = [0.0]
-            total_distance = 0.0
+        # Pick the best pairing strategy (centroid distance vs. left-to-right order)
+        compound_pairs = geometry.pair_compounds(src_compounds, tgt_compounds)
 
-            for i in range(1, len(points)):
-                dx = points[i][0] - points[i - 1][0]
-                dy = points[i][1] - points[i - 1][1]
-                distance = math.sqrt(dx * dx + dy * dy)
-                total_distance += distance
-                distances.append(total_distance)
+        result_loops: list[list[Point]] = []
 
-            if total_distance == 0:
-                return [points[0]] * target_count
-
-            # STEP 2: Find where key points should be positioned along the flattened perimeter
-            preserved_positions = []
-            if preserve_points:
-                preserved_positions = _find_preserved_positions(
-                    points, distances, preserve_points
+        for src_c, tgt_c in compound_pairs:
+            if src_c and tgt_c:
+                # Morph outer shells
+                result_loops.extend(
+                    Shape._morph_two_loops(
+                        src_c.shell, tgt_c.shell, t, max_len, tolerance
+                    )
                 )
 
-            # STEP 3: Generate target sampling positions
-            target_distances = set()
-            if preserved_positions:
-                target_distances.update(preserved_positions)
-
-            # Fill remaining slots with evenly distributed points
-            additional_points_needed = target_count - len(preserved_positions)
-            if additional_points_needed > 0:
-                for i in range(additional_points_needed):
-                    target_distance = (
-                        i / max(1, additional_points_needed - 1)
-                    ) * total_distance
-                    target_distances.add(target_distance)
-
-            # STEP 4: Convert distance values back to (x,y) coordinates
-            sorted_distances = sorted(target_distances)[:target_count]
-            return _distances_to_coordinates(points, distances, sorted_distances, target_count)
-
-        @staticmethod
-        def _find_preserved_positions(
-            points: list[tuple[float, float]],
-            distances: list[float],
-            preserve_points: list[tuple[float, float]]
-        ) -> list[float]:
-            """Find the distance positions of preserved points along the perimeter."""
-            preserved_positions = []
-            
-            for preserve_pt in preserve_points:
-                best_distance = 0.0
-                min_dist_to_perimeter = float("inf")
-
-                # Find which segment of the flattened perimeter is closest to this key point
-                for i in range(len(points) - 1):
-                    p1, p2 = points[i], points[i + 1]
-
-                    # Project the key point onto this line segment to find closest point
-                    dx, dy = p2[0] - p1[0], p2[1] - p1[1]
-                    segment_length_sq = dx * dx + dy * dy
-
-                    if segment_length_sq == 0:
-                        closest_pt = p1
-                        t_on_segment = 0
-                    else:
-                        t_on_segment = max(
-                            0,
-                            min(
-                                1,
-                                (
-                                    (preserve_pt[0] - p1[0]) * dx
-                                    + (preserve_pt[1] - p1[1]) * dy
-                                )
-                                / segment_length_sq,
-                            ),
+                # Pair holes greedily (hole counts are usually small)
+                holes_src = src_c.holes
+                holes_tgt = tgt_c.holes
+                max_h = max(len(holes_src), len(holes_tgt))
+                for h_idx in range(max_h):
+                    hs = holes_src[h_idx % len(holes_src)] if holes_src else None
+                    ht = holes_tgt[h_idx % len(holes_tgt)] if holes_tgt else None
+                    if hs and ht:
+                        result_loops.extend(
+                            Shape._morph_two_loops(hs, ht, t, max_len, tolerance)
                         )
-                        closest_pt = (
-                            p1[0] + t_on_segment * dx,
-                            p1[1] + t_on_segment * dy,
+                    elif hs:  # Disappearing hole – scale down
+                        c_src = src_c.centroid()
+                        c_tgt = tgt_c.centroid()
+                        center = (
+                            c_src[0] + (c_tgt[0] - c_src[0]) * t,
+                            c_src[1] + (c_tgt[1] - c_src[1]) * t,
                         )
-
-                    # Check if this segment gives us the closest point so far
-                    dist_sq = (preserve_pt[0] - closest_pt[0]) ** 2 + (
-                        preserve_pt[1] - closest_pt[1]
-                    ) ** 2
-
-                    if dist_sq < min_dist_to_perimeter:
-                        min_dist_to_perimeter = dist_sq
-                        best_distance = distances[i] + t_on_segment * (
-                            distances[i + 1] - distances[i]
+                        scaled = geometry.scale_polygon(hs, 1 - t, center)
+                        if scaled:
+                            result_loops.append(scaled)
+                    elif ht:  # Appearing hole – scale up
+                        c_src = src_c.centroid()
+                        c_tgt = tgt_c.centroid()
+                        center = (
+                            c_src[0] + (c_tgt[0] - c_src[0]) * t,
+                            c_src[1] + (c_tgt[1] - c_src[1]) * t,
                         )
-
-                preserved_positions.append(best_distance)
-            
-            return preserved_positions
-
-        @staticmethod
-        def _distances_to_coordinates(
-            points: list[tuple[float, float]],
-            distances: list[float],
-            sorted_distances: list[float],
-            target_count: int
-        ) -> list[tuple[float, float]]:
-            """Convert distance values back to (x,y) coordinates."""
-            resampled = []
-
-            for target_distance in sorted_distances:
-                # Find the segment containing this distance
-                segment_idx = 0
-                for j in range(len(distances) - 1):
-                    if distances[j] <= target_distance <= distances[j + 1]:
-                        segment_idx = j
-                        break
-
-                # Interpolate within the segment
-                if segment_idx >= len(points) - 1:
-                    resampled.append(points[-1])
+                        scaled = geometry.scale_polygon(ht, t, center)
+                        if scaled:
+                            result_loops.append(scaled)
+            elif src_c:  # disappearing whole compound – drift toward nearest target
+                c_src = src_c.centroid()
+                if tgt_centroids_list:
+                    nearest_t = min(
+                        tgt_centroids_list,
+                        key=lambda c: (c[0] - c_src[0]) ** 2 + (c[1] - c_src[1]) ** 2,
+                    )
+                    center = (
+                        c_src[0] + (nearest_t[0] - c_src[0]) * t,
+                        c_src[1] + (nearest_t[1] - c_src[1]) * t,
+                    )
                 else:
-                    segment_start = distances[segment_idx]
-                    segment_end = distances[segment_idx + 1]
-                    segment_length = segment_end - segment_start
+                    center = c_src
 
-                    if segment_length == 0:
-                        t_segment = 0
-                    else:
-                        t_segment = (target_distance - segment_start) / segment_length
+                factor = max(0.0, 1 - t)  # linear shrink
+                scaled_shell = geometry.scale_polygon(src_c.shell, factor, center)
+                if scaled_shell:
+                    result_loops.append(scaled_shell)
+                for h in src_c.holes:
+                    scaled_h = geometry.scale_polygon(h, factor, center)
+                    if scaled_h:
+                        result_loops.append(scaled_h)
+            elif tgt_c:  # appearing whole compound – grow from nearest source
+                c_tgt = tgt_c.centroid()
+                if src_centroids_list:
+                    nearest_s = min(
+                        src_centroids_list,
+                        key=lambda c: (c[0] - c_tgt[0]) ** 2 + (c[1] - c_tgt[1]) ** 2,
+                    )
+                    center = (
+                        nearest_s[0] + (c_tgt[0] - nearest_s[0]) * t,
+                        nearest_s[1] + (c_tgt[1] - nearest_s[1]) * t,
+                    )
+                else:
+                    center = c_tgt
 
-                    p1 = points[segment_idx]
-                    p2 = points[segment_idx + 1]
+                factor = max(0.0, t)
+                scaled_shell = geometry.scale_polygon(tgt_c.shell, factor, center)
+                if scaled_shell:
+                    result_loops.append(scaled_shell)
+                for h in tgt_c.holes:
+                    scaled_h = geometry.scale_polygon(h, factor, center)
+                    if scaled_h:
+                        result_loops.append(scaled_h)
 
-                    x = p1[0] + (p2[0] - p1[0]) * t_segment
-                    y = p1[1] + (p2[1] - p1[1]) * t_segment
-                    resampled.append((x, y))
+        # Deduplicate loops that may be identical (common when cycling)
+        result_loops = geometry.deduplicate_loops(result_loops)
+        return Shape._loops_to_shape(result_loops)
 
-            # Ensure we return exactly target_count points
-            while len(resampled) < target_count:
-                resampled.append(resampled[-1] if resampled else points[-1])
-            
-            return resampled[:target_count]
+    @staticmethod
+    @lru_cache(maxsize=1024)
+    def _prepare_morph_pair(
+        src_cmds: str,
+        tgt_cmds: str,
+        max_len: float,
+        tolerance: float,
+    ) -> tuple[list[Point], list[Point]]:
+        """Pre-compute the *point correspondences* for a given source/target pair.
 
-        @staticmethod
-        def _align_shapes_for_morphing(
-            source_points: list[tuple[float, float]], 
-            target_points: list[tuple[float, float]]
-        ) -> list[tuple[float, float]]:
-            """
-            Aligns target shape with source shape for optimal morphing by finding the best
-            starting point correspondence and direction that minimizes perimeter-wise distance.
-            """
-            if len(source_points) != len(target_points):
-                raise ValueError("Point lists must have the same length for alignment")
-            
-            if len(source_points) <= 1:
-                return target_points
-            
-            # Calculate centroids and center both shapes
-            source_cx = sum(x for x, y in source_points) / len(source_points)
-            source_cy = sum(y for x, y in source_points) / len(source_points)
-            target_cx = sum(x for x, y in target_points) / len(target_points)
-            target_cy = sum(y for x, y in target_points) / len(target_points)
-            
-            centered_source = [(x - source_cx, y - source_cy) for x, y in source_points]
-            centered_target = [(x - target_cx, y - target_cy) for x, y in target_points]
-            
-            # Normalize shapes for better comparison
-            source_scale = _calculate_shape_scale(centered_source)
-            target_scale = _calculate_shape_scale(centered_target)
-            scale_factor = target_scale / source_scale if source_scale > 0 else 1.0
-            
-            normalized_source = [(x * scale_factor, y * scale_factor) for x, y in centered_source]
-            
-            # Find best alignment
-            best_offset, best_target_list = _find_best_alignment(
-                normalized_source, centered_target
+        The procedure:
+        1. Split and flatten both shapes so that their Bézier curves are
+           represented exclusively by straight line segments.
+        2. Generate evenly spaced perimeter point clouds.
+        3. Ensure that key vertices (corners, Bézier end points, etc.) are
+           preserved verbatim during resampling.
+        4. Equalise the number of vertices so both lists can be zipped
+           together.
+        5. Rotate and/or flip the *target* so that point-to-point distance to
+           the *source* is minimal – this prevents visible *twisting* when the
+           winding direction differs.
+        """
+
+        src_shape = Shape(src_cmds)
+        tgt_shape = Shape(tgt_cmds)
+
+        # Flatten and split the shapes into line segments, then extract the points
+        src_shape.split(max_len, tolerance)
+        tgt_shape.split(max_len, tolerance)
+        src_pts = [(x, y) for el in src_shape for x, y in el.coordinates]
+        tgt_pts = [(x, y) for el in tgt_shape for x, y in el.coordinates]
+
+        # Preserve key structural vertices while equalising counts
+        src_key = [
+            coord
+            for element in src_shape
+            if element.command in {"m", "l", "p"}
+            for coord in element.coordinates
+        ]
+        tgt_key = [
+            coord
+            for element in tgt_shape
+            if element.command in {"m", "l", "p"}
+            for coord in element.coordinates
+        ]
+        src_pts, tgt_pts = Shape._align_point_counts(src_pts, tgt_pts, src_key, tgt_key)
+
+        # Align the target's starting point / direction for minimal distance
+        if len(src_pts) > 1:
+            tgt_pts = Shape._align_shapes_for_morphing(src_pts, tgt_pts)
+
+        return src_pts, tgt_pts
+
+    @staticmethod
+    def _align_shapes_for_morphing(
+        source_points: list[Point],
+        target_points: list[Point],
+    ) -> list[Point]:
+        """Rotate/flip target perimeter to minimise point-to-point distance."""
+        if len(source_points) != len(target_points) or len(source_points) <= 1:
+            return target_points
+
+        # Centre both shapes
+        src_cx = sum(x for x, _ in source_points) / len(source_points)
+        src_cy = sum(y for _, y in source_points) / len(source_points)
+        tgt_cx = sum(x for x, _ in target_points) / len(target_points)
+        tgt_cy = sum(y for _, y in target_points) / len(target_points)
+
+        centered_src = [(x - src_cx, y - src_cy) for x, y in source_points]
+        centered_tgt = [(x - tgt_cx, y - tgt_cy) for x, y in target_points]
+
+        scale_src = geometry.mean_distance_from_origin(centered_src)
+        scale_tgt = geometry.mean_distance_from_origin(centered_tgt)
+        factor = scale_tgt / scale_src if scale_src else 1.0
+        normalized_src = [(x * factor, y * factor) for x, y in centered_src]
+
+        off, best_list = geometry.find_best_alignment(normalized_src, centered_tgt)
+        return geometry.apply_alignment(target_points, best_list, off, centered_tgt)
+
+    @staticmethod
+    def _align_point_counts(
+        source_points: list[Point],
+        target_points: list[Point],
+        source_key_points: list[Point],
+        target_key_points: list[Point],
+    ) -> tuple[list[Point], list[Point]]:
+        """Equalise list lengths by resampling along perimeters."""
+        if len(source_points) != len(target_points):
+            count = max(len(source_points), len(target_points), 3)
+            source_points = geometry.resample_perimeter_points(
+                source_points, count, source_key_points
             )
-            
-            # Apply the best alignment using original target points
-            return _apply_alignment(target_points, best_target_list, best_offset, centered_target)
-
-        @staticmethod
-        def _calculate_shape_scale(points: list[tuple[float, float]]) -> float:
-            """Calculate the average distance from origin for normalization."""
-            if not points:
-                return 1.0
-            distances = [math.sqrt(x*x + y*y) for x, y in points]
-            return sum(distances) / len(distances)
-
-        @staticmethod
-        def _find_best_alignment(
-            normalized_source: list[tuple[float, float]],
-            centered_target: list[tuple[float, float]]
-        ) -> tuple[int, list[tuple[float, float]]]:
-            """Find the best offset and direction for shape alignment."""
-            def calculate_alignment_cost(target_list, offset: int) -> float:
-                total_cost = 0.0
-                n = len(normalized_source)
-                
-                for i in range(n):
-                    j = (i + offset) % n
-                    dx = normalized_source[i][0] - target_list[j][0]
-                    dy = normalized_source[i][1] - target_list[j][1]
-                    distance = math.sqrt(dx * dx + dy * dy)
-                    
-                    # Add penalty for large jumps to discourage crossing connections
-                    if i > 0:
-                        prev_j = ((i - 1) + offset) % n
-                        jump_distance = min(abs(j - prev_j), n - abs(j - prev_j))
-                        if jump_distance > n // 4:
-                            distance *= (1 + jump_distance / n)
-                    
-                    total_cost += distance
-                
-                return total_cost
-            
-            best_offset = 0
-            best_cost = float('inf')
-            best_target_list = centered_target
-            
-            # Test both normal and reversed target point order
-            target_variants = [centered_target, list(reversed(centered_target))]
-            
-            for target_list in target_variants:
-                n = len(target_list)
-                step = max(1, n // 20)  # Sample at most 20 different alignments
-                
-                for offset in range(0, n, step):
-                    cost = calculate_alignment_cost(target_list, offset)
-                    if cost < best_cost:
-                        best_cost = cost
-                        best_offset = offset
-                        best_target_list = target_list
-            
-            return best_offset, best_target_list
-
-        @staticmethod
-        def _apply_alignment(
-            target_points: list[tuple[float, float]],
-            best_target_list: list[tuple[float, float]],
-            best_offset: int,
-            centered_target: list[tuple[float, float]]
-        ) -> list[tuple[float, float]]:
-            """Apply the determined alignment to get the final reordered target points."""
-            reordered_target = []
-            
-            if best_target_list is centered_target:
-                # Normal order was best
-                for i in range(len(target_points)):
-                    j = (i + best_offset) % len(target_points)
-                    reordered_target.append(target_points[j])
-            else:
-                # Reversed order was best
-                reversed_target = list(reversed(target_points))
-                for i in range(len(reversed_target)):
-                    j = (i + best_offset) % len(reversed_target)
-                    reordered_target.append(reversed_target[j])
-            
-            return reordered_target
-
-        def _extract_and_normalize_points(
-            source_shape: Shape, target_shape: Shape, max_len: float, tolerance: float
-        ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
-            """Extract and normalize points from both shapes for morphing."""
-            # Extract key points before processing
-            source_key_points = _extract_key_points(source_shape)
-            target_key_points = _extract_key_points(target_shape)
-
-            # Normalize both shapes for morphing compatibility
-            normalized_source = Shape(source_shape.drawing_cmds).split(max_len, tolerance)
-            normalized_target = Shape(target_shape.drawing_cmds).split(max_len, tolerance)
-
-            # Extract points using the iterator
-            source_points = [
-                (x, y) for element in normalized_source for x, y in element.coordinates
-            ]
-            target_points = [
-                (x, y) for element in normalized_target for x, y in element.coordinates
-            ]
-            
-            if not source_points or not target_points:
-                raise ValueError("Cannot morph shapes with no points")
-
-            return source_points, target_points
-
-        def _align_point_counts(
-            source_points: list[tuple[float, float]],
-            target_points: list[tuple[float, float]],
-            source_key_points: list[tuple[float, float]],
-            target_key_points: list[tuple[float, float]]
-        ) -> tuple[list[tuple[float, float]], list[tuple[float, float]]]:
-            """Align point counts between source and target shapes."""
-            if len(source_points) != len(target_points):
-                target_count = max(len(source_points), len(target_points))
-                target_count = max(target_count, 3)  # Ensure minimum count
-                
-                source_points = _resample_points_along_perimeter(
-                    source_points, target_count, source_key_points
+            target_points = geometry.resample_perimeter_points(
+                target_points, count, target_key_points
+            )
+        if len(source_points) != len(target_points):
+            min_ct = min(len(source_points), len(target_points))
+            source_points = source_points[:min_ct]
+            target_points = target_points[:min_ct]
+            if min_ct == 0:
+                raise ValueError(
+                    "Cannot morph shapes with no valid points after processing"
                 )
-                target_points = _resample_points_along_perimeter(
-                    target_points, target_count, target_key_points
-                )
+        return source_points, target_points
 
-            # Verify point counts match after resampling
-            if len(source_points) != len(target_points):
-                min_count = min(len(source_points), len(target_points))
-                source_points = source_points[:min_count]
-                target_points = target_points[:min_count]
-                
-                if min_count == 0:
-                    raise ValueError("Cannot morph shapes with no valid points after processing")
+    @staticmethod
+    def _morph_two_loops(loop1, loop2, t: float, max_len: float, tolerance: float):
+        """Linear‐interpolate the perimeter of two *closed* loops.
 
-            return source_points, target_points
+        This is a self-contained adaptation of the previous single-contour
+        fast-path.  It avoids a round-trip through ``Shape.morph`` (which now
+        always delegates to the compound engine) while still re-using the
+        heavy geometry helpers such as :py:meth:`_prepare_morph_pair`.
+        """
 
-        try:
-            # Extract and normalize points from both shapes
-            source_points, target_points = _extract_and_normalize_points(
-                self, target_shape, max_len, tolerance
+        # Convert the two loops into temporary Shape objects so we can re-use
+        # the robust point-correspondence machinery that already exists.
+        tmp_src = Shape._loop_to_shape(loop1)
+        tmp_tgt = Shape._loop_to_shape(loop2)
+
+        src_pts, tgt_pts = Shape._prepare_morph_pair(
+            tmp_src.drawing_cmds,
+            tmp_tgt.drawing_cmds,
+            max_len,
+            tolerance,
+        )
+
+        # Simple linear interpolation between matching vertices.
+        interp = [
+            (x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)
+            for (x1, y1), (x2, y2) in zip(src_pts, tgt_pts)
+        ]
+
+        # Ensure the loop is formally closed (first == last).
+        if interp and interp[0] != interp[-1]:
+            interp.append(interp[0])
+
+        return [interp]
+
+    def _to_loops(
+        self, max_len: float = 8, tolerance: float = 1.0
+    ) -> list[list[Point]]:
+        """Convert ASS drawing commands to a list of closed loops (points)."""
+        flattened = Shape(self.drawing_cmds).split(max_len, tolerance)
+        loops: list[list[Point]] = []
+        current: list[Point] = []
+        for element in flattened:
+            cmd = element.command
+            if cmd in {"m", "n"}:  # start new contour (implicit close previous)
+                if current:
+                    if current[0] != current[-1]:
+                        current.append(current[0])
+                    loops.append(current)
+                    current = []
+                current.append(element.coordinates[0])
+            elif cmd == "l":
+                current.append(element.coordinates[0])
+            elif cmd == "c":  # explicit close
+                if current:
+                    if current[0] != current[-1]:
+                        current.append(current[0])
+                    loops.append(current)
+                    current = []
+        if current:
+            if current[0] != current[-1]:
+                current.append(current[0])
+            loops.append(current)
+        return loops
+
+    def _to_compounds(self, max_len: float = 8, tolerance: float = 1.0):
+        """Break the shape into a list of outer-shell + holes compounds."""
+        if Polygon is None:
+            raise ImportError(
+                "Shapely is required for compound morphing. Please `pip install shapely`."
             )
-            
-            # Get key points for preservation during resampling
-            source_key_points = _extract_key_points(self)
-            target_key_points = _extract_key_points(target_shape)
-            
-            # Align point counts
-            source_points, target_points = _align_point_counts(
-                source_points, target_points, source_key_points, target_key_points
-            )
+        loops = self._to_loops(max_len, tolerance)
+        polys = [Polygon(lp) for lp in loops]
+        parent_of: list[int | None] = [None] * len(loops)
+        for i, poly_i in enumerate(polys):
+            smallest_parent = None
+            smallest_area = float("inf")
+            for j, poly_j in enumerate(polys):
+                if i == j:
+                    continue
+                try:
+                    if poly_j.contains(poly_i):
+                        area_j = abs(poly_j.area)
+                        if area_j < smallest_area:
+                            smallest_area = area_j
+                            smallest_parent = j
+                except TopologicalError:
+                    continue
+            parent_of[i] = smallest_parent
+        compounds: list[geometry.Compound] = []
+        for idx, parent in enumerate(parent_of):
+            if parent is not None:
+                continue
+            shell_loop = loops[idx]
+            holes_here = [loops[h_idx] for h_idx, p in enumerate(parent_of) if p == idx]
+            shell_area_sign = geometry.signed_area(shell_loop)
 
-            # Align shapes for optimal morphing
-            if len(source_points) > 1:
-                target_points = _align_shapes_for_morphing(source_points, target_points)
+            def ensure_opposite_orientation(loop_pts: list[Point]):
+                if shell_area_sign == 0:
+                    return loop_pts
+                hole_sign = geometry.signed_area(loop_pts)
+                if hole_sign * shell_area_sign > 0:
+                    return list(reversed(loop_pts))
+                return loop_pts
 
-            # Interpolate between corresponding points
-            morphed_points = [
-                (x1 + (x2 - x1) * t, y1 + (y2 - y1) * t)
-                for (x1, y1), (x2, y2) in zip(source_points, target_points)
-            ]
+            holes_here = [ensure_opposite_orientation(h) for h in holes_here]
+            compounds.append(geometry.Compound(shell_loop, holes_here))
+        compounds.sort(key=lambda c: abs(c.signed_area()), reverse=True)
+        return compounds
 
-            # Create elements: first point as move, rest as lines
-            elements = [ShapeElement("m", [morphed_points[0]])]
-            elements.extend(ShapeElement("l", [point]) for point in morphed_points[1:])
+    @staticmethod
+    def _loop_to_shape(loop: list[Point]) -> "Shape":
+        """Create a Shape from one closed loop of points."""
+        if not loop:
+            return Shape("m 0 0")
+        fmt = Shape.format_value
+        pts = [f"{fmt(x)} {fmt(y)}" for x, y in loop]
+        cmd = f"m {pts[0]} l {' '.join(pts[1:])} c"
+        return Shape(cmd)
 
-            return Shape.from_elements(elements)
-
-        except Exception as e:
-            raise ValueError(f"Failed to morph shapes: {str(e)}")
+    @staticmethod
+    def _loops_to_shape(loops: list[list[Point]]) -> "Shape":
+        """Convert multiple loops back into a single Shape object."""
+        parts = []
+        fmt = Shape.format_value
+        for lp in loops:
+            if not lp:
+                continue
+            parts.append(f"m {fmt(lp[0][0])} {fmt(lp[0][1])}")
+            for x, y in lp[1:]:
+                parts.append(f"l {fmt(x)} {fmt(y)}")
+            parts.append("c")
+        return Shape(" ".join(parts) if parts else "m 0 0")
 
     @staticmethod
     def ring(out_r: float, in_r: float) -> Shape:
