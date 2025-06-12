@@ -256,7 +256,7 @@ class FrameUtility:
     ):
         # Check for invalid values
         if start_ms < 0 or end_ms < 0:
-            raise ValueError("Parameters 'start_ms' and 'start_ms' must be >= 0.")
+            raise ValueError("Parameters 'start_ms' and 'end_ms' must be >= 0.")
         if end_ms < start_ms:
             raise ValueError("Parameter 'start_ms' is expected to be <= 'end_ms'.")
         if n_fr <= 0:
