@@ -1,4 +1,5 @@
 import pytest
+from shapely import Point
 from pyonfx import *
 
 
@@ -10,19 +11,19 @@ def test_iter():
     elements = list(shape)
     assert len(elements) == 1
     assert elements[0].command == "m"
-    assert elements[0].coordinates == [(10.0, 20.0)]
+    assert elements[0].coordinates == [Point(10.0, 20.0)]
 
     shape = Shape("n 30 40")
     elements = list(shape)
     assert len(elements) == 1
     assert elements[0].command == "n"
-    assert elements[0].coordinates == [(30.0, 40.0)]
+    assert elements[0].coordinates == [Point(30.0, 40.0)]
 
     shape = Shape("p 50 60")
     elements = list(shape)
     assert len(elements) == 1
     assert elements[0].command == "p"
-    assert elements[0].coordinates == [(50.0, 60.0)]
+    assert elements[0].coordinates == [Point(50.0, 60.0)]
 
     shape = Shape("c")
     elements = list(shape)
@@ -35,34 +36,50 @@ def test_iter():
     elements = list(shape)
     assert len(elements) == 3
     assert elements[0].command == "l"
-    assert elements[0].coordinates == [(10.0, 20.0)]
+    assert elements[0].coordinates == [Point(10.0, 20.0)]
     assert elements[1].command == "l"
-    assert elements[1].coordinates == [(30.0, 40.0)]
+    assert elements[1].coordinates == [Point(30.0, 40.0)]
     assert elements[2].command == "l"
-    assert elements[2].coordinates == [(50.0, 60.0)]
+    assert elements[2].coordinates == [Point(50.0, 60.0)]
 
     # Test single bezier curve
     shape = Shape("b 10 20 30 40 50 60")
     elements = list(shape)
     assert len(elements) == 1
     assert elements[0].command == "b"
-    assert elements[0].coordinates == [(10.0, 20.0), (30.0, 40.0), (50.0, 60.0)]
+    assert elements[0].coordinates == [
+        Point(10.0, 20.0),
+        Point(30.0, 40.0),
+        Point(50.0, 60.0),
+    ]
 
     # Test multiple bezier curves (implicit continuation)
     shape = Shape("b 10 20 30 40 50 60 70 80 90 100 110 120")
     elements = list(shape)
     assert len(elements) == 2
     assert elements[0].command == "b"
-    assert elements[0].coordinates == [(10.0, 20.0), (30.0, 40.0), (50.0, 60.0)]
+    assert elements[0].coordinates == [
+        Point(10.0, 20.0),
+        Point(30.0, 40.0),
+        Point(50.0, 60.0),
+    ]
     assert elements[1].command == "b"
-    assert elements[1].coordinates == [(70.0, 80.0), (90.0, 100.0), (110.0, 120.0)]
+    assert elements[1].coordinates == [
+        Point(70.0, 80.0),
+        Point(90.0, 100.0),
+        Point(110.0, 120.0),
+    ]
 
     # Test spline command with minimum points
     shape = Shape("s 10 20 30 40 50 60")
     elements = list(shape)
     assert len(elements) == 1
     assert elements[0].command == "s"
-    assert elements[0].coordinates == [(10.0, 20.0), (30.0, 40.0), (50.0, 60.0)]
+    assert elements[0].coordinates == [
+        Point(10.0, 20.0),
+        Point(30.0, 40.0),
+        Point(50.0, 60.0),
+    ]
 
     # Test spline command with more points
     shape = Shape("s 10 20 30 40 50 60 70 80")
@@ -70,10 +87,10 @@ def test_iter():
     assert len(elements) == 1
     assert elements[0].command == "s"
     assert elements[0].coordinates == [
-        (10.0, 20.0),
-        (30.0, 40.0),
-        (50.0, 60.0),
-        (70.0, 80.0),
+        Point(10.0, 20.0),
+        Point(30.0, 40.0),
+        Point(50.0, 60.0),
+        Point(70.0, 80.0),
     ]
 
     # Test complex shape with multiple commands
@@ -81,13 +98,17 @@ def test_iter():
     elements = list(shape)
     assert len(elements) == 5
     assert elements[0].command == "m"
-    assert elements[0].coordinates == [(0.0, 0.0)]
+    assert elements[0].coordinates == [Point(0.0, 0.0)]
     assert elements[1].command == "l"
-    assert elements[1].coordinates == [(10.0, 0.0)]
+    assert elements[1].coordinates == [Point(10.0, 0.0)]
     assert elements[2].command == "l"
-    assert elements[2].coordinates == [(10.0, 10.0)]
+    assert elements[2].coordinates == [Point(10.0, 10.0)]
     assert elements[3].command == "b"
-    assert elements[3].coordinates == [(10.0, 10.0), (20.0, 20.0), (30.0, 10.0)]
+    assert elements[3].coordinates == [
+        Point(10.0, 10.0),
+        Point(20.0, 20.0),
+        Point(30.0, 10.0),
+    ]
     assert elements[4].command == "c"  # This is a zero-argument command
     assert elements[4].coordinates == []
 
@@ -106,23 +127,23 @@ def test_iter():
     elements = list(shape)
     assert len(elements) == 1
     assert elements[0].command == "m"
-    assert elements[0].coordinates == [(10.5, 20.25)]
+    assert elements[0].coordinates == [Point(10.5, 20.25)]
 
     # Test negative coordinates
     shape = Shape("m -10 -20")
     elements = list(shape)
     assert len(elements) == 1
     assert elements[0].command == "m"
-    assert elements[0].coordinates == [(-10.0, -20.0)]
+    assert elements[0].coordinates == [Point(-10.0, -20.0)]
 
     # Test mixed positive and negative coordinates
     shape = Shape("l -10.5 20 30.25 -40")
     elements = list(shape)
     assert len(elements) == 2
     assert elements[0].command == "l"
-    assert elements[0].coordinates == [(-10.5, 20.0)]
+    assert elements[0].coordinates == [Point(-10.5, 20.0)]
     assert elements[1].command == "l"
-    assert elements[1].coordinates == [(30.25, -40.0)]
+    assert elements[1].coordinates == [Point(30.25, -40.0)]
 
 
 def test_iter_error_handling():
@@ -130,46 +151,44 @@ def test_iter_error_handling():
 
     # Test invalid command
     with pytest.raises(ValueError, match="Unexpected command 'x'"):
-        shape = Shape("x 10 20")
-        list(shape)
+        Shape("x 10 20")
 
     # Test incomplete coordinates for move command
     with pytest.raises(
-        ValueError, match="Unexpected end of shape while parsing command 'm'"
+        ValueError,
+        match=r"Every ASS drawing command requires an even number of arguments \(got 1\)",
     ):
-        shape = Shape("m 10")
-        list(shape)
+        Shape("m 10")
 
     # Test incomplete coordinates for line command
     with pytest.raises(
         ValueError, match="Command 'l' requires at least 1 coordinate pair"
     ):
-        shape = Shape("l")
-        list(shape)
+        Shape("l")
 
     # Test incomplete coordinates for bezier command
     with pytest.raises(
-        ValueError, match="Command 'b' requires at least 3 coordinate pairs"
+        ValueError,
+        match="Command 'b' requires a number of coordinate pairs multiple of 3",
     ):
-        shape = Shape("b 10 20")
-        list(shape)
+        Shape("b 10 20")
 
     # Test incomplete coordinates for spline command
     with pytest.raises(
         ValueError, match="Command 's' requires at least 3 coordinate pair"
     ):
-        shape = Shape("s 10 20")
-        list(shape)
+        Shape("s 10 20")
 
     # Test invalid coordinate values
-    with pytest.raises(ValueError, match="Invalid coordinate values for command 'm'"):
-        shape = Shape("m abc def")
-        list(shape)
+    with pytest.raises(
+        ValueError,
+        match=r"Invalid arguments \(expected floats\) for command 'm': \('abc', 'def'\)",
+    ):
+        Shape("m abc def")
 
     # Test mixed valid and invalid coordinates in line command
     with pytest.raises(ValueError):
-        shape = Shape("l 10 20 abc def")
-        list(shape)
+        Shape("l 10 20 abc def")
 
 
 def test_iter_roundtrip_with_from_elements():
@@ -217,10 +236,10 @@ def test_shape_element_equality_and_repr():
     """Test ShapeElement equality and string representation."""
 
     # Test equality
-    elem1 = ShapeElement("m", [(10.0, 20.0)])
-    elem2 = ShapeElement("m", [(10.0, 20.0)])
-    elem3 = ShapeElement("l", [(10.0, 20.0)])
-    elem4 = ShapeElement("m", [(30.0, 40.0)])
+    elem1 = ShapeElement("m", [Point(10.0, 20.0)])
+    elem2 = ShapeElement("m", [Point(10.0, 20.0)])
+    elem3 = ShapeElement("l", [Point(10.0, 20.0)])
+    elem4 = ShapeElement("m", [Point(30.0, 40.0)])
 
     assert elem1 == elem2
     assert elem1 != elem3  # Different command
@@ -228,13 +247,13 @@ def test_shape_element_equality_and_repr():
     assert elem1 != "not a shape element"  # Different type
 
     # Test string representation
-    elem = ShapeElement("m", [(10.0, 20.0)])
-    expected_repr = "ShapeElement('m', [(10.0, 20.0)])"
+    elem = ShapeElement("m", [Point(10.0, 20.0)])
+    expected_repr = "ShapeElement('m', [Point(10.0, 20.0)])"
     assert repr(elem) == expected_repr
 
     # Test with multiple coordinates
-    elem = ShapeElement("l", [(10.0, 20.0), (30.0, 40.0)])
-    expected_repr = "ShapeElement('l', [(10.0, 20.0), (30.0, 40.0)])"
+    elem = ShapeElement("l", [Point(10.0, 20.0), Point(30.0, 40.0)])
+    expected_repr = "ShapeElement('l', [Point(10.0, 20.0), Point(30.0, 40.0)])"
     assert repr(elem) == expected_repr
 
     # Test with no coordinates
@@ -271,8 +290,8 @@ def test_transform():
     dest = Shape("m 0 0 l 20 1 21 10 1 10")
     assert original.map(lambda x, y: (round(x), round(y))) == dest
 
-    original = Shape("m 0 0 l 20 0 20 10 0 10 22")
     with pytest.raises(ValueError):
+        original = Shape("m 0 0 l 20 0 20 10 0 10 22")
         assert original.map(lambda x, y: (x, y)) == dest
 
     # With type checking
