@@ -130,7 +130,8 @@ class Shape:
             raise TypeError(
                 f"A string containing the shape's drawing commands is expected, but you passed a {type(drawing_cmds)}"
             )
-        self._elements: list[ShapeElement] = []
+        self._updating = False  # Flag to prevent infinite recursion when updating elements/drawing_cmds
+        self.elements: list[ShapeElement] = []
         self.drawing_cmds = drawing_cmds
 
     def __repr__(self):
@@ -141,7 +142,25 @@ class Shape:
         return type(other) is type(self) and self.drawing_cmds == other.drawing_cmds
 
     def __iter__(self):
-        return iter(self._elements)
+        return iter(self.elements)
+
+    @property
+    def _elements(self) -> list[ShapeElement]:
+        return self.elements
+
+    @_elements.setter
+    def _elements(self, value: list[ShapeElement]):
+        self.elements = value
+        if self._updating:
+            return
+
+        # Update drawing_cmds to reflect the new elements
+        if not self._updating:
+            self._updating = True
+            try:
+                self._drawing_cmds = Shape.from_elements(value).drawing_cmds
+            finally:
+                self._updating = False
 
     @property
     def drawing_cmds(self) -> str:
@@ -150,15 +169,24 @@ class Shape:
     @drawing_cmds.setter
     def drawing_cmds(self, value: str):
         self._drawing_cmds = value
-        self._update_elements()
+        if self._updating:
+            return
 
-    def _update_elements(self):
+        # Update elements to reflect the new drawing commands
+        if not self._updating:
+            self._updating = True
+            try:
+                self._build_elements_from_cmds()
+            finally:
+                self._updating = False
+
+    def _build_elements_from_cmds(self):
         """
         Parses the drawing commands string and updates the internal list of ShapeElement objects.
         """
         cmds_and_points = self._drawing_cmds.split()
         if not cmds_and_points:
-            self._elements = []
+            self.elements = []
             return
 
         elements = []
@@ -180,7 +208,7 @@ class Shape:
             for element in ShapeElement.from_ass_drawing_cmd(command, *args):
                 elements.append(element)
 
-        self._elements = elements
+        self.elements = elements
 
     @classmethod
     def from_elements(cls, elements: list[ShapeElement]) -> Shape:
@@ -293,9 +321,8 @@ class Shape:
                 ShapeElement(element.command, transformed_coords)
             )
 
-        # Reconstruct the shape from transformed elements
-        transformed_shape = Shape.from_elements(transformed_elements)
-        self.drawing_cmds = transformed_shape.drawing_cmds
+        # Update the shape with transformed elements
+        self._elements = transformed_elements
         return self
 
     def bounding(self) -> tuple[float, float, float, float]:
@@ -478,8 +505,8 @@ class Shape:
                 if element.coordinates:
                     current_point = element.coordinates[-1]
 
-        # Reconstruct shape
-        self.drawing_cmds = Shape.from_elements(flattened_elements).drawing_cmds
+        # Update shape with flattened elements
+        self._elements = flattened_elements
         return self
 
     def split(self, max_len: float = 16, tolerance: float = 1.0) -> Shape:
@@ -592,8 +619,8 @@ class Shape:
         # Close the final contour if needed
         split_elements.extend(_close_contour_if_needed(current_point, first_move_point))
 
-        # Reconstruct shape
-        self.drawing_cmds = Shape.from_elements(split_elements).drawing_cmds
+        # Update shape with split elements
+        self._elements = split_elements
         return self
 
     def __to_outline(self, bord_xy: float, bord_y: float, mode: str = "round") -> Shape:
