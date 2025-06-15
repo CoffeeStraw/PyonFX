@@ -193,8 +193,11 @@ def test_text_to_shape():
         )
         for element, expected_element in zip(shape, expectedShape):
             for i in range(len(element.coordinates)):
-                x, y = element.coordinates[i]
-                x_expected, y_expected = expected_element.coordinates[i]
+                x, y = element.coordinates[i].x, element.coordinates[i].y
+                x_expected, y_expected = (
+                    expected_element.coordinates[i].x,
+                    expected_element.coordinates[i].y,
+                )
                 check.almost_equal(x, x_expected, abs=max_deviation)
                 check.almost_equal(y, y_expected, abs=max_deviation)
     else:
@@ -223,8 +226,11 @@ def test_text_to_shape_with_spacing():
         )
         for element, expected_element in zip(shape, expectedShape):
             for i in range(len(element.coordinates)):
-                x, y = element.coordinates[i]
-                x_expected, y_expected = expected_element.coordinates[i]
+                x, y = element.coordinates[i].x, element.coordinates[i].y
+                x_expected, y_expected = (
+                    expected_element.coordinates[i].x,
+                    expected_element.coordinates[i].y,
+                )
                 check.almost_equal(x, x_expected, abs=max_deviation)
                 check.almost_equal(y, y_expected, abs=max_deviation)
     else:
