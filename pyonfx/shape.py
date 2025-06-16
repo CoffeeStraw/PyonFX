@@ -1243,27 +1243,29 @@ class Shape:
         return resampled_pairs, src_unmatched, tgt_unmatched
 
     def morph(
-        self, target: Shape, t: float, max_len: float = 16.0, tolerance: float = 1.0
+        self, target: Shape, t: float, max_len: float = 16.0, tolerance: float = 1.0, min_point_spacing: float = 0.5,
     ) -> Shape:
         """Interpolates the current shape towards *target*, returning a new `Shape` that represents the intermediate state at fraction *t*.
-
-        Shapes are first decomposed into compounds (outer shells with holes).
-        Then, individual loops are matched based on:
-           - Centroid distance (preferring loops with closer centers);
-           - Area similarity (preferring loops of similar size);
-           - Overlap (preferring loops that share space);
-           - Shell/hole role (avoiding matching shells with holes).
-
-        The matched loops are interpolated. The unmatched ones are either shrunk or grown.
 
         Parameters:
             target (Shape): Destination shape.
             t (float): Interpolation factor (0 ≤ t ≤ 1).
-            max_len (int or float): The max length that you want all the lines to be
+            max_len (int or float): The max length that you want all the lines to be.
             tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
+            min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both |Δx| and |Δy| from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
 
         Returns:
             A **new** `Shape` instance representing the morph at *t*.
+
+        Note:
+            Shapes are first decomposed into compounds (outer shells with holes).
+            Then, individual loops are matched based on:
+            - Centroid distance (preferring loops with closer centers);
+            - Area similarity (preferring loops of similar size);
+            - Overlap (preferring loops that share space);
+            - Shell/hole role (avoiding matching shells with holes).
+
+            The matched loops are interpolated. The unmatched ones are either shrunk or grown.
         """
 
         # Fast-path validations
@@ -1339,10 +1341,14 @@ class Shape:
             interp_coords = np.vstack([interp_coords, interp_coords[0]])
             return LinearRing(interp_coords)
 
-        def _rings_to_shape(rings: list[tuple[LinearRing, bool]]) -> Shape:
-            """Convert a collection of `(ring, is_hole)` tuples back to a `Shape`."""
-            parts: list[str] = []
-            fmt = Shape.format_value
+        def _rings_to_shape(
+            rings: list[tuple[LinearRing, bool]],
+            min_point_spacing: float = 0.5,
+        ) -> Shape:
+            """Convert a collection of `(ring, is_hole)` tuples back to a `Shape`, with optional near-duplicate filtering."""
+
+            parts: list[ShapeElement] = []
+
             for ring, is_hole in rings:
                 # Normalise orientation (outer = CW, inner = CCW)
                 if is_hole and not ring.is_ccw:
@@ -1354,10 +1360,20 @@ class Shape:
                     continue  # skip degenerate rings
 
                 x0, y0 = ring.coords[0]
-                parts.append(f"m {fmt(x0)} {fmt(y0)} l")
-                for x, y in ring.coords[1:-1]:
-                    parts.append(f"{fmt(x)} {fmt(y)}")
-            return Shape(" ".join(parts))
+                parts.append(ShapeElement("m", [Point(x0, y0)]))
+
+                # Track last emitted coordinate to filter near-duplicates
+                prev_x, prev_y = x0, y0
+
+                for x, y in ring.coords[1:-1]:  # exclude the duplicate closing vertex
+                    if abs(x - prev_x) < min_point_spacing and abs(y - prev_y) < min_point_spacing:
+                        # Both deltas are below the threshold → skip this point
+                        continue
+
+                    parts.append(ShapeElement("l", [Point(x, y)]))
+                    prev_x, prev_y = x, y
+
+            return Shape(elements=parts)
 
         # 1) Retrieve pairing & resampling information (cached)
         paired, src_unmatched, tgt_unmatched = Shape._prepare_morph(
@@ -1379,4 +1395,4 @@ class Shape:
             result_rings.append((_morph_appearing(ring, origin_pt, t), is_hole))
 
         # 4) Convert back to Shape and return
-        return _rings_to_shape(result_rings)
+        return _rings_to_shape(result_rings, min_point_spacing)
