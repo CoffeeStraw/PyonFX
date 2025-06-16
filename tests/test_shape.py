@@ -197,7 +197,7 @@ def test_iter_roundtrip_with_from_elements():
     # Test simple shape
     original = Shape("m 10 20 l 30 40")
     elements = list(original)
-    reconstructed = Shape.from_elements(elements)
+    reconstructed = Shape(elements=elements)
 
     # Check that the shapes are functionally equivalent
     original_elements = list(original)
@@ -210,7 +210,7 @@ def test_iter_roundtrip_with_from_elements():
     # Test complex shape with multiple command types
     original = Shape("m 0 0 l 10 0 10 10 b 10 10 20 20 30 10 c")
     elements = list(original)
-    reconstructed = Shape.from_elements(elements)
+    reconstructed = Shape(elements=elements)
 
     original_elements = list(original)
     reconstructed_elements = list(reconstructed)
@@ -222,7 +222,7 @@ def test_iter_roundtrip_with_from_elements():
     # Test bezier with implicit continuations
     original = Shape("b 10 20 30 40 50 60 70 80 90 100 110 120")
     elements = list(original)
-    reconstructed = Shape.from_elements(elements)
+    reconstructed = Shape(elements=elements)
 
     original_elements = list(original)
     reconstructed_elements = list(reconstructed)
