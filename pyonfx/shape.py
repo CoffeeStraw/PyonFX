@@ -951,7 +951,14 @@ class Shape:
     @functools.lru_cache(maxsize=1024)
     @staticmethod
     def _prepare_morph(
-        src_cmds: str, tgt_cmds: str, max_len: float = 16.0, tolerance: float = 1.0
+        src_cmds: str,
+        tgt_cmds: str,
+        max_len: float,
+        tolerance: float,
+        w_dist: float,
+        w_area: float,
+        w_overlap: float,
+        cost_threshold: float,
     ) -> tuple[
         list[tuple[LinearRing, LinearRing, bool]],
         list[tuple[LinearRing, Point, bool]],
@@ -1239,7 +1246,12 @@ class Shape:
 
         # 2) Pair individual rings extracted from those compounds
         paired_rings, src_unmatched, tgt_unmatched = _pair_compounds(
-            src_compounds, tgt_compounds
+            src_compounds,
+            tgt_compounds,
+            w_dist,
+            w_area,
+            w_overlap,
+            cost_threshold,
         )
 
         # 3) Resample each paired ring so that both have the same vertex count
@@ -1259,7 +1271,16 @@ class Shape:
         return resampled_pairs, src_unmatched, tgt_unmatched
 
     def morph(
-        self, target: Shape, t: float, max_len: float = 16.0, tolerance: float = 1.0, min_point_spacing: float = 0.5,
+        self,
+        target: Shape,
+        t: float,
+        max_len: float = 16.0,
+        tolerance: float = 1.0,
+        min_point_spacing: float = 0.5,
+        w_dist: float = 0.55,
+        w_area: float = 0.35,
+        w_overlap: float = 0.1,
+        cost_threshold: float = 2.5,
     ) -> Shape:
         """Interpolates the current shape towards *target*, returning a new `Shape` that represents the intermediate state at fraction *t*.
 
@@ -1269,6 +1290,10 @@ class Shape:
             max_len (int or float): The max length that you want all the lines to be.
             tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
             min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both |Δx| and |Δy| from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
+            w_dist (float, optional): Weight for the centroid-distance term (higher values make proximity more important).
+            w_area (float, optional): Weight for the relative area-difference term (higher values make size similarity more important).
+            w_overlap (float, optional): Weight for the overlap / IoU term that penalises pairs with little spatial intersection.
+            cost_threshold (float, optional): Maximum acceptable cost for a pairing. Pairs whose cost is above this threshold are treated as unmatched and will grow/shrink to the closest centroid.
 
         Returns:
             A **new** `Shape` instance representing the morph at *t*.
@@ -1314,7 +1339,9 @@ class Shape:
                 # Shrink *ring* towards *ref_pt*
                 centroid = np.array(ring.centroid.coords[0])
                 dest = np.array([ref_pt.x, ref_pt.y])
-                new_coords = centroid + (coords - centroid) * (1 - t) + (dest - centroid) * t
+                new_coords = (
+                    centroid + (coords - centroid) * (1 - t) + (dest - centroid) * t
+                )
 
             new_coords = np.vstack([new_coords, new_coords[0]])  # close ring
             return LinearRing(new_coords)
@@ -1374,7 +1401,10 @@ class Shape:
                 prev_x, prev_y = x0, y0
 
                 for x, y in ring.coords[1:-1]:  # exclude the duplicate closing vertex
-                    if abs(x - prev_x) < min_point_spacing and abs(y - prev_y) < min_point_spacing:
+                    if (
+                        abs(x - prev_x) < min_point_spacing
+                        and abs(y - prev_y) < min_point_spacing
+                    ):
                         # Both deltas are below the threshold → skip this point
                         continue
 
@@ -1389,6 +1419,10 @@ class Shape:
             target.drawing_cmds,
             max_len=max_len,
             tolerance=tolerance,
+            w_dist=w_dist,
+            w_area=w_area,
+            w_overlap=w_overlap,
+            cost_threshold=cost_threshold,
         )
 
         # 2) Interpolate matched rings
@@ -1398,9 +1432,13 @@ class Shape:
 
         # 3) Handle disappearing / appearing rings
         for ring, dest_pt, is_hole in src_unmatched:
-            result_rings.append((_morph_transition(ring, dest_pt, t, appearing=False), is_hole))
+            result_rings.append(
+                (_morph_transition(ring, dest_pt, t, appearing=False), is_hole)
+            )
         for ring, origin_pt, is_hole in tgt_unmatched:
-            result_rings.append((_morph_transition(ring, origin_pt, t, appearing=True), is_hole))
+            result_rings.append(
+                (_morph_transition(ring, origin_pt, t, appearing=True), is_hole)
+            )
 
         # 4) Convert back to Shape and return
         return _rings_to_shape(result_rings, min_point_spacing)
