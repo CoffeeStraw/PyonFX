@@ -1294,37 +1294,29 @@ class Shape:
         if t == 1:
             return target
 
-        def _morph_disappearing(
-            src_ring: LinearRing, dest_pt: Point, t: float
+        def _morph_transition(
+            ring: LinearRing,
+            ref_pt: Point,
+            t: float,
+            appearing: bool,
         ) -> LinearRing:
-            """Shrink *src_ring* toward *dest_pt* over time."""
-            if t == 0:
-                return src_ring
+            """Morphism helper shared by *appearing* and *disappearing* rings."""
+            if (t == 0 and not appearing) or (t == 1 and appearing):
+                return ring
 
-            coords = np.asarray(
-                src_ring.coords[:-1], dtype=float
-            )  # exclude closing vertex
-            centroid = np.array(src_ring.centroid.coords[0])
-            dest = np.array([dest_pt.x, dest_pt.y])
+            coords = np.asarray(ring.coords[:-1], dtype=float)
 
-            # Scale towards centroid then translate towards destination point
-            new_coords = (
-                centroid + (coords - centroid) * (1 - t) + (dest - centroid) * t
-            )
+            if appearing:
+                # Grow *ring* from *ref_pt*
+                origin = np.array([ref_pt.x, ref_pt.y])
+                new_coords = origin + (coords - origin) * t
+            else:
+                # Shrink *ring* towards *ref_pt*
+                centroid = np.array(ring.centroid.coords[0])
+                dest = np.array([ref_pt.x, ref_pt.y])
+                new_coords = centroid + (coords - centroid) * (1 - t) + (dest - centroid) * t
+
             new_coords = np.vstack([new_coords, new_coords[0]])  # close ring
-            return LinearRing(new_coords)
-
-        def _morph_appearing(
-            tgt_ring: LinearRing, origin_pt: Point, t: float
-        ) -> LinearRing:
-            """Grow *tgt_ring* from *origin_pt* over time."""
-            if t == 1:
-                return tgt_ring
-
-            coords = np.asarray(tgt_ring.coords[:-1], dtype=float)
-            origin = np.array([origin_pt.x, origin_pt.y])
-            new_coords = origin + (coords - origin) * t
-            new_coords = np.vstack([new_coords, new_coords[0]])
             return LinearRing(new_coords)
 
         def _interpolate_rings(
@@ -1406,9 +1398,9 @@ class Shape:
 
         # 3) Handle disappearing / appearing rings
         for ring, dest_pt, is_hole in src_unmatched:
-            result_rings.append((_morph_disappearing(ring, dest_pt, t), is_hole))
+            result_rings.append((_morph_transition(ring, dest_pt, t, appearing=False), is_hole))
         for ring, origin_pt, is_hole in tgt_unmatched:
-            result_rings.append((_morph_appearing(ring, origin_pt, t), is_hole))
+            result_rings.append((_morph_transition(ring, origin_pt, t, appearing=True), is_hole))
 
         # 4) Convert back to Shape and return
         return _rings_to_shape(result_rings, min_point_spacing)
