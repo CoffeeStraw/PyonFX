@@ -1171,44 +1171,60 @@ class Shape:
         def _resample_loop(
             loop: LinearRing, n_points: int, preserve_starting_points: bool = True
         ) -> LinearRing:
-            """Return *loop* resampled to *n_points* evenly spaced vertices along its perimeter, while preserving the starting points if *preserve_starting_points* is True."""
+            """Return *loop* resampled to *n_points* evenly spaced vertices along its perimeter, while preserving all the original loop points if *preserve_original_points* is True."""
 
             if n_points < 3:
                 raise ValueError("n_points must be at least 3 for a valid LinearRing.")
 
             # Ensure the loop is closed and get coordinates
-            coords = np.array(loop.coords)
+            coords = np.asarray(loop.coords)
             if not np.allclose(coords[0], coords[-1]):
                 raise ValueError("Input LinearRing must be closed.")
             coords = coords[:-1]  # remove duplicate endpoint
 
+            if n_points < len(coords):
+                raise ValueError(
+                    "n_points must be >= number of original vertices when preserve_original_points=True."
+                )
+            if n_points == len(coords):
+                return loop
+
+            extra = n_points - len(coords)
+
             # Compute segment lengths and cumulative lengths
             deltas = np.diff(coords, axis=0, append=[coords[0]])
             segment_lengths = np.linalg.norm(deltas, axis=1)
-            cum_lengths = np.insert(np.cumsum(segment_lengths), 0, 0)
-            total_length = cum_lengths[-1]
+            total_length = segment_lengths.sum()
 
-            # Target distances along the perimeter
-            if preserve_starting_points:
-                dists = np.linspace(0, total_length, n_points + 1)[
-                    :-1
-                ]  # drop last point to avoid duplication
-            else:
-                dists = np.linspace(0, total_length, n_points, endpoint=False)
+            # Ideal (floating point) allocation of extra vertices per segment
+            ideal_alloc = segment_lengths / total_length * extra
 
-            # Interpolate new points
+            # Initial integer allocation (floor) and compute how many vertices are still unassigned
+            int_alloc = np.floor(ideal_alloc).astype(int)
+            allocated = int_alloc.sum()
+            remaining = extra - allocated
+
+            # Distribute the remaining vertices to the segments with the largest fractional parts
+            if remaining > 0:
+                frac_parts = ideal_alloc - int_alloc
+                # Indices of segments sorted by descending fractional part
+                order = np.argsort(-frac_parts)
+                for idx in order[:remaining]:
+                    int_alloc[idx] += 1
+
+            # Build the new coordinate list
             new_coords = []
-            seg_idx = 0
-            for d in dists:
-                # Find the segment containing the target distance
-                while cum_lengths[seg_idx + 1] < d:
-                    seg_idx += 1
-                seg_start = coords[seg_idx]
-                seg_vec = deltas[seg_idx]
-                seg_length = segment_lengths[seg_idx]
-                t = (d - cum_lengths[seg_idx]) / seg_length
-                new_point = seg_start + t * seg_vec
-                new_coords.append(tuple(new_point))
+            for i, start_pt in enumerate(coords):
+                end_pt = coords[(i + 1) % len(coords)]
+                new_coords.append(tuple(start_pt))  # always keep the original vertex
+                k = int_alloc[i]
+                if k == 0:
+                    continue
+                # Insert *k* equally spaced points *strictly inside* the segment
+                for j in range(1, k + 1):
+                    ratio = j / (k + 1)
+                    interp_pt = start_pt + ratio * (end_pt - start_pt)
+                    new_coords.append(tuple(interp_pt))
 
             new_coords.append(new_coords[0])  # close the ring
             return LinearRing(new_coords)
