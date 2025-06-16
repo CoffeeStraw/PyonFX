@@ -15,12 +15,16 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
+import functools
 import math
 from typing import Callable, cast
 from inspect import signature
 
+import numpy as np
 from pyquaternion import Quaternion
-from shapely.geometry import Point, MultiPoint, LineString
+from shapely import LinearRing
+from shapely.geometry import Point, MultiPoint, LineString, Polygon
+from scipy.optimize import linear_sum_assignment
 
 
 class ShapeElement:
@@ -122,17 +126,22 @@ class Shape:
 
     Args:
         drawing_cmds (str): The shape's drawing commands in ASS format as a string.
+        elements (list[ShapeElement]): The shape's elements as a list of ShapeElement objects.
     """
 
-    def __init__(self, drawing_cmds: str):
+    def __init__(self, drawing_cmds: str = "", elements: list[ShapeElement] = []):
         # Assure that drawing_cmds is a string
-        if not isinstance(drawing_cmds, str):
-            raise TypeError(
-                f"A string containing the shape's drawing commands is expected, but you passed a {type(drawing_cmds)}"
-            )
-        self._updating = False  # Flag to prevent infinite recursion when updating elements/drawing_cmds
-        self.elements: list[ShapeElement] = []
-        self.drawing_cmds = drawing_cmds
+        if drawing_cmds and elements:
+            raise ValueError("Cannot pass both drawing_cmds and elements.")
+
+        if drawing_cmds:
+            self._updating = False  # Flag to prevent infinite recursion when updating elements/drawing_cmds
+            self.elements: list[ShapeElement] = []
+            self.drawing_cmds = drawing_cmds
+        else:
+            self._updating = False
+            self.drawing_cmds = ""
+            self.elements: list[ShapeElement] = elements
 
     def __repr__(self):
         # We return drawing commands as a string rapresentation of the object
@@ -515,8 +524,8 @@ class Shape:
         **Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
 
         Parameters:
-            max_len (int or float): The max length that you want all the lines to be
-            tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
+            max_len (int or float): The max length that you want all the lines to be.
+            tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy).
 
         Returns:
             A pointer to the current object.
@@ -534,16 +543,16 @@ class Shape:
             )
 
         def _split_line_segment(p1: Point, p2: Point) -> list[Point]:
-            """Split a line segment into smaller segments using Shapely."""
+            """Split a line segment *p1→p2* into shorter segments of length ``<= max_len``"""
             line = LineString([p1, p2])
             distance = line.length
 
-            # If the line is too short, return just the end point
+            # If already short enough, just return the end point
             if distance <= max_len:
                 return [Point(p2.x, p2.y)]
 
             # Split the line into segments of max_len, with possibly shorter first segment
-            segments = []
+            segments: list[Point] = []
             distance_rest = distance % max_len
             cur_distance = distance_rest if distance_rest > 0 else max_len
 
@@ -938,3 +947,436 @@ class Shape:
                 f(base),
             )
         )
+
+    @functools.lru_cache(maxsize=1024)
+    @staticmethod
+    def _prepare_morph(
+        src_cmds: str, tgt_cmds: str, max_len: float = 16.0, tolerance: float = 1.0
+    ) -> tuple[
+        list[tuple[LinearRing, LinearRing, bool]],
+        list[tuple[LinearRing, Point, bool]],
+        list[tuple[LinearRing, Point, bool]],
+    ]:
+        """Prepare the morphing process by decomposing the shapes into compounds and pairing them.
+
+        Returns:
+            A tuple containing:
+            - A list of (src, tgt, is_hole) ring pairs
+            - A list of (src, dest, is_hole) unmatched source rings
+            - A list of (tgt, origin, is_hole) unmatched target rings
+        """
+
+        def _shape_to_compounds(shape: Shape) -> list[Polygon]:
+            """Convert *shape* into a list of *compounds* - each compound consists of an outer shell and zero or more holes."""
+            # 1. Ensure the outline is fully linear by flattening Béziers.
+            shape.split(max_len, tolerance)
+
+            # 2. Extract individual closed loops (contours).
+            loops: list[list[Point]] = []
+            current_loop: list[Point] = []
+
+            for element in shape:
+                cmd = element.command
+                if cmd == "m":
+                    if current_loop:
+                        loops.append(current_loop)
+                    current_loop = [element.coordinates[0]]
+                elif cmd in {"l", "n"}:
+                    current_loop.append(element.coordinates[0])
+
+            if current_loop:
+                loops.append(current_loop)
+
+            # 3. Convert loops to Shapely polygons (without holes yet).
+            loop_polys: list[Polygon] = []
+            for pts in loops:
+                if len(pts) < 3:
+                    # Degenerate loop – ignore.
+                    continue
+                loop_polys.append(Polygon(pts))
+
+            if not loop_polys:
+                return []
+
+            # 4. Sort by descending area magnitude so that larger shells are processed first.
+            loop_polys.sort(key=lambda p: abs(p.area), reverse=True)
+
+            shells: list[Polygon] = []
+            holes_map: dict[Polygon, set[Polygon]] = {}
+
+            for loop_poly in loop_polys:
+                # Try to place the loop as a hole inside an existing shell.
+                for shell in shells:
+                    if shell.contains(loop_poly):
+                        holes_map[shell].add(loop_poly)
+                        break
+                else:
+                    # It's a new outer shell.
+                    shells.append(loop_poly)
+                    holes_map[loop_poly] = set()
+
+            # 5. Build compound polygons with their holes.
+            compounds: list[Polygon] = []
+            for shell in shells:
+                holes = holes_map[shell]
+                if holes:
+                    compound = Polygon(shell.exterior, [h.exterior for h in holes])
+                else:
+                    compound = shell
+                compounds.append(compound)
+
+            return compounds
+
+        def _pair_compounds(
+            src_compounds: list[Polygon],
+            tgt_compounds: list[Polygon],
+            w_dist: float = 0.55,
+            w_area: float = 0.35,
+            w_overlap: float = 0.1,
+            cost_threshold: float = 2.5,
+        ) -> tuple[
+            list[tuple[LinearRing, LinearRing, bool]],
+            list[tuple[LinearRing, Point, bool]],
+            list[tuple[LinearRing, Point, bool]],
+        ]:
+            """
+            Pair source and target polygon rings (exteriors and interiors) based on centroid distance,
+            area similarity, and overlap, avoiding shell-hole mismatches.
+
+            Any ring left without a counterpart is matched to the closest centroid so that downstream
+            morphing logic can decide whether it is *appearing* or *disappearing*.
+            """
+
+            def _extract_rings(
+                polys: list[Polygon],
+            ) -> list[tuple[LinearRing, bool, Polygon]]:
+                out: list[tuple[LinearRing, bool, Polygon]] = []
+                for poly in polys:
+                    out.append((poly.exterior, False, Polygon(poly.exterior)))
+                    out.extend(
+                        (inter, True, Polygon(inter)) for inter in poly.interiors
+                    )
+                return out
+
+            src_rings = _extract_rings(src_compounds)
+            tgt_rings = _extract_rings(tgt_compounds)
+
+            matched = []
+            unmatched_src = []
+            unmatched_tgt = []
+
+            # Global centroid arrays (used for nearest-neighbour fallback)
+            all_src_centroids = np.array(
+                [poly.centroid.coords[0] for _, _, poly in src_rings]
+            )
+            all_tgt_centroids = np.array(
+                [poly.centroid.coords[0] for _, _, poly in tgt_rings]
+            )
+
+            # Match separately for shells (False) and holes (True)
+            for is_hole in (False, True):
+                cur_src = [
+                    (ring, poly) for (ring, flag, poly) in src_rings if flag == is_hole
+                ]
+                cur_tgt = [
+                    (ring, poly) for (ring, flag, poly) in tgt_rings if flag == is_hole
+                ]
+                n_src, n_tgt = len(cur_src), len(cur_tgt)
+
+                if n_src == 0 and n_tgt == 0:
+                    continue
+                if n_src == 0:
+                    for ring, poly in cur_tgt:
+                        unmatched_tgt.append((ring, poly.centroid, is_hole))
+                    continue
+                if n_tgt == 0:
+                    for ring, poly in cur_src:
+                        unmatched_src.append((ring, poly.centroid, is_hole))
+                    continue
+
+                src_centroids = np.array(
+                    [poly.centroid.coords[0] for _, poly in cur_src]
+                )
+                tgt_centroids = np.array(
+                    [poly.centroid.coords[0] for _, poly in cur_tgt]
+                )
+                src_areas = np.array([poly.area for _, poly in cur_src])
+                tgt_areas = np.array([poly.area for _, poly in cur_tgt])
+
+                # 1) Centroid distance (normalised)
+                diff = src_centroids[:, None, :] - tgt_centroids[None, :, :]
+                dist = np.linalg.norm(diff, axis=2)
+                size_norm = np.sqrt(np.maximum(src_areas[:, None], tgt_areas[None, :]))
+                centroid_term = dist / (size_norm + 1e-8)
+
+                # 2) Relative area difference
+                area_term = np.abs(src_areas[:, None] - tgt_areas[None, :]) / (
+                    np.maximum(src_areas[:, None], tgt_areas[None, :]) + 1e-8
+                )
+
+                costs = w_dist * centroid_term + w_area * area_term
+
+                # 3) Add overlap term for top 8 promising pairs only
+                k = min(8, n_tgt)
+                candidate_cols = np.argpartition(costs, kth=k - 1, axis=1)[:, :k]
+
+                for i, cols in enumerate(candidate_cols):
+                    ring_i, _ = cur_src[i]
+                    area_i = src_areas[i]
+                    for j in cols:
+                        ring_j, _ = cur_tgt[j]
+                        inter_area = 0.0
+                        if ring_i.intersects(ring_j):
+                            inter_area = ring_i.intersection(ring_j).area
+                        min_area = min(area_i, tgt_areas[j])
+                        if min_area:
+                            iou_term = 1.0 - (inter_area / min_area)
+                            costs[i, j] += w_overlap * iou_term
+
+                # 4) Solve assignment (Hungarian algorithm)
+                row_ind, col_ind = linear_sum_assignment(costs)
+
+                used_src: set[int] = set()
+                used_tgt: set[int] = set()
+
+                for i, j in zip(row_ind, col_ind):
+                    if cost_threshold is None or costs[i, j] <= cost_threshold:
+                        matched.append((cur_src[i][0], cur_tgt[j][0], is_hole))
+                        used_src.add(i)
+                        used_tgt.add(j)
+
+                # 5) Collect unmatched rings (nearest-neighbour based on centroids)
+                for idx, (ring, poly) in enumerate(cur_src):
+                    if idx not in used_src:
+                        src_cent = src_centroids[idx]
+                        nn = np.argmin(
+                            np.linalg.norm(all_tgt_centroids - src_cent, axis=1)
+                        )
+                        unmatched_src.append(
+                            (ring, Point(all_tgt_centroids[nn]), is_hole)
+                        )
+
+                for idx, (ring, poly) in enumerate(cur_tgt):
+                    if idx not in used_tgt:
+                        tgt_cent = tgt_centroids[idx]
+                        nn = np.argmin(
+                            np.linalg.norm(all_src_centroids - tgt_cent, axis=1)
+                        )
+                        unmatched_tgt.append(
+                            (ring, Point(all_src_centroids[nn]), is_hole)
+                        )
+
+            return matched, unmatched_src, unmatched_tgt
+
+        def _resample_loop(
+            loop: LinearRing, n_points: int, preserve_starting_points: bool = True
+        ) -> LinearRing:
+            """Return *loop* resampled to *n_points* evenly spaced vertices along its perimeter, while preserving the starting points if *preserve_starting_points* is True."""
+
+            if n_points < 3:
+                raise ValueError("n_points must be at least 3 for a valid LinearRing.")
+
+            # Ensure the loop is closed and get coordinates
+            coords = np.array(loop.coords)
+            if not np.allclose(coords[0], coords[-1]):
+                raise ValueError("Input LinearRing must be closed.")
+            coords = coords[:-1]  # remove duplicate endpoint
+
+            # Compute segment lengths and cumulative lengths
+            deltas = np.diff(coords, axis=0, append=[coords[0]])
+            segment_lengths = np.linalg.norm(deltas, axis=1)
+            cum_lengths = np.insert(np.cumsum(segment_lengths), 0, 0)
+            total_length = cum_lengths[-1]
+
+            # Target distances along the perimeter
+            if preserve_starting_points:
+                dists = np.linspace(0, total_length, n_points + 1)[
+                    :-1
+                ]  # drop last point to avoid duplication
+            else:
+                dists = np.linspace(0, total_length, n_points, endpoint=False)
+
+            # Interpolate new points
+            new_coords = []
+            seg_idx = 0
+            for d in dists:
+                # Find the segment containing the target distance
+                while cum_lengths[seg_idx + 1] < d:
+                    seg_idx += 1
+                seg_start = coords[seg_idx]
+                seg_vec = deltas[seg_idx]
+                seg_length = segment_lengths[seg_idx]
+                t = (d - cum_lengths[seg_idx]) / seg_length
+                new_point = seg_start + t * seg_vec
+                new_coords.append(tuple(new_point))
+
+            new_coords.append(new_coords[0])  # close the ring
+            return LinearRing(new_coords)
+
+        # --- Execute the pipeline ---
+        src_shape = Shape(src_cmds)
+        tgt_shape = Shape(tgt_cmds)
+
+        # 1) Decompose into compounds (shell with holes)
+        src_compounds = _shape_to_compounds(src_shape)
+        tgt_compounds = _shape_to_compounds(tgt_shape)
+
+        # 2) Pair individual rings extracted from those compounds
+        paired_rings, src_unmatched, tgt_unmatched = _pair_compounds(
+            src_compounds, tgt_compounds
+        )
+
+        # 3) Resample each paired ring so that both have the same vertex count
+        resampled_pairs: list[tuple[LinearRing, LinearRing, bool]] = []
+
+        for src_ring, tgt_ring, is_hole in paired_rings:
+            # Decide target vertex count (at least 4 and large enough to accommodate both rings)
+            n_src = len(src_ring.coords) - 1  # exclude duplicate closing vertex
+            n_tgt = len(tgt_ring.coords) - 1
+            n_points = max(n_src, n_tgt, 4)
+
+            res_src = _resample_loop(src_ring, n_points)
+            res_tgt = _resample_loop(tgt_ring, n_points)
+
+            resampled_pairs.append((res_src, res_tgt, is_hole))
+
+        return resampled_pairs, src_unmatched, tgt_unmatched
+
+    def morph(
+        self, target: Shape, t: float, max_len: float = 16.0, tolerance: float = 1.0
+    ) -> Shape:
+        """Interpolates the current shape towards *target*, returning a new `Shape` that represents the intermediate state at fraction *t*.
+
+        Shapes are first decomposed into compounds (outer shells with holes).
+        Then, individual loops are matched based on:
+           - Centroid distance (preferring loops with closer centers);
+           - Area similarity (preferring loops of similar size);
+           - Overlap (preferring loops that share space);
+           - Shell/hole role (avoiding matching shells with holes).
+
+        The matched loops are interpolated. The unmatched ones are either shrunk or grown.
+
+        Parameters:
+            target (Shape): Destination shape.
+            t (float): Interpolation factor (0 ≤ t ≤ 1).
+            max_len (int or float): The max length that you want all the lines to be
+            tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
+
+        Returns:
+            A **new** `Shape` instance representing the morph at *t*.
+        """
+
+        # Fast-path validations
+        if not isinstance(target, Shape):
+            raise TypeError("Target must be a Shape instance")
+        if not 0 <= t <= 1:
+            raise ValueError("t must be between 0 and 1")
+        if t == 0:
+            return self
+        if t == 1:
+            return target
+
+        def _morph_disappearing(
+            src_ring: LinearRing, dest_pt: Point, t: float
+        ) -> LinearRing:
+            """Shrink *src_ring* toward *dest_pt* over time."""
+            if t == 0:
+                return src_ring
+
+            coords = np.asarray(
+                src_ring.coords[:-1], dtype=float
+            )  # exclude closing vertex
+            centroid = np.array(src_ring.centroid.coords[0])
+            dest = np.array([dest_pt.x, dest_pt.y])
+
+            # Scale towards centroid then translate towards destination point
+            new_coords = (
+                centroid + (coords - centroid) * (1 - t) + (dest - centroid) * t
+            )
+            new_coords = np.vstack([new_coords, new_coords[0]])  # close ring
+            return LinearRing(new_coords)
+
+        def _morph_appearing(
+            tgt_ring: LinearRing, origin_pt: Point, t: float
+        ) -> LinearRing:
+            """Grow *tgt_ring* from *origin_pt* over time."""
+            if t == 1:
+                return tgt_ring
+
+            coords = np.asarray(tgt_ring.coords[:-1], dtype=float)
+            origin = np.array([origin_pt.x, origin_pt.y])
+            new_coords = origin + (coords - origin) * t
+            new_coords = np.vstack([new_coords, new_coords[0]])
+            return LinearRing(new_coords)
+
+        def _interpolate_rings(
+            src_ring: LinearRing, tgt_ring: LinearRing, t: float
+        ) -> LinearRing:
+            """Linear interpolation between two rings with vertex correspondence already ensured."""
+            if t == 0:
+                return src_ring
+            if t == 1:
+                return tgt_ring
+            if len(src_ring.coords) != len(tgt_ring.coords):
+                raise ValueError(
+                    "Rings must have the same number of vertices: "
+                    f"{len(src_ring.coords)} != {len(tgt_ring.coords)}"
+                )
+
+            src_coords = np.asarray(src_ring.coords[:-1], dtype=float)
+            tgt_coords = np.asarray(tgt_ring.coords[:-1], dtype=float)
+
+            # Ensure orientation consistency
+            if src_ring.is_ccw != tgt_ring.is_ccw:
+                tgt_coords = tgt_coords[::-1]
+
+            # Rotate target points so that vertex 0 is as close as possible to src vertex 0
+            shift = int(np.argmin(np.sum((tgt_coords - src_coords[0]) ** 2, axis=1)))
+            if shift:
+                tgt_coords = np.roll(tgt_coords, -shift, axis=0)
+
+            interp_coords = (1 - t) * src_coords + t * tgt_coords
+            interp_coords = np.vstack([interp_coords, interp_coords[0]])
+            return LinearRing(interp_coords)
+
+        def _rings_to_shape(rings: list[tuple[LinearRing, bool]]) -> Shape:
+            """Convert a collection of `(ring, is_hole)` tuples back to a `Shape`."""
+            parts: list[str] = []
+            fmt = Shape.format_value
+            for ring, is_hole in rings:
+                # Normalise orientation (outer = CW, inner = CCW)
+                if is_hole and not ring.is_ccw:
+                    ring = LinearRing(list(ring.coords)[::-1])
+                if not is_hole and ring.is_ccw:
+                    ring = LinearRing(list(ring.coords)[::-1])
+
+                if len(ring.coords) < 3:
+                    continue  # skip degenerate rings
+
+                x0, y0 = ring.coords[0]
+                parts.append(f"m {fmt(x0)} {fmt(y0)} l")
+                for x, y in ring.coords[1:-1]:
+                    parts.append(f"{fmt(x)} {fmt(y)}")
+            return Shape(" ".join(parts))
+
+        # 1) Retrieve pairing & resampling information (cached)
+        paired, src_unmatched, tgt_unmatched = Shape._prepare_morph(
+            self.drawing_cmds,
+            target.drawing_cmds,
+            max_len=max_len,
+            tolerance=tolerance,
+        )
+
+        # 2) Interpolate matched rings
+        result_rings: list[tuple[LinearRing, bool]] = [
+            (_interpolate_rings(src, tgt, t), is_hole) for src, tgt, is_hole in paired
+        ]
+
+        # 3) Handle disappearing / appearing rings
+        for ring, dest_pt, is_hole in src_unmatched:
+            result_rings.append((_morph_disappearing(ring, dest_pt, t), is_hole))
+        for ring, origin_pt, is_hole in tgt_unmatched:
+            result_rings.append((_morph_appearing(ring, origin_pt, t), is_hole))
+
+        # 4) Convert back to Shape and return
+        return _rings_to_shape(result_rings)

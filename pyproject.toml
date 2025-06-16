@@ -13,6 +13,7 @@ dependencies = [
     "numpy",
     "pyquaternion",
     "shapely",
+    "scipy",
     "VideoTimestamps>=0.2",
     "pywin32; platform_system=='Windows'",
     "pycairo; platform_system=='Linux' or platform_system=='Darwin'",
