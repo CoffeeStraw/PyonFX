@@ -28,13 +28,12 @@ from scipy.optimize import linear_sum_assignment
 
 
 class ShapeElement:
-    """
-    Represents a single drawing command with its associated coordinates.
+    """Represents a single drawing command with its associated coordinates."""
 
-    Attributes:
-        command (str): The drawing command (one of "m", "n", "l", "p", "b", "s", "c").
-        coordinates (list[Point]): List of (x, y) coordinate pairs for this command.
-    """
+    command: str
+    """The drawing command (one of "m", "n", "l", "p", "b", "s", "c")."""
+    coordinates: list[Point]
+    """List of (x, y) coordinate pairs for this command."""
 
     def __init__(self, command: str, coordinates: list[Point]):
         if command not in {"m", "n", "l", "p", "b", "s", "c"}:
@@ -123,10 +122,6 @@ class Shape:
     """
     This class can be used to define a Shape object (by passing its drawing commands)
     and then apply functions to it in order to accomplish some tasks, like analyzing its bounding box, apply transformations, splitting curves into segments...
-
-    Args:
-        drawing_cmds (str): The shape's drawing commands in ASS format as a string.
-        elements (list[ShapeElement]): The shape's elements as a list of ShapeElement objects.
     """
 
     def __init__(self, drawing_cmds: str = "", elements: list[ShapeElement] = []):
@@ -155,6 +150,7 @@ class Shape:
 
     @property
     def elements(self) -> list[ShapeElement]:
+        """The shape's elements as a list of `ShapeElement` objects."""
         return self._elements
 
     @elements.setter
@@ -173,6 +169,7 @@ class Shape:
 
     @property
     def drawing_cmds(self) -> str:
+        """The shape's drawing commands in ASS format as a string."""
         return self._drawing_cmds
 
     @drawing_cmds.setter
