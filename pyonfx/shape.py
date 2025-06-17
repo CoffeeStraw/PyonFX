@@ -389,100 +389,93 @@ class Shape:
         return MultiPoint(all_points).bounds
 
     def __bounding_exact(self) -> tuple[float, float, float, float]:
-        # From: https://stackoverflow.com/a/14429749
-        def get_bounds_of_curve(x0, y0, x1, y1, x2, y2, x3, y3):
-            tvalues = []
+        def _cubic_bezier_bounds(
+            p0: Point,
+            p1: Point,
+            p2: Point,
+            p3: Point,
+        ) -> tuple[float, float, float, float]:
+            """Axis-aligned bounds of a cubic Bézier curve.
 
-            for i in range(2):
-                if i == 0:
-                    b = 6 * x0 - 12 * x1 + 6 * x2
-                    a = -3 * x0 + 9 * x1 - 9 * x2 + 3 * x3
-                    c = 3 * x1 - 3 * x0
-                else:
-                    b = 6 * y0 - 12 * y1 + 6 * y2
-                    a = -3 * y0 + 9 * y1 - 9 * y2 + 3 * y3
-                    c = 3 * y1 - 3 * y0
+            Implementation adapted from https://stackoverflow.com/a/14429749
+            taking care of degenerate cases (coincident control points).
+            """
 
-                if abs(a) < 1e-12:  # Numerical robustness
-                    if abs(b) < 1e-12:  # Numerical robustness
-                        continue
-                    t = -c / b
-                    if 0 < t < 1:
-                        tvalues.append(t)
-                    continue
-                b2ac = b * b - 4 * c * a
-                if b2ac < 0:
-                    continue
-                sqrtb2ac = math.sqrt(b2ac)
-                t1 = (-b + sqrtb2ac) / (2 * a)
-                if 0 < t1 < 1:
-                    tvalues.append(t1)
-                t2 = (-b - sqrtb2ac) / (2 * a)
-                if 0 < t2 < 1:
-                    tvalues.append(t2)
+            def _axis_bounds(c0, c1, c2, c3):
+                # Solve derivative 3*at^2 + 2*bt + c for roots in (0,1)
+                a = -3 * c0 + 9 * c1 - 9 * c2 + 3 * c3
+                b = 6 * c0 - 12 * c1 + 6 * c2
+                c = 3 * (c1 - c0)
 
-            x_min, y_min, x_max, y_max = math.inf, math.inf, -math.inf, -math.inf
+                ts: list[float] = []
 
-            for t in tvalues:
-                mt = 1 - t
-                x = (
-                    (mt * mt * mt * x0)
-                    + (3 * mt * mt * t * x1)
-                    + (3 * mt * t * t * x2)
-                    + (t * t * t * x3)
-                )
-                x_min, x_max = min(x_min, x), max(x_max, x)
-                y = (
-                    (mt * mt * mt * y0)
-                    + (3 * mt * mt * t * y1)
-                    + (3 * mt * t * t * y2)
-                    + (t * t * t * y3)
-                )
-                y_min, y_max = min(y_min, y), max(y_max, y)
+                if abs(a) < 1e-12:  # Quadratic (or linear) case
+                    if abs(b) > 1e-12:
+                        t = -c / b
+                        if 0 < t < 1:
+                            ts.append(t)
+                else:  # Cubic case
+                    disc = b * b - 4 * a * c
+                    if disc >= 0:
+                        sqrt_disc = math.sqrt(disc)
+                        for sign in (1, -1):
+                            t = (-b + sign * sqrt_disc) / (2 * a)
+                            if 0 < t < 1:
+                                ts.append(t)
 
-            x_min, x_max = min(x_min, x0), max(x_max, x0)
-            y_min, y_max = min(y_min, y0), max(y_max, y0)
-            x_min, x_max = min(x_min, x3), max(x_max, x3)
-            y_min, y_max = min(y_min, y3), max(y_max, y3)
+                # extrema candidates are the end-points and the roots above
+                vals = [c0, c3]
+                for t in ts:
+                    mt = 1 - t
+                    vals.append(
+                        mt * mt * mt * c0
+                        + 3 * mt * mt * t * c1
+                        + 3 * mt * t * t * c2
+                        + t * t * t * c3
+                    )
 
-            if math.inf in (x_min, y_min) or -math.inf in (x_max, y_max):
-                raise ValueError("Invalid bezier curve")
+                return min(vals), max(vals)
 
-            return x_min, y_min, x_max, y_max
+            xmin, xmax = _axis_bounds(p0.x, p1.x, p2.x, p3.x)
+            ymin, ymax = _axis_bounds(p0.y, p1.y, p2.y, p3.y)
+            return xmin, ymin, xmax, ymax
 
-        x_min, y_min, x_max, y_max = math.inf, math.inf, -math.inf, -math.inf
+        x_min, y_min = math.inf, math.inf
+        x_max, y_max = -math.inf, -math.inf
 
-        def update_min_max(x, y):
+        def _update(pt: Point):
             nonlocal x_min, y_min, x_max, y_max
-            x_min = min(x_min, x)
-            y_min = min(y_min, y)
-            x_max = max(x_max, x)
-            y_max = max(y_max, y)
+            x_min = min(x_min, pt.x)
+            y_min = min(y_min, pt.y)
+            x_max = max(x_max, pt.x)
+            y_max = max(y_max, pt.y)
 
-        def points_to_tuples(coordinates: list[Point]) -> list[tuple[float, float]]:
-            return [(coord.x, coord.y) for coord in coordinates]
+        prev_element: ShapeElement | None = None
 
-        cursor = (0, 0)
         for element in self:
-            if element.command == "m":
-                cursor = points_to_tuples(element.coordinates)[0]
-            elif element.command == "l":
-                update_min_max(*cursor)
-                cursor = points_to_tuples(element.coordinates)[0]
-                update_min_max(*cursor)
-            elif element.command == "b":
-                coords = points_to_tuples(element.coordinates)
-                bounds = get_bounds_of_curve(*cursor, *[i for c in coords for i in c])
-                update_min_max(*bounds[:2])
-                update_min_max(*bounds[2:])
-                cursor = coords[2]
-            else:
-                raise NotImplementedError(
-                    f"Drawing command '{element.command}' not implemented"
-                )
+            match element.command:
+                case "m" | "n":
+                    prev_element = element
+                case "l":
+                    if prev_element is not None and prev_element.command in {"m", "n"}:
+                        _update(prev_element.coordinates[-1])
+                    for c in element.coordinates:
+                        _update(c)
+                    prev_element = element
+                case "b":
+                    if prev_element is None:
+                        raise ValueError("Bezier command found without an initial point.")
+                    bx_min, by_min, bx_max, by_max = _cubic_bezier_bounds(prev_element.coordinates[-1], *element.coordinates)
+                    _update(Point(bx_min, by_min))
+                    _update(Point(bx_max, by_max))
+                    prev_element = element
+                case "c":
+                    pass
+                case _:
+                    raise NotImplementedError(f"Drawing command '{element.command}' not handled by bounding().")
 
         if math.inf in (x_min, y_min) or -math.inf in (x_max, y_max):
-            raise ValueError("Invalid or empty shape")
+            raise ValueError("Invalid or empty shape - could not determine bounds.")
 
         return x_min, y_min, x_max, y_max
 
