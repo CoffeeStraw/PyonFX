@@ -464,15 +464,21 @@ class Shape:
                     prev_element = element
                 case "b":
                     if prev_element is None:
-                        raise ValueError("Bezier command found without an initial point.")
-                    bx_min, by_min, bx_max, by_max = _cubic_bezier_bounds(prev_element.coordinates[-1], *element.coordinates)
+                        raise ValueError(
+                            "Bezier command found without an initial point."
+                        )
+                    bx_min, by_min, bx_max, by_max = _cubic_bezier_bounds(
+                        prev_element.coordinates[-1], *element.coordinates
+                    )
                     _update(Point(bx_min, by_min))
                     _update(Point(bx_max, by_max))
                     prev_element = element
                 case "c":
                     pass
                 case _:
-                    raise NotImplementedError(f"Drawing command '{element.command}' not handled by bounding().")
+                    raise NotImplementedError(
+                        f"Drawing command '{element.command}' not handled by bounding()."
+                    )
 
         if math.inf in (x_min, y_min) or -math.inf in (x_max, y_max):
             raise ValueError("Invalid or empty shape - could not determine bounds.")
