@@ -1047,12 +1047,12 @@ class Shape:
 
             def _extract_rings(
                 polys: list[Polygon],
-            ) -> list[tuple[LinearRing, bool, Polygon]]:
-                out: list[tuple[LinearRing, bool, Polygon]] = []
+            ) -> list[tuple[Polygon, bool]]:
+                out: list[tuple[Polygon, bool]] = []
                 for poly in polys:
-                    out.append((poly.exterior, False, Polygon(poly.exterior)))
+                    out.append((Polygon(poly.exterior), False))
                     out.extend(
-                        (inter, True, Polygon(inter)) for inter in poly.interiors
+                        (Polygon(inter), True) for inter in poly.interiors
                     )
                 return out
 
@@ -1065,41 +1065,41 @@ class Shape:
 
             # Global centroid arrays (used for nearest-neighbour fallback)
             all_src_centroids = np.array(
-                [poly.centroid.coords[0] for _, _, poly in src_rings]
+                [poly.centroid.coords[0] for poly, _ in src_rings]
             )
             all_tgt_centroids = np.array(
-                [poly.centroid.coords[0] for _, _, poly in tgt_rings]
+                [poly.centroid.coords[0] for poly, _ in tgt_rings]
             )
 
             # Match separately for shells (False) and holes (True)
             for is_hole in (False, True):
                 cur_src = [
-                    (ring, poly) for (ring, flag, poly) in src_rings if flag == is_hole
+                    poly for (poly, flag) in src_rings if flag == is_hole
                 ]
                 cur_tgt = [
-                    (ring, poly) for (ring, flag, poly) in tgt_rings if flag == is_hole
+                    poly for (poly, flag) in tgt_rings if flag == is_hole
                 ]
                 n_src, n_tgt = len(cur_src), len(cur_tgt)
 
                 if n_src == 0 and n_tgt == 0:
                     continue
                 if n_src == 0:
-                    for ring, poly in cur_tgt:
-                        unmatched_tgt.append((ring, poly.centroid, is_hole))
+                    for poly in cur_tgt:
+                        unmatched_tgt.append((poly.exterior, poly.centroid, is_hole))
                     continue
                 if n_tgt == 0:
-                    for ring, poly in cur_src:
-                        unmatched_src.append((ring, poly.centroid, is_hole))
+                    for poly in cur_src:
+                        unmatched_src.append((poly.exterior, poly.centroid, is_hole))
                     continue
 
                 src_centroids = np.array(
-                    [poly.centroid.coords[0] for _, poly in cur_src]
+                    [poly.centroid.coords[0] for poly in cur_src]
                 )
                 tgt_centroids = np.array(
-                    [poly.centroid.coords[0] for _, poly in cur_tgt]
+                    [poly.centroid.coords[0] for poly in cur_tgt]
                 )
-                src_areas = np.array([poly.area for _, poly in cur_src])
-                tgt_areas = np.array([poly.area for _, poly in cur_tgt])
+                src_areas = np.array([poly.area for poly in cur_src])
+                tgt_areas = np.array([poly.area for poly in cur_tgt])
 
                 # 1) Centroid distance (normalised)
                 diff = src_centroids[:, None, :] - tgt_centroids[None, :, :]
@@ -1119,13 +1119,13 @@ class Shape:
                 candidate_cols = np.argpartition(costs, kth=k - 1, axis=1)[:, :k]
 
                 for i, cols in enumerate(candidate_cols):
-                    ring_i, _ = cur_src[i]
+                    poly_i = cur_src[i]
                     area_i = src_areas[i]
                     for j in cols:
-                        ring_j, _ = cur_tgt[j]
+                        poly_j = cur_tgt[j]
                         inter_area = 0.0
-                        if ring_i.intersects(ring_j):
-                            inter_area = ring_i.intersection(ring_j).area
+                        if poly_i.intersects(poly_j):
+                            inter_area = poly_i.intersection(poly_j).area
                         min_area = min(area_i, tgt_areas[j])
                         if min_area:
                             iou_term = 1.0 - (inter_area / min_area)
@@ -1139,29 +1139,29 @@ class Shape:
 
                 for i, j in zip(row_ind, col_ind):
                     if cost_threshold is None or costs[i, j] <= cost_threshold:
-                        matched.append((cur_src[i][0], cur_tgt[j][0], is_hole))
+                        matched.append((cur_src[i].exterior, cur_tgt[j].exterior, is_hole))
                         used_src.add(i)
                         used_tgt.add(j)
 
                 # 5) Collect unmatched rings (nearest-neighbour based on centroids)
-                for idx, (ring, poly) in enumerate(cur_src):
+                for idx, poly in enumerate(cur_src):
                     if idx not in used_src:
                         src_cent = src_centroids[idx]
                         nn = np.argmin(
                             np.linalg.norm(all_tgt_centroids - src_cent, axis=1)
                         )
                         unmatched_src.append(
-                            (ring, Point(all_tgt_centroids[nn]), is_hole)
+                            (poly.exterior, Point(all_tgt_centroids[nn]), is_hole)
                         )
 
-                for idx, (ring, poly) in enumerate(cur_tgt):
+                for idx, poly in enumerate(cur_tgt):
                     if idx not in used_tgt:
                         tgt_cent = tgt_centroids[idx]
                         nn = np.argmin(
                             np.linalg.norm(all_src_centroids - tgt_cent, axis=1)
                         )
                         unmatched_tgt.append(
-                            (ring, Point(all_src_centroids[nn]), is_hole)
+                            (poly.exterior, Point(all_src_centroids[nn]), is_hole)
                         )
 
             return matched, unmatched_src, unmatched_tgt
@@ -1340,7 +1340,7 @@ class Shape:
         def _interpolate_rings(
             src_ring: LinearRing, tgt_ring: LinearRing, t: float
         ) -> LinearRing:
-            """Linear interpolation between two rings with vertex correspondence already ensured."""
+            """Linear interpolation between two rings with optimal vertex correspondence."""
             if t == 0:
                 return src_ring
             if t == 1:
@@ -1358,12 +1358,28 @@ class Shape:
             if src_ring.is_ccw != tgt_ring.is_ccw:
                 tgt_coords = tgt_coords[::-1]
 
-            # Rotate target points so that vertex 0 is as close as possible to src vertex 0
-            shift = int(np.argmin(np.sum((tgt_coords - src_coords[0]) ** 2, axis=1)))
-            if shift:
-                tgt_coords = np.roll(tgt_coords, -shift, axis=0)
+            # Find optimal alignment by minimizing total vertex distances
+            n_vertices = len(src_coords)
+            min_total_distance = float('inf')
+            best_shift = 0
+            
+            # Try all possible rotations and find the one with minimum total distance
+            for shift in range(n_vertices):
+                shifted_tgt = np.roll(tgt_coords, -shift, axis=0)
+                total_distance = np.sum(np.linalg.norm(src_coords - shifted_tgt, axis=1))
+                
+                if total_distance < min_total_distance:
+                    min_total_distance = total_distance
+                    best_shift = shift
+            
+            # Apply the best alignment
+            if best_shift > 0:
+                tgt_coords = np.roll(tgt_coords, -best_shift, axis=0)
 
+            # Perform linear interpolation between corresponding vertices
             interp_coords = (1 - t) * src_coords + t * tgt_coords
+
+            # Close the ring
             interp_coords = np.vstack([interp_coords, interp_coords[0]])
             return LinearRing(interp_coords)
 
