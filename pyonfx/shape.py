@@ -237,7 +237,9 @@ class Shape:
                 # Commands with coordinates
                 coord_strs = []
                 for p in element.coordinates:
-                    coord_strs.extend([Shape.format_value(p.x), Shape.format_value(p.y)])
+                    coord_strs.extend(
+                        [Shape.format_value(p.x), Shape.format_value(p.y)]
+                    )
 
                 # Check if we can use implicit command (for consecutive "l" or "b" commands)
                 if (
@@ -1051,9 +1053,7 @@ class Shape:
                 out: list[tuple[Polygon, bool]] = []
                 for poly in polys:
                     out.append((Polygon(poly.exterior), False))
-                    out.extend(
-                        (Polygon(inter), True) for inter in poly.interiors
-                    )
+                    out.extend((Polygon(inter), True) for inter in poly.interiors)
                 return out
 
             src_rings = _extract_rings(src_compounds)
@@ -1073,12 +1073,8 @@ class Shape:
 
             # Match separately for shells (False) and holes (True)
             for is_hole in (False, True):
-                cur_src = [
-                    poly for (poly, flag) in src_rings if flag == is_hole
-                ]
-                cur_tgt = [
-                    poly for (poly, flag) in tgt_rings if flag == is_hole
-                ]
+                cur_src = [poly for (poly, flag) in src_rings if flag == is_hole]
+                cur_tgt = [poly for (poly, flag) in tgt_rings if flag == is_hole]
                 n_src, n_tgt = len(cur_src), len(cur_tgt)
 
                 if n_src == 0 and n_tgt == 0:
@@ -1092,12 +1088,8 @@ class Shape:
                         unmatched_src.append((poly.exterior, poly.centroid, is_hole))
                     continue
 
-                src_centroids = np.array(
-                    [poly.centroid.coords[0] for poly in cur_src]
-                )
-                tgt_centroids = np.array(
-                    [poly.centroid.coords[0] for poly in cur_tgt]
-                )
+                src_centroids = np.array([poly.centroid.coords[0] for poly in cur_src])
+                tgt_centroids = np.array([poly.centroid.coords[0] for poly in cur_tgt])
                 src_areas = np.array([poly.area for poly in cur_src])
                 tgt_areas = np.array([poly.area for poly in cur_tgt])
 
@@ -1139,7 +1131,9 @@ class Shape:
 
                 for i, j in zip(row_ind, col_ind):
                     if cost_threshold is None or costs[i, j] <= cost_threshold:
-                        matched.append((cur_src[i].exterior, cur_tgt[j].exterior, is_hole))
+                        matched.append(
+                            (cur_src[i].exterior, cur_tgt[j].exterior, is_hole)
+                        )
                         used_src.add(i)
                         used_tgt.add(j)
 
@@ -1360,18 +1354,20 @@ class Shape:
 
             # Find optimal alignment by minimizing total vertex distances
             n_vertices = len(src_coords)
-            min_total_distance = float('inf')
+            min_total_distance = float("inf")
             best_shift = 0
-            
+
             # Try all possible rotations and find the one with minimum total distance
             for shift in range(n_vertices):
                 shifted_tgt = np.roll(tgt_coords, -shift, axis=0)
-                total_distance = np.sum(np.linalg.norm(src_coords - shifted_tgt, axis=1))
-                
+                total_distance = np.sum(
+                    np.linalg.norm(src_coords - shifted_tgt, axis=1)
+                )
+
                 if total_distance < min_total_distance:
                     min_total_distance = total_distance
                     best_shift = shift
-            
+
             # Apply the best alignment
             if best_shift > 0:
                 tgt_coords = np.roll(tgt_coords, -best_shift, axis=0)
