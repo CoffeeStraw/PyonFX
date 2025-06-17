@@ -119,9 +119,39 @@ class ShapeElement:
 
 
 class Shape:
-    """
-    This class can be used to define a Shape object (by passing its drawing commands)
-    and then apply functions to it in order to accomplish some tasks, like analyzing its bounding box, apply transformations, splitting curves into segments...
+    """High-level wrapper around ASS drawing commands.
+
+    A :class:`Shape` instance stores and manipulates the vector outlines that you
+    would normally place in a ``{\\p}`` override tag.  Internally it keeps **two**
+    synchronised representations of the outline:
+
+    1. :py:attr:`drawing_cmds`: the exact string of ASS commands (``m``, ``l``,
+       ``b`` …) and numbers.
+    2. :py:attr:`elements`: a list of :class:`~pyonfx.shape.ShapeElement`
+       objects, each one wrapping **a single drawing instruction** together
+       with its coordinates.
+
+    The class provides a rich tool-set to work with shapes: bounding-box
+    calculation, geometric transformations, curve flattening, segmentations and more.
+    Most methods mutate the instance and return ``self`` so they can be *chained*.
+
+    ``Shape`` also implements :py:meth:`__iter__`, therefore you can simply write::
+
+        >>> for element in shape:
+        >>>     ...
+
+    The iterator yields the underlying :class:`ShapeElement` objects **in the
+    same order** they appear in the ASS drawing string.  Every explicit command
+    (``m``, ``n``, ``l``, ``p``, ``b``, ``s``, ``c``) is returned one-to-one.
+    In addition, *implicit* continuations after a command - for example extra
+    coordinate pairs that follow an ``l`` or ``b`` - are split so that each
+    segment becomes its own :class:`ShapeElement`::
+
+        >>> shape = Shape("m 0 0 l 10 0 10 10")
+        >>> list(shape)
+        [ShapeElement('m', [Point(0, 0)]),
+         ShapeElement('l', [Point(10, 0)]),
+         ShapeElement('l', [Point(10, 10)])]
     """
 
     def __init__(self, drawing_cmds: str = "", elements: list[ShapeElement] = []):
@@ -150,7 +180,7 @@ class Shape:
 
     @property
     def elements(self) -> list[ShapeElement]:
-        """The shape's elements as a list of `ShapeElement` objects."""
+        """The shape's elements as a list of :class:`ShapeElement` objects."""
         return self._elements
 
     @elements.setter
@@ -1271,7 +1301,7 @@ class Shape:
             t (float): Interpolation factor (0 ≤ t ≤ 1).
             max_len (int or float): The max length that you want all the lines to be.
             tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
-            min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both |Δx| and |Δy| from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
+            min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both `|Δx|` and `|Δy|` from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
             w_dist (float, optional): Weight for the centroid-distance term (higher values make proximity more important).
             w_area (float, optional): Weight for the relative area-difference term (higher values make size similarity more important).
             w_overlap (float, optional): Weight for the overlap / IoU term that penalises pairs with little spatial intersection.
