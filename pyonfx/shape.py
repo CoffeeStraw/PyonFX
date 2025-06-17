@@ -1392,19 +1392,24 @@ class Shape:
             parts: list[ShapeElement] = []
 
             for ring, is_hole in rings:
+                # We don't want consecutive move commands: drop the last one
+                if parts and parts[-1].command == "m":
+                    parts.pop()
+
+                # Skip degenerate rings
+                if len(ring.coords) < 3:
+                    continue
+
                 # Normalise orientation (outer = CW, inner = CCW)
                 if is_hole and not ring.is_ccw:
                     ring = LinearRing(list(ring.coords)[::-1])
                 if not is_hole and ring.is_ccw:
                     ring = LinearRing(list(ring.coords)[::-1])
 
-                if len(ring.coords) < 3:
-                    continue  # skip degenerate rings
-
+                # Convert to list of ShapeElement
                 x0, y0 = ring.coords[0]
                 parts.append(ShapeElement("m", [Point(x0, y0)]))
 
-                # Track last emitted coordinate to filter near-duplicates
                 prev_x, prev_y = x0, y0
 
                 for x, y in ring.coords[1:-1]:  # exclude the duplicate closing vertex
@@ -1417,6 +1422,10 @@ class Shape:
 
                     parts.append(ShapeElement("l", [Point(x, y)]))
                     prev_x, prev_y = x, y
+
+            # A last "m" command is useless: drop it
+            if parts and parts[-1].command == "m":
+                parts.pop()
 
             return Shape(elements=parts)
 
