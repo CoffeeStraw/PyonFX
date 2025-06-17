@@ -28,13 +28,12 @@ from scipy.optimize import linear_sum_assignment
 
 
 class ShapeElement:
-    """
-    Represents a single drawing command with its associated coordinates.
+    """Represents a single drawing command with its associated coordinates."""
 
-    Attributes:
-        command (str): The drawing command (one of "m", "n", "l", "p", "b", "s", "c").
-        coordinates (list[Point]): List of (x, y) coordinate pairs for this command.
-    """
+    command: str
+    """The drawing command (one of "m", "n", "l", "p", "b", "s", "c")."""
+    coordinates: list[Point]
+    """List of (x, y) coordinate pairs for this command."""
 
     def __init__(self, command: str, coordinates: list[Point]):
         if command not in {"m", "n", "l", "p", "b", "s", "c"}:
@@ -120,13 +119,39 @@ class ShapeElement:
 
 
 class Shape:
-    """
-    This class can be used to define a Shape object (by passing its drawing commands)
-    and then apply functions to it in order to accomplish some tasks, like analyzing its bounding box, apply transformations, splitting curves into segments...
+    """High-level wrapper around ASS drawing commands.
 
-    Args:
-        drawing_cmds (str): The shape's drawing commands in ASS format as a string.
-        elements (list[ShapeElement]): The shape's elements as a list of ShapeElement objects.
+    A :class:`Shape` instance stores and manipulates the vector outlines that you
+    would normally place in a ``{\\p}`` override tag.  Internally it keeps **two**
+    synchronised representations of the outline:
+
+    1. :py:attr:`drawing_cmds`: the exact string of ASS commands (``m``, ``l``,
+       ``b`` …) and numbers.
+    2. :py:attr:`elements`: a list of :class:`~pyonfx.shape.ShapeElement`
+       objects, each one wrapping **a single drawing instruction** together
+       with its coordinates.
+
+    The class provides a rich tool-set to work with shapes: bounding-box
+    calculation, geometric transformations, curve flattening, segmentations and more.
+    Most methods mutate the instance and return ``self`` so they can be *chained*.
+
+    ``Shape`` also implements :py:meth:`__iter__`, therefore you can simply write::
+
+        >>> for element in shape:
+        >>>     ...
+
+    The iterator yields the underlying :class:`ShapeElement` objects **in the
+    same order** they appear in the ASS drawing string.  Every explicit command
+    (``m``, ``n``, ``l``, ``p``, ``b``, ``s``, ``c``) is returned one-to-one.
+    In addition, *implicit* continuations after a command - for example extra
+    coordinate pairs that follow an ``l`` or ``b`` - are split so that each
+    segment becomes its own :class:`ShapeElement`::
+
+        >>> shape = Shape("m 0 0 l 10 0 10 10")
+        >>> list(shape)
+        [ShapeElement('m', [Point(0, 0)]),
+         ShapeElement('l', [Point(10, 0)]),
+         ShapeElement('l', [Point(10, 10)])]
     """
 
     def __init__(self, drawing_cmds: str = "", elements: list[ShapeElement] = []):
@@ -155,6 +180,7 @@ class Shape:
 
     @property
     def elements(self) -> list[ShapeElement]:
+        """The shape's elements as a list of :class:`ShapeElement` objects."""
         return self._elements
 
     @elements.setter
@@ -173,6 +199,7 @@ class Shape:
 
     @property
     def drawing_cmds(self) -> str:
+        """The shape's drawing commands in ASS format as a string."""
         return self._drawing_cmds
 
     @drawing_cmds.setter
@@ -237,7 +264,9 @@ class Shape:
                 # Commands with coordinates
                 coord_strs = []
                 for p in element.coordinates:
-                    coord_strs.extend([Shape.format_value(p.x), Shape.format_value(p.y)])
+                    coord_strs.extend(
+                        [Shape.format_value(p.x), Shape.format_value(p.y)]
+                    )
 
                 # Check if we can use implicit command (for consecutive "l" or "b" commands)
                 if (
@@ -1229,13 +1258,11 @@ class Shape:
 
             def _extract_rings(
                 polys: list[Polygon],
-            ) -> list[tuple[LinearRing, bool, Polygon]]:
-                out: list[tuple[LinearRing, bool, Polygon]] = []
+            ) -> list[tuple[Polygon, bool]]:
+                out: list[tuple[Polygon, bool]] = []
                 for poly in polys:
-                    out.append((poly.exterior, False, Polygon(poly.exterior)))
-                    out.extend(
-                        (inter, True, Polygon(inter)) for inter in poly.interiors
-                    )
+                    out.append((Polygon(poly.exterior), False))
+                    out.extend((Polygon(inter), True) for inter in poly.interiors)
                 return out
 
             src_rings = _extract_rings(src_compounds)
@@ -1247,41 +1274,33 @@ class Shape:
 
             # Global centroid arrays (used for nearest-neighbour fallback)
             all_src_centroids = np.array(
-                [poly.centroid.coords[0] for _, _, poly in src_rings]
+                [poly.centroid.coords[0] for poly, _ in src_rings]
             )
             all_tgt_centroids = np.array(
-                [poly.centroid.coords[0] for _, _, poly in tgt_rings]
+                [poly.centroid.coords[0] for poly, _ in tgt_rings]
             )
 
             # Match separately for shells (False) and holes (True)
             for is_hole in (False, True):
-                cur_src = [
-                    (ring, poly) for (ring, flag, poly) in src_rings if flag == is_hole
-                ]
-                cur_tgt = [
-                    (ring, poly) for (ring, flag, poly) in tgt_rings if flag == is_hole
-                ]
+                cur_src = [poly for (poly, flag) in src_rings if flag == is_hole]
+                cur_tgt = [poly for (poly, flag) in tgt_rings if flag == is_hole]
                 n_src, n_tgt = len(cur_src), len(cur_tgt)
 
                 if n_src == 0 and n_tgt == 0:
                     continue
                 if n_src == 0:
-                    for ring, poly in cur_tgt:
-                        unmatched_tgt.append((ring, poly.centroid, is_hole))
+                    for poly in cur_tgt:
+                        unmatched_tgt.append((poly.exterior, poly.centroid, is_hole))
                     continue
                 if n_tgt == 0:
-                    for ring, poly in cur_src:
-                        unmatched_src.append((ring, poly.centroid, is_hole))
+                    for poly in cur_src:
+                        unmatched_src.append((poly.exterior, poly.centroid, is_hole))
                     continue
 
-                src_centroids = np.array(
-                    [poly.centroid.coords[0] for _, poly in cur_src]
-                )
-                tgt_centroids = np.array(
-                    [poly.centroid.coords[0] for _, poly in cur_tgt]
-                )
-                src_areas = np.array([poly.area for _, poly in cur_src])
-                tgt_areas = np.array([poly.area for _, poly in cur_tgt])
+                src_centroids = np.array([poly.centroid.coords[0] for poly in cur_src])
+                tgt_centroids = np.array([poly.centroid.coords[0] for poly in cur_tgt])
+                src_areas = np.array([poly.area for poly in cur_src])
+                tgt_areas = np.array([poly.area for poly in cur_tgt])
 
                 # 1) Centroid distance (normalised)
                 diff = src_centroids[:, None, :] - tgt_centroids[None, :, :]
@@ -1301,13 +1320,13 @@ class Shape:
                 candidate_cols = np.argpartition(costs, kth=k - 1, axis=1)[:, :k]
 
                 for i, cols in enumerate(candidate_cols):
-                    ring_i, _ = cur_src[i]
+                    poly_i = cur_src[i]
                     area_i = src_areas[i]
                     for j in cols:
-                        ring_j, _ = cur_tgt[j]
+                        poly_j = cur_tgt[j]
                         inter_area = 0.0
-                        if ring_i.intersects(ring_j):
-                            inter_area = ring_i.intersection(ring_j).area
+                        if poly_i.intersects(poly_j):
+                            inter_area = poly_i.intersection(poly_j).area
                         min_area = min(area_i, tgt_areas[j])
                         if min_area:
                             iou_term = 1.0 - (inter_area / min_area)
@@ -1321,29 +1340,31 @@ class Shape:
 
                 for i, j in zip(row_ind, col_ind):
                     if cost_threshold is None or costs[i, j] <= cost_threshold:
-                        matched.append((cur_src[i][0], cur_tgt[j][0], is_hole))
+                        matched.append(
+                            (cur_src[i].exterior, cur_tgt[j].exterior, is_hole)
+                        )
                         used_src.add(i)
                         used_tgt.add(j)
 
                 # 5) Collect unmatched rings (nearest-neighbour based on centroids)
-                for idx, (ring, poly) in enumerate(cur_src):
+                for idx, poly in enumerate(cur_src):
                     if idx not in used_src:
                         src_cent = src_centroids[idx]
                         nn = np.argmin(
                             np.linalg.norm(all_tgt_centroids - src_cent, axis=1)
                         )
                         unmatched_src.append(
-                            (ring, Point(all_tgt_centroids[nn]), is_hole)
+                            (poly.exterior, Point(all_tgt_centroids[nn]), is_hole)
                         )
 
-                for idx, (ring, poly) in enumerate(cur_tgt):
+                for idx, poly in enumerate(cur_tgt):
                     if idx not in used_tgt:
                         tgt_cent = tgt_centroids[idx]
                         nn = np.argmin(
                             np.linalg.norm(all_src_centroids - tgt_cent, axis=1)
                         )
                         unmatched_tgt.append(
-                            (ring, Point(all_src_centroids[nn]), is_hole)
+                            (poly.exterior, Point(all_src_centroids[nn]), is_hole)
                         )
 
             return matched, unmatched_src, unmatched_tgt
@@ -1462,7 +1483,7 @@ class Shape:
             t (float): Interpolation factor (0 ≤ t ≤ 1).
             max_len (int or float): The max length that you want all the lines to be.
             tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
-            min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both |Δx| and |Δy| from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
+            min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both `|Δx|` and `|Δy|` from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
             w_dist (float, optional): Weight for the centroid-distance term (higher values make proximity more important).
             w_area (float, optional): Weight for the relative area-difference term (higher values make size similarity more important).
             w_overlap (float, optional): Weight for the overlap / IoU term that penalises pairs with little spatial intersection.
@@ -1522,7 +1543,7 @@ class Shape:
         def _interpolate_rings(
             src_ring: LinearRing, tgt_ring: LinearRing, t: float
         ) -> LinearRing:
-            """Linear interpolation between two rings with vertex correspondence already ensured."""
+            """Linear interpolation between two rings with optimal vertex correspondence."""
             if t == 0:
                 return src_ring
             if t == 1:
@@ -1540,12 +1561,30 @@ class Shape:
             if src_ring.is_ccw != tgt_ring.is_ccw:
                 tgt_coords = tgt_coords[::-1]
 
-            # Rotate target points so that vertex 0 is as close as possible to src vertex 0
-            shift = int(np.argmin(np.sum((tgt_coords - src_coords[0]) ** 2, axis=1)))
-            if shift:
-                tgt_coords = np.roll(tgt_coords, -shift, axis=0)
+            # Find optimal alignment by minimizing total vertex distances
+            n_vertices = len(src_coords)
+            min_total_distance = float("inf")
+            best_shift = 0
 
+            # Try all possible rotations and find the one with minimum total distance
+            for shift in range(n_vertices):
+                shifted_tgt = np.roll(tgt_coords, -shift, axis=0)
+                total_distance = np.sum(
+                    np.linalg.norm(src_coords - shifted_tgt, axis=1)
+                )
+
+                if total_distance < min_total_distance:
+                    min_total_distance = total_distance
+                    best_shift = shift
+
+            # Apply the best alignment
+            if best_shift > 0:
+                tgt_coords = np.roll(tgt_coords, -best_shift, axis=0)
+
+            # Perform linear interpolation between corresponding vertices
             interp_coords = (1 - t) * src_coords + t * tgt_coords
+
+            # Close the ring
             interp_coords = np.vstack([interp_coords, interp_coords[0]])
             return LinearRing(interp_coords)
 
@@ -1558,19 +1597,24 @@ class Shape:
             parts: list[ShapeElement] = []
 
             for ring, is_hole in rings:
+                # We don't want consecutive move commands: drop the last one
+                if parts and parts[-1].command == "m":
+                    parts.pop()
+
+                # Skip degenerate rings
+                if len(ring.coords) < 3:
+                    continue
+
                 # Normalise orientation (outer = CW, inner = CCW)
                 if is_hole and not ring.is_ccw:
                     ring = LinearRing(list(ring.coords)[::-1])
                 if not is_hole and ring.is_ccw:
                     ring = LinearRing(list(ring.coords)[::-1])
 
-                if len(ring.coords) < 3:
-                    continue  # skip degenerate rings
-
+                # Convert to list of ShapeElement
                 x0, y0 = ring.coords[0]
                 parts.append(ShapeElement("m", [Point(x0, y0)]))
 
-                # Track last emitted coordinate to filter near-duplicates
                 prev_x, prev_y = x0, y0
 
                 for x, y in ring.coords[1:-1]:  # exclude the duplicate closing vertex
@@ -1583,6 +1627,10 @@ class Shape:
 
                     parts.append(ShapeElement("l", [Point(x, y)]))
                     prev_x, prev_y = x, y
+
+            # A last "m" command is useless: drop it
+            if parts and parts[-1].command == "m":
+                parts.pop()
 
             return Shape(elements=parts)
 

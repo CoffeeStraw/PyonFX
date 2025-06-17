@@ -403,7 +403,7 @@ class Ass:
         extended: bool = True,
         vertical_kanji: bool = False,
         video_index: int = 0,
-        rounding_method: RoundingMethod = RoundingMethod.ROUND,
+        rounding_method: RoundingMethod = RoundingMethod.ROUND,  # type: ignore[attr-defined]
         time_scale: Fraction = Fraction(1000),
         first_timestamps: Fraction = Fraction(0),
     ):
