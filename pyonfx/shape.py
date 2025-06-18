@@ -504,17 +504,18 @@ class Shape:
 
             >>> m -5 10 l 25 10 25 30 -5 30
         """
-
         return self.map(lambda cx, cy: (cx + x, cy + y))
 
-    def align(self, anchor: int = 5, an: int = 5) -> Shape:
-        """Aligns the shape.
+    def align(self, an: int = 5, anchor: int | None = None) -> Shape:
+        """Moves the outline so that a chosen **pivot inside the shape** coincides
+        with the point that will be used for ``\\pos`` when the line is rendered
+        with a given ``{\\an..}`` tag.
 
         | If no argument for anchor is passed, it will automatically center the shape.
 
         Parameters:
-            anchor (int): The shape's position relative to the position anchor. If anchor=7, the position anchor would be at the top left of the shape's bounding box. If anchor=5, it would be in the center. If anchor=3, it would be at the bottom right.
-            an (int): Alignment used for the shape (e.g. for {\\\\an8} you would use an=8).
+            an (int): Alignment of the subtitle line (``{\\an1}`` … ``{\\an9}``).
+            anchor (int, optional): Pivot inside the shape - uses the same keypad convention.  Defaults to *an*.
 
         Returns:
             A pointer to the current object.
@@ -526,64 +527,47 @@ class Shape:
 
             >>> m 0 0 l 20 0 20 10 0 10
         """
+        if anchor is None:
+            anchor = an
 
-        y_axis_anchor, x_axis_anchor = divmod(anchor - 1, 3)
-        y_axis_an, x_axis_an = divmod(an - 1, 3)
-        x_min, y_min, x_max, y_max = self.bounding()
-        libass_boundings = self.bounding(exact=False)
-        x_min_libass, y_min_libass, x_max_libass, y_max_libass = libass_boundings
-        x_move = -x_min
-        y_move = -y_min
+        # Keypad decomposition (0: left / bottom, 1: centre, 2: right / top)
+        pivot_row, pivot_col = divmod(anchor - 1, 3)
+        line_row, line_col = divmod(an - 1, 3)
 
-        # Center shape along x-axis
-        if x_axis_an == 0:  # left
-            # center shape
-            x_move -= (x_max - x_min) / 2
-        elif x_axis_an == 1:  # center
-            # adjust for imprecise calculation from libass (when using bezier curves)
-            x_move -= (x_max - x_min) / 2 - (x_max_libass - x_min_libass) / 2
-        elif x_axis_an == 2:  # right
-            # center shape
-            x_move += (x_max - x_min) / 2
-            # adjust for imprecise calculation from libass (when using bezier curves)
-            x_move -= (x_max - x_min) - (x_max_libass - x_min_libass)
-        else:
-            raise ValueError("an must be an integer from 1 to 9")
+        # Bounding boxes (exact vs. libass)
+        left, top, right, bottom = self.bounding()
+        l_left, l_top, l_right, l_bottom = self.bounding(exact=False)
 
-        # Center shape along y-axis
-        if y_axis_an == 0:  # bottom
-            # center shape
-            y_move += (y_max - y_min) / 2
-            # adjust for imprecise calculation from libass (when using bezier curves)
-            y_move -= (y_max - y_min) - (y_max_libass - y_min_libass)
-        elif y_axis_an == 1:  # middle
-            # adjust for imprecise calculation from libass (when using bezier curves)
-            y_move -= (y_max - y_min) / 2 - (y_max_libass - y_min_libass) / 2
-        elif y_axis_an == 2:  # top
-            # center shape
-            y_move -= (y_max - y_min) / 2
-        else:
-            raise ValueError("an must be an integer from 1 to 9")
+        width, height = right - left, bottom - top
 
-        # Set anchor along x-axis
-        if x_axis_anchor == 0:  # left
-            x_move += (x_max - x_min) / 2
-        elif x_axis_anchor == 1:  # center
-            pass
-        elif x_axis_anchor == 2:  # right
-            x_move -= (x_max - x_min) / 2
-        else:
-            raise ValueError("anchor must be an integer from 1 to 9")
+        x_move = -left
+        y_move = -top
 
-        # Set anchor along y-axis
-        if y_axis_anchor == 0:  # bottom
-            y_move -= (y_max - y_min) / 2
-        elif y_axis_anchor == 1:  # middle
-            pass
-        elif y_axis_anchor == 2:  # top
-            y_move += (y_max - y_min) / 2
-        else:
-            raise ValueError("anchor must be an integer from 1 to 9")
+        # Centre according to line alignment (libass corrections included)
+        if line_col == 0:  # left
+            x_move -= width / 2
+        elif line_col == 1:  # centre
+            x_move -= width / 2 - (l_right - l_left) / 2
+        elif line_col == 2:  # right
+            x_move += width / 2 - (width - (l_right - l_left))
+
+        if line_row == 0:  # bottom
+            y_move += height / 2 - (height - (l_bottom - l_top))
+        elif line_row == 1:  # middle
+            y_move -= height / 2 - (l_bottom - l_top) / 2
+        elif line_row == 2:  # top
+            y_move -= height / 2
+
+        # Finally shift so that requested pivot is the reference point
+        if pivot_col == 0:  # left
+            x_move += width / 2
+        elif pivot_col == 2:  # right
+            x_move -= width / 2
+
+        if pivot_row == 0:  # bottom
+            y_move -= height / 2
+        elif pivot_row == 2:  # top
+            y_move += height / 2
 
         # Update shape
         self.map(lambda cx, cy: (cx + x_move, cy + y_move))
