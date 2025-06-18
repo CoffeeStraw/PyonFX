@@ -22,8 +22,8 @@ from inspect import signature
 
 import numpy as np
 from pyquaternion import Quaternion
-from shapely import LinearRing
-from shapely.geometry import Point, MultiPoint, LineString, Polygon
+from shapely.geometry import LinearRing, Point, MultiPoint, LineString, Polygon, MultiPolygon
+from shapely.ops import unary_union
 from scipy.optimize import linear_sum_assignment
 
 
@@ -1412,9 +1412,48 @@ class Shape:
         ) -> Shape:
             """Convert a collection of `(ring, is_hole)` tuples back to a `Shape`, with optional near-duplicate filtering."""
 
-            parts: list[ShapeElement] = []
+            # Gather polygons (shells and holes)
+            shell_polys: list[Polygon] = []
+            hole_polys: list[Polygon] = []
 
-            for ring, is_hole in rings:
+            for lr, is_hole in rings:
+                poly = Polygon(lr).buffer(0)
+                if poly.is_empty or not poly.is_valid:
+                    continue
+                (hole_polys if is_hole else shell_polys).append(poly)
+
+            # Union the shells and holes
+            shell_union = unary_union(shell_polys) if shell_polys else None
+            hole_union = unary_union(hole_polys) if hole_polys else None
+
+            # Subtract the holes from the shells (if any)
+            if shell_union and hole_union:
+                combined = shell_union.difference(hole_union)
+            elif shell_union:
+                combined = shell_union
+            elif hole_union:
+                combined = hole_union
+            else:
+                return Shape()
+
+            combined_polys: list[Polygon]
+            if isinstance(combined, MultiPolygon):
+                combined_polys = list(combined.geoms)
+            elif isinstance(combined, Polygon):
+                combined_polys = [combined]
+            else:
+                raise ValueError("Combined geometry is not a Polygon or MultiPolygon")
+
+            # Extract exterior/interior rings from the combined geometry
+            merged_rings: list[tuple[LinearRing, bool]] = []
+            for poly in combined_polys:
+                merged_rings.append((poly.exterior, False))
+                for interior in poly.interiors:
+                    merged_rings.append((interior, True))
+
+            # Convert rings → ShapeElements
+            parts: list[ShapeElement] = []
+            for ring, is_hole in merged_rings:
                 # We don't want consecutive move commands: drop the last one
                 if parts and parts[-1].command == "m":
                     parts.pop()
