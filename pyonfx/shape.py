@@ -979,6 +979,7 @@ class Shape:
         w_area: float,
         w_overlap: float,
         cost_threshold: float,
+        ensure_shell_pairs: bool = False,
     ) -> tuple[
         list[tuple[LinearRing, LinearRing, bool]],
         list[tuple[LinearRing, Point, bool]],
@@ -1061,6 +1062,7 @@ class Shape:
             w_area: float = 0.35,
             w_overlap: float = 0.1,
             cost_threshold: float = 2.5,
+            ensure_shell_pairs: bool = False,
         ) -> tuple[
             list[tuple[LinearRing, LinearRing, bool]],
             list[tuple[LinearRing, Point, bool]],
@@ -1164,26 +1166,44 @@ class Shape:
                         used_src.add(i)
                         used_tgt.add(j)
 
-                # 5) Collect unmatched rings (nearest-neighbour based on centroids)
-                for idx, poly in enumerate(cur_src):
-                    if idx not in used_src:
-                        src_cent = src_centroids[idx]
-                        nn = np.argmin(
-                            np.linalg.norm(all_tgt_centroids - src_cent, axis=1)
-                        )
-                        unmatched_src.append(
-                            (poly.exterior, Point(all_tgt_centroids[nn]), is_hole)
-                        )
+                # 5) Handle still-unmatched rings.
+                unmatched_src_idx = set(range(n_src)) - used_src
+                unmatched_tgt_idx = set(range(n_tgt)) - used_tgt
 
-                for idx, poly in enumerate(cur_tgt):
-                    if idx not in used_tgt:
-                        tgt_cent = tgt_centroids[idx]
-                        nn = np.argmin(
-                            np.linalg.norm(all_src_centroids - tgt_cent, axis=1)
-                        )
-                        unmatched_tgt.append(
-                            (poly.exterior, Point(all_src_centroids[nn]), is_hole)
-                        )
+                # Optionally force-pair shells so that they always morph into something.
+                if ensure_shell_pairs and not is_hole and n_src > 0 and n_tgt > 0:
+                    # Pair every remaining source shell with its minimum-cost target shell
+                    for i in list(unmatched_src_idx):
+                        j = int(np.argmin(costs[i]))
+                        matched.append((cur_src[i].exterior, cur_tgt[j].exterior, is_hole))
+                        unmatched_src_idx.remove(i)
+
+                    # Pair every remaining target shell with its minimum-cost source shell
+                    for j in list(unmatched_tgt_idx):
+                        i = int(np.argmin(costs[:, j]))
+                        matched.append((cur_src[i].exterior, cur_tgt[j].exterior, is_hole))
+                        unmatched_tgt_idx.remove(j)
+
+                # Any ring still left unmatched will follow the old grow/shrink behaviour.
+                for idx in unmatched_src_idx:
+                    poly = cur_src[idx]
+                    src_cent = src_centroids[idx]
+                    nn = np.argmin(
+                        np.linalg.norm(all_tgt_centroids - src_cent, axis=1)
+                    )
+                    unmatched_src.append(
+                        (poly.exterior, Point(all_tgt_centroids[nn]), is_hole)
+                    )
+
+                for idx in unmatched_tgt_idx:
+                    poly = cur_tgt[idx]
+                    tgt_cent = tgt_centroids[idx]
+                    nn = np.argmin(
+                        np.linalg.norm(all_src_centroids - tgt_cent, axis=1)
+                    )
+                    unmatched_tgt.append(
+                        (poly.exterior, Point(all_src_centroids[nn]), is_hole)
+                    )
 
             return matched, unmatched_src, unmatched_tgt
 
@@ -1264,6 +1284,7 @@ class Shape:
             w_area,
             w_overlap,
             cost_threshold,
+            ensure_shell_pairs,
         )
 
         # 3) Resample each paired ring so that both have the same vertex count
@@ -1293,6 +1314,7 @@ class Shape:
         w_area: float = 0.35,
         w_overlap: float = 0.1,
         cost_threshold: float = 2.5,
+        ensure_shell_pairs: bool = True,
     ) -> Shape:
         """Interpolates the current shape towards *target*, returning a new `Shape` that represents the intermediate state at fraction *t*.
 
@@ -1306,6 +1328,7 @@ class Shape:
             w_area (float, optional): Weight for the relative area-difference term (higher values make size similarity more important).
             w_overlap (float, optional): Weight for the overlap / IoU term that penalises pairs with little spatial intersection.
             cost_threshold (float, optional): Maximum acceptable cost for a pairing. Pairs whose cost is above this threshold are treated as unmatched and will grow/shrink to the closest centroid.
+            ensure_shell_pairs (bool, optional): If ``True`` *shell* rings that would otherwise remain unmatched will be force-paired with the shell that yields the minimum cost. This guarantees that every visible contour morphs into something, at the price of allowing the same shell to be reused multiple times.
 
         Returns:
             A **new** `Shape` instance representing the morph at *t*.
@@ -1501,6 +1524,7 @@ class Shape:
             w_area=w_area,
             w_overlap=w_overlap,
             cost_threshold=cost_threshold,
+            ensure_shell_pairs=ensure_shell_pairs,
         )
 
         # 2) Interpolate matched rings
