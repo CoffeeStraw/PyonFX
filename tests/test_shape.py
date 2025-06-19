@@ -324,7 +324,7 @@ def test_bounding():
     assert original.bounding(exact=False) == (-100.5, 0, 100, 100)
 
     original = Shape("m 0 0 l 20 0 20 10 0 10")
-    assert original.bounding() == (0.0, 0.0, 20.0, 10.0)
+    assert original.bounding(exact=True) == (0.0, 0.0, 20.0, 10.0)
 
     original = Shape("m 0 0 l 20 0 20 10 0 10")
     assert original.bounding(exact=False) == (0.0, 0.0, 20.0, 10.0)
@@ -332,7 +332,7 @@ def test_bounding():
     original = Shape(
         "m 313 312 b 255 275 482 38 277 212 l 436 269 b 378 388 461 671 260 481 235 431 118 430 160 282"
     )
-    assert original.bounding() == (
+    assert original.bounding(exact=True) == (
         150.98535796762013,
         148.88438545593218,
         436.0,
@@ -342,7 +342,7 @@ def test_bounding():
     original = Shape(
         "m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481"
     )
-    assert original.bounding() == (260.0, 150.67823683425252, 436.0, 544.871772934194)
+    assert original.bounding(exact=True) == (260.0, 150.67823683425252, 436.0, 544.871772934194)
     assert original.bounding(exact=False) == (254.0, 38.0, 482.0, 671.0)
 
 
