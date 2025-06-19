@@ -355,13 +355,13 @@ class Shape:
         self.elements = transformed_elements
         return self
 
-    def bounding(self, exact: bool = True) -> tuple[float, float, float, float]:
+    def bounding(self, exact: bool = False) -> tuple[float, float, float, float]:
         """Calculates shape bounding box.
 
         **Tips:** *Using this you can get more precise information about a shape (width, height, position).*
 
         Parameters:
-            exact (bool): Whether the calculation of the bounding box should be exact, which is more precise for bezier curves.
+            exact (bool): Whether the calculation of the bounding box should be exact, which is more precise for Bézier curves.
 
         Returns:
             A tuple (x0, y0, x1, y1) containing coordinates of the bounding box.
@@ -371,12 +371,12 @@ class Shape:
 
                 print( "Left-top: %d %d\\nRight-bottom: %d %d" % ( Shape("m 10 5 l 25 5 25 42 10 42").bounding() ) )
                 print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding() )
-                print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding(exact=False) )
+                print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding(exact=True) )
 
             >>> Left-top: 10 5
             >>> Right-bottom: 25 42
-            >>> (260.0, 150.67823683425252, 436.0, 544.871772934194)
             >>> (254.0, 38.0, 482.0, 671.0)
+            >>> (260.0, 150.67823683425252, 436.0, 544.871772934194)
         """
         all_points = [coord for element in self for coord in element.coordinates]
 
@@ -530,12 +530,18 @@ class Shape:
         if anchor is None:
             anchor = an
 
+        if an < 1 or an > 9:
+            raise ValueError("Alignment value must be an integer between 1 and 9")
+
+        if anchor < 1 or anchor > 9:
+            raise ValueError("Anchor value must be an integer between 1 and 9")
+
         # Keypad decomposition (0: left / bottom, 1: centre, 2: right / top)
         pivot_row, pivot_col = divmod(anchor - 1, 3)
         line_row, line_col = divmod(an - 1, 3)
 
         # Bounding boxes (exact vs. libass)
-        left, top, right, bottom = self.bounding()
+        left, top, right, bottom = self.bounding(exact=True)
         l_left, l_top, l_right, l_bottom = self.bounding(exact=False)
 
         width, height = right - left, bottom - top
