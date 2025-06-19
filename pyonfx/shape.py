@@ -294,74 +294,6 @@ class Shape:
         # Utility function to properly format values for shapes also returning them as a string
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
-    def has_error(self) -> bool | str:
-        """Utility function that checks if the shape is valid.
-
-        Returns:
-            False if no error has been found, else a string with the first error encountered.
-        """
-        try:
-            list(self)
-            return False
-        except ValueError as e:
-            return str(e)
-        except Exception as e:
-            return f"Unexpected error: {str(e)}"
-
-    def map(
-        self,
-        fun: (
-            Callable[[float, float], tuple[float, float]]
-            | Callable[[float, float, str], tuple[float, float]]
-        ),
-    ) -> Shape:
-        """Sends every point of a shape through given transformation function to change them.
-
-        **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
-
-        Parameters:
-            fun (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
-
-        Returns:
-            A pointer to the current object.
-
-        Examples:
-            ..  code-block:: python3
-
-                original = Shape("m 0 0 l 20 0 20 10 0 10")
-                print ( original.map(lambda x, y: (x+10, y+5) ) )
-
-            >>> m 10 5 l 30 5 30 15 10 15
-        """
-        if not callable(fun):
-            raise TypeError("(Lambda) function expected")
-
-        transformed_elements = []
-        for element in self:
-            if not element.coordinates:
-                # Commands like 'c' with no coordinates - keep as-is
-                transformed_elements.append(element)
-                continue
-
-            # Transform each coordinate pair in this element
-            transformed_coords = []
-            for p in element.coordinates:
-                if len(signature(fun).parameters) == 3:
-                    fun = cast(Callable[[float, float, str], tuple[float, float]], fun)
-                    new_x, new_y = fun(p.x, p.y, element.command)
-                else:
-                    fun = cast(Callable[[float, float], tuple[float, float]], fun)
-                    new_x, new_y = fun(p.x, p.y)
-                transformed_coords.append(Point(new_x, new_y))
-
-            transformed_elements.append(
-                ShapeElement(element.command, transformed_coords)
-            )
-
-        # Update the shape with transformed elements
-        self.elements = transformed_elements
-        return self
-
     def bounding(self, exact: bool = False) -> tuple[float, float, float, float]:
         """Calculates shape bounding box.
 
@@ -387,15 +319,9 @@ class Shape:
         """
         all_points = [coord for element in self for coord in element.coordinates]
 
-        if not all_points:
-            return (0.0, 0.0, 0.0, 0.0)
+        if not exact:
+            return MultiPoint(all_points).bounds
 
-        if exact:
-            return self.__bounding_exact()
-
-        return MultiPoint(all_points).bounds
-
-    def __bounding_exact(self) -> tuple[float, float, float, float]:
         def _cubic_bezier_bounds(
             p0: Point,
             p1: Point,
@@ -492,6 +418,60 @@ class Shape:
 
         return x_min, y_min, x_max, y_max
 
+    def map(
+        self,
+        fun: (
+            Callable[[float, float], tuple[float, float]]
+            | Callable[[float, float, str], tuple[float, float]]
+        ),
+    ) -> Shape:
+        """Sends every point of a shape through given transformation function to change them.
+
+        **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
+
+        Parameters:
+            fun (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
+
+        Returns:
+            A pointer to the current object.
+
+        Examples:
+            ..  code-block:: python3
+
+                original = Shape("m 0 0 l 20 0 20 10 0 10")
+                print ( original.map(lambda x, y: (x+10, y+5) ) )
+
+            >>> m 10 5 l 30 5 30 15 10 15
+        """
+        if not callable(fun):
+            raise TypeError("(Lambda) function expected")
+
+        transformed_elements = []
+        for element in self:
+            if not element.coordinates:
+                # Commands like 'c' with no coordinates - keep as-is
+                transformed_elements.append(element)
+                continue
+
+            # Transform each coordinate pair in this element
+            transformed_coords = []
+            for p in element.coordinates:
+                if len(signature(fun).parameters) == 3:
+                    fun = cast(Callable[[float, float, str], tuple[float, float]], fun)
+                    new_x, new_y = fun(p.x, p.y, element.command)
+                else:
+                    fun = cast(Callable[[float, float], tuple[float, float]], fun)
+                    new_x, new_y = fun(p.x, p.y)
+                transformed_coords.append(Point(new_x, new_y))
+
+            transformed_elements.append(
+                ShapeElement(element.command, transformed_coords)
+            )
+
+        # Update the shape with transformed elements
+        self.elements = transformed_elements
+        return self
+
     def move(self, x: float, y: float) -> Shape:
         """Moves shape coordinates in given direction.
 
@@ -582,9 +562,7 @@ class Shape:
         elif pivot_row == 2:  # top
             y_move += height / 2
 
-        # Update shape
-        self.map(lambda cx, cy: (cx + x_move, cy + y_move))
-        return self
+        return self.move(x_move, y_move)
 
     def flatten(self, tolerance: float = 1.0) -> Shape:
         """Splits shape's bezier curves into lines.
@@ -845,291 +823,6 @@ class Shape:
             A new shape as string, representing the border of the input.
         """
         raise NotImplementedError
-
-    @staticmethod
-    def polygon(edges: int, side_length: float) -> Shape:
-        """Returns a shape representing a regular *n*-sided polygon.
-
-        Parameters:
-            edges (int): Number of sides.
-            side_length (float): Length of each side.
-
-        Returns:
-            A shape representing the polygon.
-        """
-        if edges < 3:
-            raise ValueError("Edges must be ≥ 3")
-        if side_length <= 0:
-            raise ValueError("Side length must be positive")
-
-        # Calculate circumradius from side length
-        radius = side_length / (2 * math.sin(math.pi / edges))
-
-        f = Shape.format_value
-        pts = []
-        # Rotate to get a more natural orientation (flat bottom when possible)
-        angle_offset = math.pi / 2 + math.pi / edges
-
-        for i in range(edges):
-            angle = 2 * math.pi * i / edges + angle_offset
-            x = radius * math.cos(angle)
-            y = radius * math.sin(angle)
-            pts.append((f(x), f(y)))
-
-        cmd_parts = [f"m {pts[0][0]} {pts[0][1]} l"]
-        cmd_parts.extend(f"{x} {y}" for x, y in pts[1:])
-        return Shape(" ".join(cmd_parts)).align()
-
-    @staticmethod
-    def ring(out_r: float, in_r: float) -> Shape:
-        """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
-
-        **Tips:** *A ring with increasing inner radius, starting from 0, can look like an outfading point.*
-
-        Parameters:
-            out_r (int or float): The outer radius for the ring.
-            in_r (int or float): The inner radius for the ring.
-
-        Returns:
-            A shape object representing a ring.
-        """
-        try:
-            out_r2, in_r2 = out_r * 2, in_r * 2
-            off = out_r - in_r
-            off_in_r = off + in_r
-            off_in_r2 = off + in_r2
-        except TypeError:
-            raise TypeError("Number(s) expected")
-
-        if in_r >= out_r:
-            raise ValueError(
-                "Valid number expected. Inner radius must be less than outer radius"
-            )
-
-        f = Shape.format_value
-        return Shape(
-            "m 0 %s "
-            "b 0 %s 0 0 %s 0 "
-            "%s 0 %s 0 %s %s "
-            "%s %s %s %s %s %s "
-            "%s %s 0 %s 0 %s "
-            "m %s %s "
-            "b %s %s %s %s %s %s "
-            "%s %s %s %s %s %s "
-            "%s %s %s %s %s %s "
-            "%s %s %s %s %s %s"
-            % (
-                f(out_r),  # outer move
-                f(out_r),
-                f(out_r),  # outer curve 1
-                f(out_r),
-                f(out_r2),
-                f(out_r2),
-                f(out_r),  # outer curve 2
-                f(out_r2),
-                f(out_r),
-                f(out_r2),
-                f(out_r2),
-                f(out_r),
-                f(out_r2),  # outer curve 3
-                f(out_r),
-                f(out_r2),
-                f(out_r2),
-                f(out_r),  # outer curve 4
-                f(off),
-                f(off_in_r),  # inner move
-                f(off),
-                f(off_in_r),
-                f(off),
-                f(off_in_r2),
-                f(off_in_r),
-                f(off_in_r2),  # inner curve 1
-                f(off_in_r),
-                f(off_in_r2),
-                f(off_in_r2),
-                f(off_in_r2),
-                f(off_in_r2),
-                f(off_in_r),  # inner curve 2
-                f(off_in_r2),
-                f(off_in_r),
-                f(off_in_r2),
-                f(off),
-                f(off_in_r),
-                f(off),  # inner curve 3
-                f(off_in_r),
-                f(off),
-                f(off),
-                f(off),
-                f(off),
-                f(off_in_r),  # inner curve 4
-            )
-        )
-
-    @staticmethod
-    def ellipse(w: float, h: float) -> Shape:
-        """Returns a shape object of an ellipse with given width and height, centered around (0,0).
-
-        **Tips:** *You could use that to create rounded stribes or arcs in combination with blurring for light effects.*
-
-        Parameters:
-            w (int or float): The width for the ellipse.
-            h (int or float): The height for the ellipse.
-
-        Returns:
-            A shape object representing an ellipse.
-        """
-        try:
-            w2, h2 = w / 2, h / 2
-        except TypeError:
-            raise TypeError("Number(s) expected")
-
-        f = Shape.format_value
-
-        return Shape(
-            "m 0 %s "
-            "b 0 %s 0 0 %s 0 "
-            "%s 0 %s 0 %s %s "
-            "%s %s %s %s %s %s "
-            "%s %s 0 %s 0 %s"
-            % (
-                f(h2),  # move
-                f(h2),
-                f(w2),  # curve 1
-                f(w2),
-                f(w),
-                f(w),
-                f(h2),  # curve 2
-                f(w),
-                f(h2),
-                f(w),
-                f(h),
-                f(w2),
-                f(h),  # curve 3
-                f(w2),
-                f(h),
-                f(h),
-                f(h2),  # curve 4
-            )
-        )
-
-    @staticmethod
-    def heart(size: float, offset: float = 0) -> Shape:
-        """Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
-
-        **Tips:** *An offset=size*(2/3) results in a splitted heart.*
-
-        Parameters:
-            size (int or float): The width&height for the heart.
-            offset (int or float): The vertical offset of center point.
-
-        Returns:
-            A shape object representing an heart.
-        """
-        try:
-            mult = size / 30
-        except TypeError:
-            raise TypeError("Size parameter must be a number")
-        # Build shape from template
-        shape = Shape(
-            "m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30"
-        ).map(lambda x, y: (x * mult, y * mult))
-
-        # Shift mid point of heart vertically
-        count = 0
-
-        def shift_mid_point(x, y):
-            nonlocal count
-            count += 1
-
-            if count == 7:
-                try:
-                    return x, y + offset
-                except TypeError:
-                    raise TypeError("Offset parameter must be a number")
-            return x, y
-
-        # Return result
-        return shape.map(shift_mid_point)
-
-    @staticmethod
-    def __glance_or_star(
-        edges: int, inner_size: float, outer_size: float, g_or_s: str
-    ) -> Shape:
-        """
-        General function to create a shape object representing star or glance.
-        """
-        # Alias for utility functions
-        f = Shape.format_value
-
-        def rotate_on_axis_z(point, theta):
-            # Internal function to rotate a point around z axis by a given angle.
-            theta = math.radians(theta)
-            return Quaternion(axis=[0, 0, 1], angle=theta).rotate(point)
-
-        # Building shape
-        shape = [f"m 0 {-outer_size} {g_or_s}"]
-        inner_p, outer_p = 0, 0
-
-        for i in range(1, edges + 1):
-            # Inner edge
-            inner_p = rotate_on_axis_z([0, -inner_size, 0], ((i - 0.5) / edges) * 360)
-            # Outer edge
-            outer_p = rotate_on_axis_z([0, -outer_size, 0], (i / edges) * 360)
-            # Add curve / line
-            if g_or_s == "l":
-                shape.append(
-                    "%s %s %s %s"
-                    % (f(inner_p[0]), f(inner_p[1]), f(outer_p[0]), f(outer_p[1]))
-                )
-            else:
-                shape.append(
-                    "%s %s %s %s %s %s"
-                    % (
-                        f(inner_p[0]),
-                        f(inner_p[1]),
-                        f(inner_p[0]),
-                        f(inner_p[1]),
-                        f(outer_p[0]),
-                        f(outer_p[1]),
-                    )
-                )
-
-        shape = Shape(" ".join(shape))
-
-        # Return result centered
-        return shape.align()
-
-    @staticmethod
-    def star(edges: int, inner_size: float, outer_size: float) -> Shape:
-        """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
-
-        **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
-
-        Parameters:
-            edges (int): The number of edges of the star.
-            inner_size (int or float): The inner edges distance from center.
-            outer_size (int or float): The outer edges distance from center.
-
-        Returns:
-            A shape object as a string representing a star.
-        """
-        return Shape.__glance_or_star(edges, inner_size, outer_size, "l")
-
-    @staticmethod
-    def glance(edges: int, inner_size: float, outer_size: float) -> Shape:
-        """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
-
-        **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
-
-        Parameters:
-            edges (int): The number of edges of the star.
-            inner_size (int or float): The inner edges distance from center.
-            outer_size (int or float): The control points for bezier curves between edges distance from center.
-
-        Returns:
-            A shape object as a string representing a glance.
-        """
-        return Shape.__glance_or_star(edges, inner_size, outer_size, "b")
 
     @functools.lru_cache(maxsize=1024)
     @staticmethod
@@ -1707,3 +1400,288 @@ class Shape:
 
         # 4) Convert back to Shape and return
         return _rings_to_shape(result_rings, min_point_spacing)
+
+    @staticmethod
+    def polygon(edges: int, side_length: float) -> Shape:
+        """Returns a shape representing a regular *n*-sided polygon.
+
+        Parameters:
+            edges (int): Number of sides.
+            side_length (float): Length of each side.
+
+        Returns:
+            A shape representing the polygon.
+        """
+        if edges < 3:
+            raise ValueError("Edges must be ≥ 3")
+        if side_length <= 0:
+            raise ValueError("Side length must be positive")
+
+        # Calculate circumradius from side length
+        radius = side_length / (2 * math.sin(math.pi / edges))
+
+        f = Shape.format_value
+        pts = []
+        # Rotate to get a more natural orientation (flat bottom when possible)
+        angle_offset = math.pi / 2 + math.pi / edges
+
+        for i in range(edges):
+            angle = 2 * math.pi * i / edges + angle_offset
+            x = radius * math.cos(angle)
+            y = radius * math.sin(angle)
+            pts.append((f(x), f(y)))
+
+        cmd_parts = [f"m {pts[0][0]} {pts[0][1]} l"]
+        cmd_parts.extend(f"{x} {y}" for x, y in pts[1:])
+        return Shape(" ".join(cmd_parts)).align()
+
+    @staticmethod
+    def ellipse(w: float, h: float) -> Shape:
+        """Returns a shape object of an ellipse with given width and height, centered around (0,0).
+
+        **Tips:** *You could use that to create rounded stribes or arcs in combination with blurring for light effects.*
+
+        Parameters:
+            w (int or float): The width for the ellipse.
+            h (int or float): The height for the ellipse.
+
+        Returns:
+            A shape object representing an ellipse.
+        """
+        try:
+            w2, h2 = w / 2, h / 2
+        except TypeError:
+            raise TypeError("Number(s) expected")
+
+        f = Shape.format_value
+
+        return Shape(
+            "m 0 %s "
+            "b 0 %s 0 0 %s 0 "
+            "%s 0 %s 0 %s %s "
+            "%s %s %s %s %s %s "
+            "%s %s 0 %s 0 %s"
+            % (
+                f(h2),  # move
+                f(h2),
+                f(w2),  # curve 1
+                f(w2),
+                f(w),
+                f(w),
+                f(h2),  # curve 2
+                f(w),
+                f(h2),
+                f(w),
+                f(h),
+                f(w2),
+                f(h),  # curve 3
+                f(w2),
+                f(h),
+                f(h),
+                f(h2),  # curve 4
+            )
+        )
+
+    @staticmethod
+    def ring(out_r: float, in_r: float) -> Shape:
+        """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
+
+        **Tips:** *A ring with increasing inner radius, starting from 0, can look like an outfading point.*
+
+        Parameters:
+            out_r (int or float): The outer radius for the ring.
+            in_r (int or float): The inner radius for the ring.
+
+        Returns:
+            A shape object representing a ring.
+        """
+        try:
+            out_r2, in_r2 = out_r * 2, in_r * 2
+            off = out_r - in_r
+            off_in_r = off + in_r
+            off_in_r2 = off + in_r2
+        except TypeError:
+            raise TypeError("Number(s) expected")
+
+        if in_r >= out_r:
+            raise ValueError(
+                "Valid number expected. Inner radius must be less than outer radius"
+            )
+
+        f = Shape.format_value
+        return Shape(
+            "m 0 %s "
+            "b 0 %s 0 0 %s 0 "
+            "%s 0 %s 0 %s %s "
+            "%s %s %s %s %s %s "
+            "%s %s 0 %s 0 %s "
+            "m %s %s "
+            "b %s %s %s %s %s %s "
+            "%s %s %s %s %s %s "
+            "%s %s %s %s %s %s "
+            "%s %s %s %s %s %s"
+            % (
+                f(out_r),  # outer move
+                f(out_r),
+                f(out_r),  # outer curve 1
+                f(out_r),
+                f(out_r2),
+                f(out_r2),
+                f(out_r),  # outer curve 2
+                f(out_r2),
+                f(out_r),
+                f(out_r2),
+                f(out_r2),
+                f(out_r),
+                f(out_r2),  # outer curve 3
+                f(out_r),
+                f(out_r2),
+                f(out_r2),
+                f(out_r),  # outer curve 4
+                f(off),
+                f(off_in_r),  # inner move
+                f(off),
+                f(off_in_r),
+                f(off),
+                f(off_in_r2),
+                f(off_in_r),
+                f(off_in_r2),  # inner curve 1
+                f(off_in_r),
+                f(off_in_r2),
+                f(off_in_r2),
+                f(off_in_r2),
+                f(off_in_r2),
+                f(off_in_r),  # inner curve 2
+                f(off_in_r2),
+                f(off_in_r),
+                f(off_in_r2),
+                f(off),
+                f(off_in_r),
+                f(off),  # inner curve 3
+                f(off_in_r),
+                f(off),
+                f(off),
+                f(off),
+                f(off),
+                f(off_in_r),  # inner curve 4
+            )
+        )
+
+    @staticmethod
+    def heart(size: float, offset: float = 0) -> Shape:
+        """Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
+
+        **Tips:** *An offset=size*(2/3) results in a splitted heart.*
+
+        Parameters:
+            size (int or float): The width&height for the heart.
+            offset (int or float): The vertical offset of center point.
+
+        Returns:
+            A shape object representing an heart.
+        """
+        try:
+            mult = size / 30
+        except TypeError:
+            raise TypeError("Size parameter must be a number")
+        # Build shape from template
+        shape = Shape(
+            "m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30"
+        ).map(lambda x, y: (x * mult, y * mult))
+
+        # Shift mid point of heart vertically
+        count = 0
+
+        def shift_mid_point(x, y):
+            nonlocal count
+            count += 1
+
+            if count == 7:
+                try:
+                    return x, y + offset
+                except TypeError:
+                    raise TypeError("Offset parameter must be a number")
+            return x, y
+
+        # Return result
+        return shape.map(shift_mid_point)
+
+    @staticmethod
+    def _glance_or_star(
+        edges: int, inner_size: float, outer_size: float, g_or_s: str
+    ) -> Shape:
+        """
+        General function to create a shape object representing star or glance.
+        """
+        # Alias for utility functions
+        f = Shape.format_value
+
+        def rotate_on_axis_z(point, theta):
+            # Internal function to rotate a point around z axis by a given angle.
+            theta = math.radians(theta)
+            return Quaternion(axis=[0, 0, 1], angle=theta).rotate(point)
+
+        # Building shape
+        shape = [f"m 0 {-outer_size} {g_or_s}"]
+        inner_p, outer_p = 0, 0
+
+        for i in range(1, edges + 1):
+            # Inner edge
+            inner_p = rotate_on_axis_z([0, -inner_size, 0], ((i - 0.5) / edges) * 360)
+            # Outer edge
+            outer_p = rotate_on_axis_z([0, -outer_size, 0], (i / edges) * 360)
+            # Add curve / line
+            if g_or_s == "l":
+                shape.append(
+                    "%s %s %s %s"
+                    % (f(inner_p[0]), f(inner_p[1]), f(outer_p[0]), f(outer_p[1]))
+                )
+            else:
+                shape.append(
+                    "%s %s %s %s %s %s"
+                    % (
+                        f(inner_p[0]),
+                        f(inner_p[1]),
+                        f(inner_p[0]),
+                        f(inner_p[1]),
+                        f(outer_p[0]),
+                        f(outer_p[1]),
+                    )
+                )
+
+        shape = Shape(" ".join(shape))
+
+        # Return result centered
+        return shape.align()
+
+    @staticmethod
+    def star(edges: int, inner_size: float, outer_size: float) -> Shape:
+        """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
+
+        **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
+
+        Parameters:
+            edges (int): The number of edges of the star.
+            inner_size (int or float): The inner edges distance from center.
+            outer_size (int or float): The outer edges distance from center.
+
+        Returns:
+            A shape object as a string representing a star.
+        """
+        return Shape._glance_or_star(edges, inner_size, outer_size, "l")
+
+    @staticmethod
+    def glance(edges: int, inner_size: float, outer_size: float) -> Shape:
+        """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
+
+        **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
+
+        Parameters:
+            edges (int): The number of edges of the star.
+            inner_size (int or float): The inner edges distance from center.
+            outer_size (int or float): The control points for bezier curves between edges distance from center.
+
+        Returns:
+            A shape object as a string representing a glance.
+        """
+        return Shape._glance_or_star(edges, inner_size, outer_size, "b")
