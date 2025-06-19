@@ -564,6 +564,36 @@ class Shape:
 
         return self.move(x_move, y_move)
 
+    def scale(self, fscx: float = 100, fscy: float = 100) -> Shape:
+        """Scales shape coordinates horizontally and vertically, similar to ASS \\fscx and \\fscy tags.
+
+        Parameters:
+            fscx (int or float): Horizontal scale factor as percentage (100 = normal, 200 = double width, 50 = half width).
+            fscy (int or float): Vertical scale factor as percentage (100 = normal, 200 = double height, 50 = half height).
+
+        Returns:
+            A pointer to the current object.
+
+        Examples:
+            ..  code-block:: python3
+
+                # Double the width, keep height the same
+                print( Shape("m 0 50 l 0 0 50 0 50 50").scale(fscx=200) )
+
+                # Scale to half size
+                print( Shape("m 0 50 l 0 0 50 0 50 50").scale(fscx=50, fscy=50) )
+
+            >>> m 0 50 l 0 0 100 0 100 50
+            >>> m 0 25 l 0 0 25 0 25 25
+        """
+        if fscx == 100.0 and fscy == 100.0:
+            return self
+
+        scale_x = fscx / 100.0
+        scale_y = fscy / 100.0
+
+        return self.map(lambda x, y: (x * scale_x, y * scale_y))
+
     def flatten(self, tolerance: float = 1.0) -> Shape:
         """Splits shape's bezier curves into lines.
 

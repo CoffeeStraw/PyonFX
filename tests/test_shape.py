@@ -529,3 +529,51 @@ def test_generate_shapes():
 
     dest = Shape("m 0 50 l 0 0 50 0 50 50")
     assert Shape.polygon(4, 50) == dest
+
+
+def test_scale():
+    # Test no scaling
+    original = Shape("m 10 10 l 20 10 20 20 10 20")
+    assert original.scale(fscx=100, fscy=100) == original
+
+    # Test horizontal scaling only
+    rect = Shape("m 0 0 l 10 0 10 10 0 10")
+    scaled_x = rect.scale(fscx=200, fscy=100)
+    expected_x = Shape("m 0 0 l 20 0 20 10 0 10")
+    assert scaled_x == expected_x
+
+    # Test vertical scaling only
+    rect = Shape("m 0 0 l 10 0 10 10 0 10")
+    scaled_y = rect.scale(fscx=100, fscy=200)
+    expected_y = Shape("m 0 0 l 10 0 10 20 0 20")
+    assert scaled_y == expected_y
+
+    # Test both horizontal and vertical scaling
+    rect = Shape("m 0 0 l 10 0 10 10 0 10")
+    scaled_both = rect.scale(fscx=150, fscy=200)
+    expected_both = Shape("m 0 0 l 15 0 15 20 0 20")
+    assert scaled_both == expected_both
+
+    # Test scaling down
+    rect = Shape("m 0 0 l 20 0 20 20 0 20")
+    scaled_down = rect.scale(fscx=50, fscy=25)
+    expected_down = Shape("m 0 0 l 10 0 10 5 0 5")
+    assert scaled_down == expected_down
+
+    # Test scaling with negative coordinates
+    shape = Shape("m -10 -10 l 10 -10 10 10 -10 10")
+    scaled_neg = shape.scale(fscx=200, fscy=50)
+    expected_neg = Shape("m -20 -5 l 20 -5 20 5 -20 5")
+    assert scaled_neg == expected_neg
+
+    # Test method chaining
+    original = Shape("m 0 0 l 10 0 10 10 0 10")
+    chained = original.scale(fscx=200, fscy=100).move(5, 5)
+    expected_chained = Shape("m 5 5 l 25 5 25 15 5 15")
+    assert chained == expected_chained
+
+    # Test with bezier curves
+    bezier = Shape("m 0 0 b 10 0 10 10 0 10")
+    scaled_bezier = bezier.scale(fscx=200, fscy=150)
+    expected_bezier = Shape("m 0 0 b 20 0 20 15 0 15")
+    assert scaled_bezier == expected_bezier
