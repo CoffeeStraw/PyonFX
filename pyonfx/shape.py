@@ -491,6 +491,9 @@ class Shape:
 
             >>> m -5 10 l 25 10 25 30 -5 30
         """
+        if x == 0 and y == 0:
+            return self
+
         return self.map(lambda cx, cy: (cx + x, cy + y))
 
     def align(self, an: int = 5, anchor: int | None = None) -> Shape:
