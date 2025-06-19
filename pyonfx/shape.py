@@ -22,7 +22,14 @@ from inspect import signature
 
 import numpy as np
 from pyquaternion import Quaternion
-from shapely.geometry import LinearRing, Point, MultiPoint, LineString, Polygon, MultiPolygon
+from shapely.geometry import (
+    LinearRing,
+    Point,
+    MultiPoint,
+    LineString,
+    Polygon,
+    MultiPolygon,
+)
 from shapely.ops import unary_union
 from scipy.optimize import linear_sum_assignment
 
@@ -1346,22 +1353,24 @@ class Shape:
                     # Pair every remaining source shell with its minimum-cost target shell
                     for i in list(unmatched_src_idx):
                         j = int(np.argmin(costs[i]))
-                        matched.append((cur_src[i].exterior, cur_tgt[j].exterior, is_hole))
+                        matched.append(
+                            (cur_src[i].exterior, cur_tgt[j].exterior, is_hole)
+                        )
                         unmatched_src_idx.remove(i)
 
                     # Pair every remaining target shell with its minimum-cost source shell
                     for j in list(unmatched_tgt_idx):
                         i = int(np.argmin(costs[:, j]))
-                        matched.append((cur_src[i].exterior, cur_tgt[j].exterior, is_hole))
+                        matched.append(
+                            (cur_src[i].exterior, cur_tgt[j].exterior, is_hole)
+                        )
                         unmatched_tgt_idx.remove(j)
 
                 # Any ring still left unmatched will follow the old grow/shrink behaviour.
                 for idx in unmatched_src_idx:
                     poly = cur_src[idx]
                     src_cent = src_centroids[idx]
-                    nn = np.argmin(
-                        np.linalg.norm(all_tgt_centroids - src_cent, axis=1)
-                    )
+                    nn = np.argmin(np.linalg.norm(all_tgt_centroids - src_cent, axis=1))
                     unmatched_src.append(
                         (poly.exterior, Point(all_tgt_centroids[nn]), is_hole)
                     )
@@ -1369,9 +1378,7 @@ class Shape:
                 for idx in unmatched_tgt_idx:
                     poly = cur_tgt[idx]
                     tgt_cent = tgt_centroids[idx]
-                    nn = np.argmin(
-                        np.linalg.norm(all_src_centroids - tgt_cent, axis=1)
-                    )
+                    nn = np.argmin(np.linalg.norm(all_src_centroids - tgt_cent, axis=1))
                     unmatched_tgt.append(
                         (poly.exterior, Point(all_src_centroids[nn]), is_hole)
                     )
