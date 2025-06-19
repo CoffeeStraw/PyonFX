@@ -12,7 +12,7 @@ meta, styles, lines = io.get_data()
 
 def romaji(line, l):
     off = 6
-    p_sh = Shape.rectangle()
+    p_sh = Shape.polygon(4, 1)
 
     for syl in Utils.all_non_empty(line.syls):
         # Leadin Effect

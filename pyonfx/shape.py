@@ -847,6 +847,40 @@ class Shape:
         raise NotImplementedError
 
     @staticmethod
+    def polygon(edges: int, side_length: float) -> Shape:
+        """Returns a shape representing a regular *n*-sided polygon.
+
+        Parameters:
+            edges (int): Number of sides.
+            side_length (float): Length of each side.
+
+        Returns:
+            A shape representing the polygon.
+        """
+        if edges < 3:
+            raise ValueError("Edges must be ≥ 3")
+        if side_length <= 0:
+            raise ValueError("Side length must be positive")
+
+        # Calculate circumradius from side length
+        radius = side_length / (2 * math.sin(math.pi / edges))
+
+        f = Shape.format_value
+        pts = []
+        # Rotate to get a more natural orientation (flat bottom when possible)
+        angle_offset = math.pi / 2 + math.pi / edges
+
+        for i in range(edges):
+            angle = 2 * math.pi * i / edges + angle_offset
+            x = radius * math.cos(angle)
+            y = radius * math.sin(angle)
+            pts.append((f(x), f(y)))
+
+        cmd_parts = [f"m {pts[0][0]} {pts[0][1]} l"]
+        cmd_parts.extend(f"{x} {y}" for x, y in pts[1:])
+        return Shape(" ".join(cmd_parts)).align()
+
+    @staticmethod
     def ring(out_r: float, in_r: float) -> Shape:
         """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
 
@@ -1096,55 +1130,6 @@ class Shape:
             A shape object as a string representing a glance.
         """
         return Shape.__glance_or_star(edges, inner_size, outer_size, "b")
-
-    @staticmethod
-    def rectangle(w: float = 1.0, h: float = 1.0) -> Shape:
-        """Returns a shape object of a rectangle with given width and height, centered around (0,0).
-
-        **Tips:** *A rectangle with width=1 and height=1 is a pixel.*
-
-        Parameters:
-            w (int or float): The width for the rectangle.
-            h (int or float): The height for the rectangle.
-
-        Returns:
-            A shape object representing an rectangle.
-        """
-        try:
-            f = Shape.format_value
-            return Shape(f"m 0 0 l {f(w)} 0 {f(w)} {f(h)} 0 {f(h)} 0 0")
-        except TypeError:
-            raise TypeError("Number(s) expected")
-
-    @staticmethod
-    def triangle(size: float) -> Shape:
-        """Returns a shape object of an equilateral triangle with given side length, centered around (0,0).
-
-        Parameters:
-            size (int or float): The side length for the triangle.
-
-        Returns:
-            A shape object representing an triangle.
-        """
-        try:
-            h = math.sqrt(3) * size / 2
-            base = -h / 6
-        except TypeError:
-            raise TypeError("Number expected")
-
-        f = Shape.format_value
-        return Shape(
-            "m %s %s l %s %s 0 %s %s %s"
-            % (
-                f(size / 2),
-                f(base),
-                f(size),
-                f(base + h),
-                f(base + h),
-                f(size / 2),
-                f(base),
-            )
-        )
 
     @functools.lru_cache(maxsize=1024)
     @staticmethod

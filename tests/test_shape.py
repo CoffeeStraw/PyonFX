@@ -523,3 +523,9 @@ def test_generate_shapes():
         "m 50 0 b 57.071 42.929 57.071 42.929 100 50 57.071 57.071 57.071 57.071 50 100 42.929 57.071 42.929 57.071 0 50 42.929 42.929 42.929 42.929 50 0"
     )
     assert Shape.glance(4, 10, 50) == dest
+
+    dest = Shape("m 0 43.302 l 25 0 50 43.302")
+    assert Shape.polygon(3, 50) == dest
+
+    dest = Shape("m 0 50 l 0 0 50 0 50 50")
+    assert Shape.polygon(4, 50) == dest

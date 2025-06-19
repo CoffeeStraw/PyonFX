@@ -12,8 +12,8 @@ meta, styles, lines = io.get_data()
 # A set of shapes we can randomly choose from
 AVAILABLE_SHAPES = [
     Shape.ellipse(25, 25),  # Circle
-    Shape.rectangle(25, 25),  # Square
-    Shape.triangle(25),  # Triangle
+    Shape.polygon(4, 25),  # Square
+    Shape.polygon(3, 25),  # Triangle
     Shape.star(5, 10, 20),  # 5-point star
     Shape.star(6, 10, 20),  # 6-point star
     Shape.heart(28),  # Heart
