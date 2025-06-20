@@ -29,9 +29,11 @@ from shapely.geometry import (
     LineString,
     Polygon,
     MultiPolygon,
+    JOIN_STYLE,
 )
 from shapely.ops import unary_union
 from scipy.optimize import linear_sum_assignment
+from shapely.affinity import scale as affine_scale
 
 
 class ShapeElement:
@@ -947,21 +949,78 @@ class Shape:
         self.elements = split_elements
         return self
 
-    def __to_outline(self, bord_xy: float, bord_y: float, mode: str = "round") -> Shape:
-        """Converts shape command for filling to a shape command for stroking.
+    def to_outline(
+        self,
+        bord_xy: float,
+        bord_y: float | None = None,
+        mode: str = "round",
+        libass_hack: float = 2/3,
+    ) -> Shape:
+        """Converts shape command for filling to a shape command for stroking (i.e. what you would get with ``{\\bord}``).
 
         **Tips:** *You could use this for border textures.*
 
         Parameters:
-            shape (str): The shape in ASS format as a string.
+            bord_xy (float): The width of the border.
+            bord_y (float, optional): The height of the border. If None, it defaults to bord_xy.
+            mode (str, optional): The join style for the border (round, bevel, mitre).
+            libass_hack (float, optional): The rescaling factor to apply to the border. You should never need to change this.
 
         Returns:
-            A pointer to the current object.
-
-        Returns:
-            A new shape as string, representing the border of the input.
+            A new Shape object representing the border of the input.
         """
-        raise NotImplementedError
+        if bord_xy <= 0:
+            raise ValueError("bord_xy must be > 0")
+        if bord_y is not None and bord_y < 0:
+            raise ValueError("bord_y must be >= 0")
+        if mode not in ("round", "bevel", "mitre"):
+            raise ValueError("mode must be one of 'round', 'bevel', or 'miter'")
+
+        if bord_y is None:
+            bord_y = bord_xy
+
+        if bord_xy == 0 and bord_y == 0:
+            return Shape()
+
+        # Build Shapely geometry
+        multipoly = self.to_multipolygon()
+
+        # Apply libass hack
+        bord_xy *= libass_hack
+        bord_y *= libass_hack
+
+        # Apply anisotropic scaling so that the buffer distance is uniform
+        width = max(bord_xy, bord_y)
+        xscale = bord_xy / width
+        yscale = bord_y / width
+
+        inv_xscale = 1.0 / xscale
+        inv_yscale = 1.0 / yscale
+        scaled_geom = affine_scale(
+            multipoly, xfact=inv_xscale, yfact=inv_yscale, origin=(0, 0)
+        )
+
+        # Apply positive buffer to get the outer outline
+        outer = scaled_geom.buffer(width, join_style=getattr(JOIN_STYLE, mode))
+
+        # Difference the outer and the original geometry
+        stroke_scaled = outer.difference(scaled_geom)
+
+        # Scale back to original coordinate system
+        stroke_geom = affine_scale(
+            stroke_scaled, xfact=xscale, yfact=yscale, origin=(0, 0)
+        )
+
+        # Craft MultiPolygon
+        if isinstance(stroke_geom, MultiPolygon):
+            mp = stroke_geom
+        elif isinstance(stroke_geom, Polygon):
+            mp = MultiPolygon([stroke_geom])
+        else:
+            raise ValueError(f"Invalid stroke geometry type: {type(stroke_geom)}")
+
+        # Convert back to Shape
+        return Shape.from_multipolygon(mp)
 
     @functools.lru_cache(maxsize=1024)
     @staticmethod
