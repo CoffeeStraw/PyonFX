@@ -259,15 +259,14 @@ class Shape:
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
     def to_multipolygon(
-        self, max_len: float = 16.0, tolerance: float = 1.0
+        self, tolerance: float = 1.0
     ) -> MultiPolygon:
         """Converts shape to a Shapely MultiPolygon with proper shell-hole relationships.
 
-        Polygons don't have curves, so :func:`Shape.split` is automatically called.
+        Polygons don't have curves, so :func:`Shape.flatten` is automatically called with the given tolerance.
 
         Parameters:
-            max_len (float): Maximum length for line segments after splitting.
-            tolerance (float): Angle tolerance in degrees for curve flattening.
+            tolerance (float): Angle in degree to define a curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
 
         Returns:
             A MultiPolygon where each polygon represents a compound with outer shell and holes.
@@ -276,7 +275,7 @@ class Shape:
         shape_copy = Shape(self.drawing_cmds)
 
         # 1. Ensure the outline is fully linear by flattening Béziers.
-        shape_copy.split(max_len, tolerance)
+        shape_copy.flatten(tolerance)
 
         # 2. Extract individual closed loops (contours).
         loops: list[list[Point]] = []
@@ -1260,12 +1259,13 @@ class Shape:
             return LinearRing(new_coords)
 
         # --- Execute the pipeline ---
-        src_shape = Shape(src_cmds)
-        tgt_shape = Shape(tgt_cmds)
+        # 0) Flatten and split into short lines to have more points to work with
+        src_shape = Shape(src_cmds).split(max_len, tolerance)
+        tgt_shape = Shape(tgt_cmds).split(max_len, tolerance)
 
         # 1) Decompose into compounds (shell with holes)
-        src_compounds = src_shape.to_multipolygon(max_len, tolerance)
-        tgt_compounds = tgt_shape.to_multipolygon(max_len, tolerance)
+        src_compounds = src_shape.to_multipolygon()
+        tgt_compounds = tgt_shape.to_multipolygon()
 
         # 2) Pair individual rings extracted from those compounds
         paired_rings, src_unmatched, tgt_unmatched = _pair_compounds(
