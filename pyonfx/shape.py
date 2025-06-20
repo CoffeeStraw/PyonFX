@@ -991,8 +991,10 @@ class Shape:
 
         # Anisotropic scaling so that the buffer distance is uniform
         width = max(abs(dist_xy), abs(dist_y))
-        xscale = abs(dist_xy) / width
-        yscale = abs(dist_y) / width
+
+        _EPS = 1e-9  # Avoid division-by-zero
+        xscale = abs(dist_xy) / width if abs(dist_xy) > 0 else _EPS
+        yscale = abs(dist_y) / width if abs(dist_y) > 0 else _EPS
 
         inv_xscale = 1.0 / xscale
         inv_yscale = 1.0 / yscale
