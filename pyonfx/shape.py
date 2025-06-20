@@ -585,24 +585,29 @@ class Shape:
         if not callable(fun):
             raise TypeError("(Lambda) function expected")
 
-        transformed_elements = []
+        # Determine the arity of the transformation function
+        n_params = len(signature(fun).parameters)
+        if n_params not in (2, 3):
+            raise ValueError("Function must have 2 or 3 parameters")
+
+        # Create a wrapper function accepting always 3 parameters
+        if n_params == 3:
+            fun = cast(Callable[[float, float, str], tuple[float, float]], fun)
+            _apply = lambda px, py, cmd: fun(px, py, cmd)
+        else:
+            fun = cast(Callable[[float, float], tuple[float, float]], fun)
+            _apply = lambda px, py, _: fun(px, py)
+
+        # Apply the transformation to each element
+        transformed_elements: list[ShapeElement] = []
         for element in self:
             if not element.coordinates:
-                # Commands like 'c' with no coordinates - keep as-is
                 transformed_elements.append(element)
                 continue
 
-            # Transform each coordinate pair in this element
-            transformed_coords = []
-            for p in element.coordinates:
-                if len(signature(fun).parameters) == 3:
-                    fun = cast(Callable[[float, float, str], tuple[float, float]], fun)
-                    new_x, new_y = fun(p.x, p.y, element.command)
-                else:
-                    fun = cast(Callable[[float, float], tuple[float, float]], fun)
-                    new_x, new_y = fun(p.x, p.y)
-                transformed_coords.append(Point(new_x, new_y))
-
+            transformed_coords = [
+                Point(*_apply(p.x, p.y, element.command)) for p in element.coordinates
+            ]
             transformed_elements.append(
                 ShapeElement(element.command, transformed_coords)
             )
