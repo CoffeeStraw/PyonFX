@@ -294,6 +294,145 @@ class Shape:
         # Utility function to properly format values for shapes also returning them as a string
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
+    def to_multipolygon(
+        self, max_len: float = 16.0, tolerance: float = 1.0
+    ) -> MultiPolygon:
+        """Converts shape to a Shapely MultiPolygon with proper shell-hole relationships.
+
+        Polygons don't have curves, so :func:`Shape.split` is automatically called.
+
+        Parameters:
+            max_len (float): Maximum length for line segments after splitting.
+            tolerance (float): Angle tolerance in degrees for curve flattening.
+
+        Returns:
+            A MultiPolygon where each polygon represents a compound with outer shell and holes.
+        """
+        # Work on a copy to avoid modifying the original shape
+        shape_copy = Shape(self.drawing_cmds)
+
+        # 1. Ensure the outline is fully linear by flattening Béziers.
+        shape_copy.split(max_len, tolerance)
+
+        # 2. Extract individual closed loops (contours).
+        loops: list[list[Point]] = []
+        current_loop: list[Point] = []
+
+        for element in shape_copy:
+            cmd = element.command
+            if cmd == "m":
+                if current_loop:
+                    loops.append(current_loop)
+                current_loop = [element.coordinates[0]]
+            elif cmd in {"l", "n"}:
+                current_loop.append(element.coordinates[0])
+
+        if current_loop:
+            loops.append(current_loop)
+
+        # 3. Convert loops to Shapely polygons (without holes yet).
+        loop_polys: list[Polygon] = []
+        for pts in loops:
+            if len(pts) < 3:
+                # Degenerate loop – ignore.
+                continue
+            loop_polys.append(Polygon(pts))
+
+        if not loop_polys:
+            return MultiPolygon([])
+
+        # 4. Sort by descending area magnitude so that larger shells are processed first.
+        loop_polys.sort(key=lambda p: abs(p.area), reverse=True)
+
+        shells: list[Polygon] = []
+        holes_map: dict[Polygon, set[Polygon]] = {}
+
+        for loop_poly in loop_polys:
+            # Try to place the loop as a hole inside an existing shell.
+            for shell in shells:
+                if shell.contains(loop_poly):
+                    holes_map[shell].add(loop_poly)
+                    break
+            else:
+                # It's a new outer shell.
+                shells.append(loop_poly)
+                holes_map[loop_poly] = set()
+
+        # 5. Build compound polygons with their holes.
+        compounds: list[Polygon] = []
+        for shell in shells:
+            holes = holes_map[shell]
+            if holes:
+                compound = Polygon(shell.exterior, [h.exterior for h in holes])
+            else:
+                compound = shell
+            compounds.append(compound)
+
+        return MultiPolygon(compounds)
+
+    @classmethod
+    def from_multipolygon(
+        cls, multipolygon: MultiPolygon, min_point_spacing: float = 0.5
+    ) -> Shape:
+        """Creates a Shape from a Shapely MultiPolygon.
+
+        Parameters:
+            multipolygon (MultiPolygon): The MultiPolygon to convert.
+            min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both `|Δx|` and `|Δy|` from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
+
+        Returns:
+            A new Shape instance representing the MultiPolygon.
+        """
+        if not isinstance(multipolygon, MultiPolygon):
+            raise TypeError("Expected a MultiPolygon instance")
+
+        elements: list[ShapeElement] = []
+
+        def _linear_ring_to_elements(linear_ring: LinearRing, is_hole: bool = False):
+            nonlocal elements
+
+            coords = list(linear_ring.coords)
+            if not coords:
+                return
+
+            # Remove duplicate closing point if present
+            if len(coords) > 1 and coords[0] == coords[-1]:
+                coords.pop()
+
+            # Normalize orientation (outer = CW, inner = CCW)
+            if is_hole and not linear_ring.is_ccw:
+                coords = coords[::-1]
+            elif not is_hole and linear_ring.is_ccw:
+                coords = coords[::-1]
+
+            # Consecutive "m" commands are overriden, drop last one
+            if elements and elements[-1].command == "m":
+                elements.pop()
+
+            first_point = last_point = coords[0]
+            elements.append(ShapeElement("m", [Point(first_point[0], first_point[1])]))
+            if len(coords) > 1:
+                for x, y in coords[1:]:
+                    if (
+                        abs(last_point[0] - x) >= min_point_spacing
+                        or abs(last_point[1] - y) >= min_point_spacing
+                    ):
+                        elements.append(ShapeElement("l", [Point(x, y)]))
+                        last_point = (x, y)
+
+        for polygon in multipolygon.geoms:
+            if not isinstance(polygon, Polygon) or polygon.is_empty:
+                continue
+            _linear_ring_to_elements(polygon.exterior, is_hole=False)
+            for interior in polygon.interiors:
+                _linear_ring_to_elements(interior, is_hole=True)
+
+        # Ending with "m" command is not VSFilter compatible, drop it
+        if elements and elements[-1].command == "m":
+            elements.pop()
+
+        return cls(elements=elements)
+
     def bounding(self, exact: bool = False) -> tuple[float, float, float, float]:
         """Calculates shape bounding box.
 
@@ -883,70 +1022,9 @@ class Shape:
             - A list of (tgt, origin, is_hole) unmatched target rings
         """
 
-        def _shape_to_compounds(shape: Shape) -> list[Polygon]:
-            """Convert *shape* into a list of *compounds* - each compound consists of an outer shell and zero or more holes."""
-            # 1. Ensure the outline is fully linear by flattening Béziers.
-            shape.split(max_len, tolerance)
-
-            # 2. Extract individual closed loops (contours).
-            loops: list[list[Point]] = []
-            current_loop: list[Point] = []
-
-            for element in shape:
-                cmd = element.command
-                if cmd == "m":
-                    if current_loop:
-                        loops.append(current_loop)
-                    current_loop = [element.coordinates[0]]
-                elif cmd in {"l", "n"}:
-                    current_loop.append(element.coordinates[0])
-
-            if current_loop:
-                loops.append(current_loop)
-
-            # 3. Convert loops to Shapely polygons (without holes yet).
-            loop_polys: list[Polygon] = []
-            for pts in loops:
-                if len(pts) < 3:
-                    # Degenerate loop – ignore.
-                    continue
-                loop_polys.append(Polygon(pts))
-
-            if not loop_polys:
-                return []
-
-            # 4. Sort by descending area magnitude so that larger shells are processed first.
-            loop_polys.sort(key=lambda p: abs(p.area), reverse=True)
-
-            shells: list[Polygon] = []
-            holes_map: dict[Polygon, set[Polygon]] = {}
-
-            for loop_poly in loop_polys:
-                # Try to place the loop as a hole inside an existing shell.
-                for shell in shells:
-                    if shell.contains(loop_poly):
-                        holes_map[shell].add(loop_poly)
-                        break
-                else:
-                    # It's a new outer shell.
-                    shells.append(loop_poly)
-                    holes_map[loop_poly] = set()
-
-            # 5. Build compound polygons with their holes.
-            compounds: list[Polygon] = []
-            for shell in shells:
-                holes = holes_map[shell]
-                if holes:
-                    compound = Polygon(shell.exterior, [h.exterior for h in holes])
-                else:
-                    compound = shell
-                compounds.append(compound)
-
-            return compounds
-
         def _pair_compounds(
-            src_compounds: list[Polygon],
-            tgt_compounds: list[Polygon],
+            src_compounds: MultiPolygon,
+            tgt_compounds: MultiPolygon,
             w_dist: float = 0.55,
             w_area: float = 0.35,
             w_overlap: float = 0.1,
@@ -966,10 +1044,10 @@ class Shape:
             """
 
             def _extract_rings(
-                polys: list[Polygon],
+                multipolygon: MultiPolygon,
             ) -> list[tuple[Polygon, bool]]:
                 out: list[tuple[Polygon, bool]] = []
-                for poly in polys:
+                for poly in multipolygon.geoms:
                     out.append((Polygon(poly.exterior), False))
                     out.extend((Polygon(inter), True) for inter in poly.interiors)
                 return out
@@ -1077,7 +1155,7 @@ class Shape:
                         )
                         unmatched_tgt_idx.remove(j)
 
-                # Any ring still left unmatched will follow the old grow/shrink behaviour.
+                # Any ring still left unmatched will be matched to the closest centroid.
                 for idx in unmatched_src_idx:
                     poly = cur_src[idx]
                     src_cent = src_centroids[idx]
@@ -1096,9 +1174,7 @@ class Shape:
 
             return matched, unmatched_src, unmatched_tgt
 
-        def _resample_loop(
-            loop: LinearRing, n_points: int, preserve_starting_points: bool = True
-        ) -> LinearRing:
+        def _resample_loop(loop: LinearRing, n_points: int) -> LinearRing:
             """Return *loop* resampled to *n_points* evenly spaced vertices along its perimeter, while preserving all the original loop points if *preserve_original_points* is True."""
 
             if n_points < 3:
@@ -1162,8 +1238,8 @@ class Shape:
         tgt_shape = Shape(tgt_cmds)
 
         # 1) Decompose into compounds (shell with holes)
-        src_compounds = _shape_to_compounds(src_shape)
-        tgt_compounds = _shape_to_compounds(tgt_shape)
+        src_compounds = src_shape.to_multipolygon(max_len, tolerance)
+        tgt_compounds = tgt_shape.to_multipolygon(max_len, tolerance)
 
         # 2) Pair individual rings extracted from those compounds
         paired_rings, src_unmatched, tgt_unmatched = _pair_compounds(
@@ -1318,11 +1394,10 @@ class Shape:
             interp_coords = np.vstack([interp_coords, interp_coords[0]])
             return LinearRing(interp_coords)
 
-        def _rings_to_shape(
+        def _rings_to_multipolygon(
             rings: list[tuple[LinearRing, bool]],
-            min_point_spacing: float = 0.5,
-        ) -> Shape:
-            """Convert a collection of `(ring, is_hole)` tuples back to a `Shape`, with optional near-duplicate filtering."""
+        ) -> MultiPolygon:
+            """Convert a collection of `(ring, is_hole)` tuples to a `MultiPolygon`."""
 
             # Gather polygons (shells and holes)
             shell_polys: list[Polygon] = []
@@ -1346,62 +1421,14 @@ class Shape:
             elif hole_union:
                 combined = hole_union
             else:
-                return Shape()
+                return MultiPolygon()
 
-            combined_polys: list[Polygon]
             if isinstance(combined, MultiPolygon):
-                combined_polys = list(combined.geoms)
+                return combined
             elif isinstance(combined, Polygon):
-                combined_polys = [combined]
+                return MultiPolygon([combined])
             else:
                 raise ValueError("Combined geometry is not a Polygon or MultiPolygon")
-
-            # Extract exterior/interior rings from the combined geometry
-            merged_rings: list[tuple[LinearRing, bool]] = []
-            for poly in combined_polys:
-                merged_rings.append((poly.exterior, False))
-                for interior in poly.interiors:
-                    merged_rings.append((interior, True))
-
-            # Convert rings → ShapeElements
-            parts: list[ShapeElement] = []
-            for ring, is_hole in merged_rings:
-                # We don't want consecutive move commands: drop the last one
-                if parts and parts[-1].command == "m":
-                    parts.pop()
-
-                # Skip degenerate rings
-                if len(ring.coords) < 3:
-                    continue
-
-                # Normalise orientation (outer = CW, inner = CCW)
-                if is_hole and not ring.is_ccw:
-                    ring = LinearRing(list(ring.coords)[::-1])
-                if not is_hole and ring.is_ccw:
-                    ring = LinearRing(list(ring.coords)[::-1])
-
-                # Convert to list of ShapeElement
-                x0, y0 = ring.coords[0]
-                parts.append(ShapeElement("m", [Point(x0, y0)]))
-
-                prev_x, prev_y = x0, y0
-
-                for x, y in ring.coords[1:-1]:  # exclude the duplicate closing vertex
-                    if (
-                        abs(x - prev_x) < min_point_spacing
-                        and abs(y - prev_y) < min_point_spacing
-                    ):
-                        # Both deltas are below the threshold → skip this point
-                        continue
-
-                    parts.append(ShapeElement("l", [Point(x, y)]))
-                    prev_x, prev_y = x, y
-
-            # A last "m" command is useless: drop it
-            if parts and parts[-1].command == "m":
-                parts.pop()
-
-            return Shape(elements=parts)
 
         # 1) Retrieve pairing & resampling information (cached)
         paired, src_unmatched, tgt_unmatched = Shape._prepare_morph(
@@ -1432,7 +1459,9 @@ class Shape:
             )
 
         # 4) Convert back to Shape and return
-        return _rings_to_shape(result_rings, min_point_spacing)
+        return Shape.from_multipolygon(
+            _rings_to_multipolygon(result_rings), min_point_spacing
+        )
 
     @staticmethod
     def polygon(edges: int, side_length: float) -> Shape:
