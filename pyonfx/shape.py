@@ -17,7 +17,7 @@
 from __future__ import annotations
 import functools
 import math
-from typing import Callable, cast
+from typing import Callable, cast, Literal
 from inspect import signature
 
 import numpy as np
@@ -258,9 +258,7 @@ class Shape:
         # Utility function to properly format values for shapes also returning them as a string
         return f"{x:.{prec}f}".rstrip("0").rstrip(".")
 
-    def to_multipolygon(
-        self, tolerance: float = 1.0
-    ) -> MultiPolygon:
+    def to_multipolygon(self, tolerance: float = 1.0) -> MultiPolygon:
         """Converts shape to a Shapely MultiPolygon with proper shell-hole relationships.
 
         Polygons don't have curves, so :func:`Shape.flatten` is automatically called with the given tolerance.
@@ -948,50 +946,53 @@ class Shape:
         self.elements = split_elements
         return self
 
-    def to_outline(
+    def buffer(
         self,
-        bord_xy: float,
-        bord_y: float | None = None,
-        mode: str = "round",
-        libass_hack: float = 2/3,
+        dist_xy: float,
+        dist_y: float | None = None,
+        *,
+        kind: Literal["fill", "border"] = "border",
+        join: Literal["round", "bevel", "mitre"] = "round",
+        libass_hack: float = 2 / 3,
     ) -> Shape:
-        """Converts shape command for filling to a shape command for stroking (i.e. what you would get with ``{\\bord}``).
+        """Return a *buffered* version of the shape.
 
-        **Tips:** *You could use this for border textures.*
+        A *buffer* is the set of points whose distance from the original geometryis <= to *dist*.
+        You could use this to create a shape representing the border you usually get with ``{\\bord}``,
+        or to expand/contract the shape.
 
         Parameters:
-            bord_xy (float): The width of the border.
-            bord_y (float, optional): The height of the border. If None, it defaults to bord_xy.
-            mode (str, optional): The join style for the border (round, bevel, mitre).
-            libass_hack (float, optional): The rescaling factor to apply to the border. You should never need to change this.
-
-        Returns:
-            A new Shape object representing the border of the input.
+            dist_xy (float): Horizontal buffer distance.  Positive values "expand" the shape, negative values "contract" it.
+            dist_y (float | None, optional): Vertical buffer distance.  If *None* the same value as *dist_xy* is used.  The sign **must** match that of *dist_xy*.
+            kind ({"fill", "border"}, optional): "fill" ⇒ return the filled buffered geometry, "border" ⇒ return only the ring between the original shape and the buffered geometry (external or internal border).
+            join ({"round", "bevel", "mitre"}, optional): Corner-join style.
+            libass_hack (float, optional): Multiplier factor to apply to the buffer distance to emulate libass' border rendering quirks. You probably never need to touch this.
         """
-        if bord_xy <= 0:
-            raise ValueError("bord_xy must be > 0")
-        if bord_y is not None and bord_y < 0:
-            raise ValueError("bord_y must be >= 0")
-        if mode not in ("round", "bevel", "mitre"):
-            raise ValueError("mode must be one of 'round', 'bevel', or 'miter'")
+        if join not in ("round", "bevel", "mitre"):
+            raise ValueError("join must be one of 'round', 'bevel', or 'mitre'")
+        if kind not in ("fill", "border"):
+            raise ValueError("kind must be either 'fill' or 'border'")
+        if dist_y is None:
+            dist_y = dist_xy
+        if dist_xy == 0 and dist_y == 0:
+            return Shape() if kind == "border" else self
 
-        if bord_y is None:
-            bord_y = bord_xy
-
-        if bord_xy == 0 and bord_y == 0:
-            return Shape()
+        # Validate signs: both distances must have the same sign (or be zero)
+        if dist_xy * dist_y < 0:
+            raise ValueError("dist_xy and dist_y must have the same sign")
+        sign = 1 if dist_xy >= 0 else -1
 
         # Build Shapely geometry
         multipoly = self.to_multipolygon()
 
         # Apply libass hack
-        bord_xy *= libass_hack
-        bord_y *= libass_hack
+        dist_xy *= libass_hack
+        dist_y *= libass_hack
 
-        # Apply anisotropic scaling so that the buffer distance is uniform
-        width = max(bord_xy, bord_y)
-        xscale = bord_xy / width
-        yscale = bord_y / width
+        # Anisotropic scaling so that the buffer distance is uniform
+        width = max(abs(dist_xy), abs(dist_y))
+        xscale = abs(dist_xy) / width
+        yscale = abs(dist_y) / width
 
         inv_xscale = 1.0 / xscale
         inv_yscale = 1.0 / yscale
@@ -999,24 +1000,34 @@ class Shape:
             multipoly, xfact=inv_xscale, yfact=inv_yscale, origin=(0, 0)
         )
 
-        # Apply positive buffer to get the outer outline
-        outer = scaled_geom.buffer(width, join_style=getattr(JOIN_STYLE, mode))
+        # Apply buffer (positive ⇒ outward, negative ⇒ inward)
+        buffered_scaled = scaled_geom.buffer(
+            sign * width, join_style=getattr(JOIN_STYLE, join)
+        )
 
-        # Difference the outer and the original geometry
-        stroke_scaled = outer.difference(scaled_geom)
+        if kind == "fill":
+            # Grown/shrunk geometry
+            result_scaled = buffered_scaled
+        else:
+            if sign > 0:
+                # External border: grow and subtract original
+                result_scaled = buffered_scaled.difference(scaled_geom)
+            else:
+                # Internal border: shrink original and subtract new interior
+                result_scaled = scaled_geom.difference(buffered_scaled)
 
-        # Scale back to original coordinate system
-        stroke_geom = affine_scale(
-            stroke_scaled, xfact=xscale, yfact=yscale, origin=(0, 0)
+        # Scale back to the original coordinate system
+        result_geom = affine_scale(
+            result_scaled, xfact=xscale, yfact=yscale, origin=(0, 0)
         )
 
         # Craft MultiPolygon
-        if isinstance(stroke_geom, MultiPolygon):
-            mp = stroke_geom
-        elif isinstance(stroke_geom, Polygon):
-            mp = MultiPolygon([stroke_geom])
+        if isinstance(result_geom, MultiPolygon):
+            mp = result_geom
+        elif isinstance(result_geom, Polygon):
+            mp = MultiPolygon([result_geom])
         else:
-            raise ValueError(f"Invalid stroke geometry type: {type(stroke_geom)}")
+            raise ValueError(f"Invalid stroke geometry type: {type(result_geom)}")
 
         # Convert back to Shape
         return Shape.from_multipolygon(mp)
