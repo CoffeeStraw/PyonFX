@@ -129,14 +129,11 @@ class Shape:
     """High-level wrapper around ASS drawing commands.
 
     A :class:`Shape` instance stores and manipulates the vector outlines that you
-    would normally place in a ``{\\p}`` override tag.  Internally it keeps **two**
-    synchronised representations of the outline:
+    would normally place in a ``{\\p}`` override tag.
 
-    1. :py:attr:`drawing_cmds`: the exact string of ASS commands (``m``, ``l``,
-       ``b`` …) and numbers.
-    2. :py:attr:`elements`: a list of :class:`~pyonfx.shape.ShapeElement`
-       objects, each one wrapping **a single drawing instruction** together
-       with its coordinates.
+    Internally the outline is represented as a list of :class:`pyonfx.shape.ShapeElement` objects exposed through :py:attr:`elements`.
+    The textual ASS representation returned by the read-only :py:attr:`drawing_cmds` property
+    is generated *on-the-fly* from that list, so it can never fall out of sync with the actual geometry.
 
     The class provides a rich tool-set to work with shapes: bounding-box
     calculation, geometric transformations, curve flattening, segmentations and more.
@@ -161,18 +158,16 @@ class Shape:
          ShapeElement('l', [Point(10, 10)])]
     """
 
+    elements: list[ShapeElement]
+    """The shape's elements as a list of :class:`ShapeElement` objects."""
+
     def __init__(self, drawing_cmds: str = "", elements: list[ShapeElement] = []):
         # Assure that drawing_cmds is a string
         if drawing_cmds and elements:
             raise ValueError("Cannot pass both drawing_cmds and elements.")
-
-        self._updating = False  # Flag used to prevent infinite recursion while keeping the two representations in sync
-
         if drawing_cmds:
-            self.elements = []
-            self.drawing_cmds = drawing_cmds
+            self.elements = Shape._cmds_to_elements(drawing_cmds)
         else:
-            self.drawing_cmds = ""
             self.elements = elements
 
     def __repr__(self):
@@ -186,42 +181,9 @@ class Shape:
         return iter(self.elements)
 
     @property
-    def elements(self) -> list[ShapeElement]:
-        """The shape's elements as a list of :class:`ShapeElement` objects."""
-        return self._elements
-
-    @elements.setter
-    def elements(self, value: list[ShapeElement]):
-        self._elements = value
-        if self._updating:
-            return
-
-        # Update drawing_cmds to reflect the new elements
-        if not self._updating:
-            self._updating = True
-            try:
-                self._drawing_cmds = Shape._elements_to_cmds(value)
-            finally:
-                self._updating = False
-
-    @property
     def drawing_cmds(self) -> str:
         """The shape's drawing commands in ASS format as a string."""
-        return self._drawing_cmds
-
-    @drawing_cmds.setter
-    def drawing_cmds(self, value: str):
-        self._drawing_cmds = value
-        if self._updating:
-            return
-
-        # Update elements to reflect the new drawing commands
-        if not self._updating:
-            self._updating = True
-            try:
-                self._elements = Shape._cmds_to_elements(value)
-            finally:
-                self._updating = False
+        return Shape._elements_to_cmds(self.elements)
 
     @staticmethod
     def _cmds_to_elements(drawing_cmds: str) -> list[ShapeElement]:
