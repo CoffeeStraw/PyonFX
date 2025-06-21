@@ -256,7 +256,8 @@ class Shape:
     @staticmethod
     def format_value(x: float, prec: int = 3) -> str:
         # Utility function to properly format values for shapes also returning them as a string
-        return f"{x:.{prec}f}".rstrip("0").rstrip(".")
+        result = f"{x:.{prec}f}".rstrip("0").rstrip(".")
+        return "0" if result == "-0" else result
 
     def to_multipolygon(self, tolerance: float = 1.0) -> MultiPolygon:
         """Converts shape to a Shapely MultiPolygon with proper shell-hole relationships.
