@@ -702,6 +702,65 @@ class Shape:
 
         return self.map(lambda x, y: (x * scale_x, y * scale_y))
 
+    def rotate(
+        self,
+        *,
+        frx: float = 0.0,
+        fry: float = 0.0,
+        frz: float = 0.0,
+        origin: tuple[float, float] = (0.0, 0.0),
+    ) -> "Shape":
+        """Rotates the shape mimicking the behaviour of \\frx, \\fry and \\frz tags.
+
+        Parameters:
+            frx, fry, frz: Rotation angles in **degrees** around, respectively, the X, Y and Z axes.
+            origin: The rotation origin (defines the point around which the shape is rotated).
+
+        Returns:
+            A pointer to the current object.
+        """
+        if frx == 0 and fry == 0 and frz == 0:
+            return self
+
+        # Normalise the origin
+        ox, oy = origin
+
+        # Pre-compute sines/cosines
+        # (Mathematical convention is counter-clockwise, but ASS uses clockwise, *sigh*)
+        rx = math.radians(-frx)
+        ry = math.radians(-fry)
+        rz = math.radians(-frz)
+        cosx, sinx = math.cos(rx), math.sin(rx)
+        cosy, siny = math.cos(ry), math.sin(ry)
+        cosz, sinz = math.cos(rz), math.sin(rz)
+
+        def _transform(px: float, py: float) -> tuple[float, float]:
+            # Translate to origin
+            x = px - ox
+            y = py - oy
+            z = 0.0
+
+            # Rotation around X (pitch)
+            y1 = y * cosx - z * sinx
+            z1 = y * sinx + z * cosx
+            x1 = x
+
+            # Rotation around Y (yaw)
+            x2 = x1 * cosy + z1 * siny
+            z2 = -x1 * siny + z1 * cosy
+            y2 = y1
+
+            # Rotation around Z (roll)
+            x3 = x2 * cosz - y2 * sinz
+            y3 = x2 * sinz + y2 * cosz
+            z3 = z2
+
+            # Translate back
+            return x3 + ox, y3 + oy
+
+        # Apply transformation to every point in the shape
+        return self.map(lambda x, y: _transform(x, y))
+
     def flatten(self, tolerance: float = 1.0) -> Shape:
         """Splits shape's bezier curves into lines.
 
