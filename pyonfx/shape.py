@@ -714,7 +714,7 @@ class Shape:
 
         Parameters:
             frx, fry, frz: Rotation angles in **degrees** around, respectively, the X, Y and Z axes.
-            origin: The rotation origin (defines the point around which the shape is rotated).
+            origin: Pivot around which the rotation is applied.
 
         Returns:
             A pointer to the current object.
@@ -773,7 +773,7 @@ class Shape:
         Parameters:
             fax: Horizontal shear factor. Positive values slant the top of the shape to the right, negative to the left.
             fay: Vertical shear factor. Positive values slant the right side of the shape downwards, negative upwards.
-            origin: Pivot around which the shear is applied. Defaults to (0, 0) – i.e. the shape is sheared relative to the script origin.
+            origin: Pivot around which the shear is applied.
 
         Returns:
             A pointer to the current object.
