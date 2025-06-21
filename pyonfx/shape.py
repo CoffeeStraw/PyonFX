@@ -761,6 +761,42 @@ class Shape:
         # Apply transformation to every point in the shape
         return self.map(lambda x, y: _transform(x, y))
 
+    def shear(
+        self,
+        *,
+        fax: float = 0.0,
+        fay: float = 0.0,
+        origin: tuple[float, float] = (0.0, 0.0),
+    ) -> "Shape":
+        """Applies a shear (aka slant/skew) transformation to the shape, mimicking the \\fax and \\fay tags.
+
+        Parameters:
+            fax: Horizontal shear factor. Positive values slant the top of the shape to the right, negative to the left.
+            fay: Vertical shear factor. Positive values slant the right side of the shape downwards, negative upwards.
+            origin: Pivot around which the shear is applied. Defaults to (0, 0) – i.e. the shape is sheared relative to the script origin.
+
+        Returns:
+            A pointer to the current object.
+        """
+        if fax == 0.0 and fay == 0.0:
+            return self
+
+        ox, oy = origin
+
+        def _shear(px: float, py: float) -> tuple[float, float]:
+            # Translate to origin
+            x_rel = px - ox
+            y_rel = py - oy
+
+            # Apply shear matrix [[1, fax], [fay, 1]]
+            new_x_rel = x_rel + fax * y_rel
+            new_y_rel = fay * x_rel + y_rel
+
+            # Translate back
+            return new_x_rel + ox, new_y_rel + oy
+
+        return self.map(lambda x, y: _shear(x, y))
+
     def flatten(self, tolerance: float = 1.0) -> Shape:
         """Splits shape's bezier curves into lines.
 
