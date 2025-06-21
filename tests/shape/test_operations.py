@@ -1,4 +1,5 @@
 import pytest
+import math
 from copy import copy
 
 from pyonfx.shape import Shape
@@ -289,3 +290,31 @@ def test_shear():
     # Combined shear (fax and fay)
     dest_both = Shape("m 0 0 l 10 10 20 20 10 10")
     assert copy(rect).shear(fax=1, fay=1) == dest_both
+
+
+def test_boolean_basic_areas():
+    """Union / intersection / difference / xor should have expected areas."""
+
+    s1 = Shape.polygon(4, 10)  # spans [0,10]×[0,10]
+    s2 = Shape.polygon(4, 10).move(5, 0)  # spans [5,15]×[0,10] → overlap is 5×10
+
+    union = s1.boolean(s2, "union")
+    inter = s1.boolean(s2, "intersection")
+    diff = s1.boolean(s2, "difference")
+    xor = s1.boolean(s2, "xor")
+
+    assert math.isclose(union.to_multipolygon().area, 150, abs_tol=1e-6)
+    assert math.isclose(inter.to_multipolygon().area, 50, abs_tol=1e-6)
+    assert math.isclose(diff.to_multipolygon().area, 50, abs_tol=1e-6)
+    assert math.isclose(xor.to_multipolygon().area, 100, abs_tol=1e-6)
+
+
+def test_boolean_invalid_input():
+    s1 = Shape.polygon(4, 10)  # spans [0,10]×[0,10]
+    s2 = Shape.polygon(4, 10).move(5, 0)  # spans [5,15]×[0,10] → overlap is 5×10
+
+    with pytest.raises(ValueError):
+        s1.boolean(s2, "foo")  # type: ignore[arg-type]
+
+    with pytest.raises(TypeError):
+        s1.boolean("not a shape", "union")  # type: ignore[arg-type]

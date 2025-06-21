@@ -519,6 +519,62 @@ class Shape:
 
         return x_min, y_min, x_max, y_max
 
+    def boolean(
+        self,
+        other: "Shape",
+        op: Literal["union", "intersection", "difference", "xor"],
+        *,
+        tolerance: float = 1.0,
+        min_point_spacing: float = 0.5,
+    ) -> Shape:
+        """Return the boolean combination between *self* and *other*.
+
+        The two shapes are converted to Shapely ``MultiPolygon`` objects (curves are
+        automatically *flattened* with the given *tolerance* just like in
+        :py:meth:`to_multipolygon`). The requested boolean operation is performed
+        and the resulting geometry is converted back to a :class:`Shape`.
+
+        Parameters:
+            other: The other shape to combine with *self*.
+            op: One of `union`, `intersection`, `difference` or `xor` (symmetric difference).
+            tolerance: Angle in degrees used when flattening Bézier curves (see :py:meth:`flatten`).
+            min_point_spacing: Per-axis spacing threshold passed to :py:meth:`from_multipolygon`.
+
+        Returns:
+            A **new** shape representing the result of the boolean operation.
+        """
+        if not isinstance(other, Shape):
+            raise TypeError("other must be a Shape instance")
+
+        if op not in {"union", "intersection", "difference", "xor"}:
+            raise ValueError(
+                "op must be one of 'union', 'intersection', 'difference', or 'xor'"
+            )
+
+        # Convert both shapes to MultiPolygon (this flattens curves).
+        mp_self = self.to_multipolygon(tolerance)
+        mp_other = other.to_multipolygon(tolerance)
+
+        # Perform the requested boolean operation.
+        if op == "union":
+            result_geom = mp_self.union(mp_other)
+        elif op == "intersection":
+            result_geom = mp_self.intersection(mp_other)
+        elif op == "difference":
+            result_geom = mp_self.difference(mp_other)
+        else:  # op == "xor"
+            result_geom = mp_self.symmetric_difference(mp_other)
+
+        # Normalise to MultiPolygon
+        if isinstance(result_geom, Polygon):
+            result_geom = MultiPolygon([result_geom])
+        elif not isinstance(result_geom, MultiPolygon):
+            # No overlapping geometry – return an empty shape.
+            return Shape()
+
+        # Convert back to Shape and return.
+        return Shape.from_multipolygon(result_geom, min_point_spacing)
+
     def map(
         self,
         fun: (
