@@ -729,12 +729,18 @@ class Shape:
 
         return self.move(x_move, y_move)
 
-    def scale(self, fscx: float = 100, fscy: float = 100) -> Shape:
+    def scale(
+        self,
+        fscx: float = 100,
+        fscy: float = 100,
+        origin: tuple[float, float] = (0.0, 0.0),
+    ) -> Shape:
         """Scales shape coordinates horizontally and vertically, similar to ASS \\fscx and \\fscy tags.
 
         Parameters:
             fscx (int or float): Horizontal scale factor as percentage (100 = normal, 200 = double width, 50 = half width).
             fscy (int or float): Vertical scale factor as percentage (100 = normal, 200 = double height, 50 = half height).
+            origin (tuple[float, float], optional): The pivot point around which the scaling is applied.
 
         Returns:
             A pointer to the current object.
@@ -757,7 +763,9 @@ class Shape:
         scale_x = fscx / 100.0
         scale_y = fscy / 100.0
 
-        return self.map(lambda x, y: (x * scale_x, y * scale_y))
+        ox, oy = origin
+
+        return self.map(lambda x, y: ((x - ox) * scale_x + ox, (y - oy) * scale_y + oy))
 
     def rotate(
         self,
