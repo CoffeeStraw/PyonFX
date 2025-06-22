@@ -603,7 +603,7 @@ class Convert:
             ..  code-block:: python3
 
                 l.style = "p"
-                p_sh = Shape.rectangle()
+                p_sh = Shape.polygon(4, 1)
                 for pixel in Convert.text_to_pixels(l):
                     x, y = math.floor(l.left) + pixel.x, math.floor(l.top) + pixel.y
                     alpha = "\\alpha" + Convert.alpha_dec_to_ass(pixel.alpha) if pixel.alpha != 0 else ""
@@ -641,7 +641,7 @@ class Convert:
             ..  code-block:: python3
 
                 l.style = "p"
-                p_sh = Shape.rectangle()
+                p_sh = Shape.polygon(4, 1)
                 for pixel in Convert.shape_to_pixels(Shape.heart(100)):
                     x, y = math.floor(l.left) + pixel.x, math.floor(l.top) + pixel.y
                     alpha = "\\alpha" + Convert.alpha_dec_to_ass(pixel.alpha) if pixel.alpha != 0 else ""

@@ -1,6 +1,6 @@
 [project]
 name = "pyonfx"
-version = "0.9.16"
+version = "0.10.0"
 description = "An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha)."
 authors = [
     { name = "Antonio Strippoli", email = "clarantonio98@gmail.com" },
@@ -10,11 +10,14 @@ license-files = ["LICENSE"]
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "numpy",
     "pyquaternion",
+    "shapely",
+    "scipy",
+    "VideoTimestamps>=0.2",
     "pywin32; platform_system=='Windows'",
     "pycairo; platform_system=='Linux' or platform_system=='Darwin'",
     "PyGObject; platform_system=='Linux' or platform_system=='Darwin'",
-    "VideoTimestamps>=0.2",
 ]
 classifiers=[
     "Development Status :: 4 - Beta",
