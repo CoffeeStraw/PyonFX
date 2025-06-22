@@ -1113,7 +1113,6 @@ class Shape:
         *,
         kind: Literal["fill", "border"] = "border",
         join: Literal["round", "bevel", "mitre"] = "round",
-        libass_hack: float = 2 / 3,
     ) -> Shape:
         """Return a *buffered* version of the shape.
 
@@ -1126,7 +1125,6 @@ class Shape:
             dist_y (float | None, optional): Vertical buffer distance.  If *None* the same value as *dist_xy* is used.  The sign **must** match that of *dist_xy*.
             kind ({"fill", "border"}, optional): "fill" ⇒ return the filled buffered geometry, "border" ⇒ return only the ring between the original shape and the buffered geometry (external or internal border).
             join ({"round", "bevel", "mitre"}, optional): Corner-join style.
-            libass_hack (float, optional): Multiplier factor to apply to the buffer distance to emulate libass' border rendering quirks. You probably never need to touch this.
         """
         if join not in ("round", "bevel", "mitre"):
             raise ValueError("join must be one of 'round', 'bevel', or 'mitre'")
@@ -1146,8 +1144,9 @@ class Shape:
         multipoly = self.to_multipolygon()
 
         # Apply libass hack
-        dist_xy *= libass_hack
-        dist_y *= libass_hack
+        _LIBASS_HACK = 2 / 3
+        dist_xy *= _LIBASS_HACK
+        dist_y *= _LIBASS_HACK
 
         # Anisotropic scaling so that the buffer distance is uniform
         width = max(abs(dist_xy), abs(dist_y))
