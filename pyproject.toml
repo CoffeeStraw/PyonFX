@@ -1,6 +1,6 @@
 [project]
 name = "pyonfx"
-version = "0.9.16"
+version = "0.10.0"
 description = "An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha)."
 authors = [
     { name = "Antonio Strippoli", email = "clarantonio98@gmail.com" },
