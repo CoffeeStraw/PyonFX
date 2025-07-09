@@ -304,9 +304,9 @@ class Line:
     """Line index in the file."""
     duration: int
     """Duration (ms) of the line."""
-    leadin: float
+    leadin: int
     """Time (ms) between this line and the previous one."""
-    leadout: float
+    leadout: int
     """Time (ms) between this line and the next one."""
     width: float
     """Width of the line (pixels)."""
@@ -642,8 +642,8 @@ class Ass:
                 text="",
                 i=line_index,
                 duration=-1,
-                leadin=float("nan"),
-                leadout=float("nan"),
+                leadin=-1,
+                leadout=-1,
                 width=float("nan"),
                 height=float("nan"),
                 ascent=float("nan"),
@@ -1237,12 +1237,12 @@ class Ass:
             lines_by_styles[style].sort(key=lambda x: x.start_time)
             for li, line in enumerate(lines_by_styles[style]):
                 line.leadin = (
-                    1000.1
+                    1001
                     if li == 0
                     else line.start_time - lines_by_styles[style][li - 1].end_time
                 )
                 line.leadout = (
-                    1000.1
+                    1001
                     if li == len(lines_by_styles[style]) - 1
                     else lines_by_styles[style][li + 1].start_time - line.end_time
                 )
