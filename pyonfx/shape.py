@@ -17,7 +17,7 @@
 from __future__ import annotations
 import functools
 import math
-from typing import Callable, cast, Literal, NamedTuple
+from typing import Callable, cast, Literal
 from inspect import signature
 
 import numpy as np
@@ -1566,7 +1566,7 @@ class Shape:
             return target
 
         # Use the multi-shape morphing routine to get intermediate geometries.
-        chunks = Shape.morph_multi(
+        morphs = Shape.morph_multi(
             {"_": self},
             {"_": target},
             t,
@@ -1580,10 +1580,11 @@ class Shape:
             ensure_shell_pairs=ensure_shell_pairs,
         )
 
-        combined_shape = chunks[0].shape
-        for chunk in chunks[1:]:
+        shapes = list(morphs.values())
+        combined_shape = shapes[0]
+        for shape in shapes[1:]:
             combined_shape = combined_shape.boolean(
-                chunk.shape,
+                shape,
                 op="union",
                 tolerance=tolerance,
                 min_point_spacing=min_point_spacing,
@@ -1605,9 +1606,9 @@ class Shape:
         w_overlap: float = 0.1,
         cost_threshold: float = 2.5,
         ensure_shell_pairs: bool = True,
-    ) -> list[MorphChunk]:
-        """Interpolates **multiple** shapes at once and returns a list of
-        :class:`MorphChunk` objects, one for every *source → destination* flow.
+    ) -> dict[tuple[str | None, str | None], Shape]:
+        """Interpolates **multiple** shapes at once and returns a dictionary mapping
+        (src_id, tgt_id) tuples to their interpolated shapes.
 
         This is a higher-level variant of :py:meth:`morph` that works on two
         *collections* of shapes rather than a single pair. Rings from all
@@ -1630,7 +1631,7 @@ class Shape:
             ensure_shell_pairs (bool): Force every *shell* to morph into something even if the best match is above *cost_threshold*.
 
         Returns:
-            list[MorphChunk]: a list where each item contains src_id (the key of the originating shape or ``None`` if the geometry *appears*), tgt_id (the key of the destination shape or ``None`` if the geometry *disappears*) and shape (the interpolated :class:`Shape` at the given *t*).
+            dict[tuple[str | None, str | None], Shape]: A dictionary where keys are (src_id, tgt_id) tuples and values are the interpolated shapes. src_id is None if the geometry is appearing, tgt_id is None if the geometry is disappearing.
 
         Examples:
             ..  code-block:: python3
@@ -1642,8 +1643,9 @@ class Shape:
                 end = {
                     'X': Shape.polygon(6, 45),
                 }
-                for chunk in Shape.morph_multi(start, end, t=0.5):
-                    print(chunk.src_id, '→', chunk.tgt_id, chunk.shape)
+                morphs = Shape.morph_multi(start, end, t=0.5)
+                for (src_id, tgt_id), shape in morphs.items():
+                    print(f"{src_id} → {tgt_id}: {shape}")
         """
         # Basic validation
         if not 0 <= t <= 1:
@@ -1655,15 +1657,9 @@ class Shape:
 
         # Fast-paths
         if t == 0:
-            return [
-                MorphChunk(src_id=k, tgt_id=None, shape=v)
-                for k, v in src_shapes.items()
-            ]
+            return {(k, None): v for k, v in src_shapes.items()}
         if t == 1:
-            return [
-                MorphChunk(src_id=None, tgt_id=k, shape=v)
-                for k, v in tgt_shapes.items()
-            ]
+            return {(None, k): v for k, v in tgt_shapes.items()}
 
         def _morph_transition(
             ring: LinearRing,
@@ -1840,16 +1836,12 @@ class Shape:
             for ring_list in flows.values():
                 ring_list.extend(global_holes)
 
-        # 5) Convert back to Shape and pack into MorphChunk objects
-        out: list[MorphChunk] = []
+        # 5) Convert back to Shape and return as dictionary
+        result: dict[tuple[str | None, str | None], Shape] = {}
         for (src_id, tgt_id), ring_list in flows.items():
             mp = _rings_to_multipolygon(ring_list)
-            out.append(
-                MorphChunk(
-                    src_id, tgt_id, Shape.from_multipolygon(mp, min_point_spacing)
-                )
-            )
-        return out
+            result[(src_id, tgt_id)] = Shape.from_multipolygon(mp, min_point_spacing)
+        return result
 
     @staticmethod
     def polygon(edges: int, side_length: float) -> Shape:
@@ -2135,9 +2127,3 @@ class Shape:
             A shape object as a string representing a glance.
         """
         return Shape._glance_or_star(edges, inner_size, outer_size, "b")
-
-
-class MorphChunk(NamedTuple):
-    src_id: str | None  # None  ⇒  chunk is *appearing*
-    tgt_id: str | None  # None  ⇒  chunk is *disappearing*
-    shape: Shape  # interpolated geometry at the given t
