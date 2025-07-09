@@ -17,7 +17,7 @@
 from __future__ import annotations
 import functools
 import math
-from typing import Callable, cast, Literal
+from typing import Callable, cast, Literal, NamedTuple
 from inspect import signature
 
 import numpy as np
@@ -1196,8 +1196,8 @@ class Shape:
     @functools.lru_cache(maxsize=1024)
     @staticmethod
     def _prepare_morph(
-        src_cmds: str,
-        tgt_cmds: str,
+        source_ids_and_cmds: tuple[tuple[str, str], ...],
+        target_ids_and_cmds: tuple[tuple[str, str], ...],
         max_len: float,
         tolerance: float,
         w_dist: float,
@@ -1206,31 +1206,31 @@ class Shape:
         cost_threshold: float,
         ensure_shell_pairs: bool = False,
     ) -> tuple[
-        list[tuple[LinearRing, LinearRing, bool]],
-        list[tuple[LinearRing, Point, bool]],
-        list[tuple[LinearRing, Point, bool]],
+        list[tuple[LinearRing, LinearRing, bool, str, str]],
+        list[tuple[LinearRing, Point, bool, str]],
+        list[tuple[LinearRing, Point, bool, str]],
     ]:
         """Prepare the morphing process by decomposing the shapes into compounds and pairing them.
 
         Returns:
             A tuple containing:
-            - A list of (src, tgt, is_hole) ring pairs
-            - A list of (src, dest, is_hole) unmatched source rings
-            - A list of (tgt, origin, is_hole) unmatched target rings
+            - A list of (src, tgt, is_hole, src_id, tgt_id) ring pairs.
+            - A list of (src, ref, is_hole, src_id) unmatched source rings.
+            - A list of (tgt, ref, is_hole, tgt_id) unmatched target rings.
         """
 
-        def _pair_compounds(
-            src_compounds: MultiPolygon,
-            tgt_compounds: MultiPolygon,
-            w_dist: float = 0.55,
-            w_area: float = 0.35,
-            w_overlap: float = 0.1,
-            cost_threshold: float = 2.5,
-            ensure_shell_pairs: bool = False,
+        def _pair_rings(
+            source_rings_meta: list[tuple[Polygon, bool, str]],
+            target_rings_meta: list[tuple[Polygon, bool, str]],
+            w_dist: float,
+            w_area: float,
+            w_overlap: float,
+            cost_threshold: float,
+            ensure_shell_pairs: bool,
         ) -> tuple[
-            list[tuple[LinearRing, LinearRing, bool]],
-            list[tuple[LinearRing, Point, bool]],
-            list[tuple[LinearRing, Point, bool]],
+            list[tuple[LinearRing, LinearRing, bool, str, str]],
+            list[tuple[LinearRing, Point, bool, str]],
+            list[tuple[LinearRing, Point, bool, str]],
         ]:
             """
             Pair source and target polygon rings (exteriors and interiors) based on centroid distance,
@@ -1239,52 +1239,57 @@ class Shape:
             Any ring left without a counterpart is matched to the closest centroid so that downstream
             morphing logic can decide whether it is *appearing* or *disappearing*.
             """
-
-            def _extract_rings(
-                multipolygon: MultiPolygon,
-            ) -> list[tuple[Polygon, bool]]:
-                out: list[tuple[Polygon, bool]] = []
-                for poly in multipolygon.geoms:
-                    out.append((Polygon(poly.exterior), False))
-                    out.extend((Polygon(inter), True) for inter in poly.interiors)
-                return out
-
-            src_rings = _extract_rings(src_compounds)
-            tgt_rings = _extract_rings(tgt_compounds)
-
-            matched = []
-            unmatched_src = []
-            unmatched_tgt = []
+            matched: list[tuple[LinearRing, LinearRing, bool, str, str]] = []
+            unmatched_src: list[tuple[LinearRing, Point, bool, str]] = []
+            unmatched_tgt: list[tuple[LinearRing, Point, bool, str]] = []
 
             # Global centroid arrays (used for nearest-neighbour fallback)
             all_src_centroids = np.array(
-                [poly.centroid.coords[0] for poly, _ in src_rings]
+                [poly.centroid.coords[0] for poly, _, _ in source_rings_meta]
             )
             all_tgt_centroids = np.array(
-                [poly.centroid.coords[0] for poly, _ in tgt_rings]
+                [poly.centroid.coords[0] for poly, _, _ in target_rings_meta]
             )
 
             # Match separately for shells (False) and holes (True)
             for is_hole in (False, True):
-                cur_src = [poly for (poly, flag) in src_rings if flag == is_hole]
-                cur_tgt = [poly for (poly, flag) in tgt_rings if flag == is_hole]
+                cur_src = [
+                    (poly, sid)
+                    for poly, hole, sid in source_rings_meta
+                    if hole == is_hole
+                ]
+                cur_tgt = [
+                    (poly, sid)
+                    for poly, hole, sid in target_rings_meta
+                    if hole == is_hole
+                ]
                 n_src, n_tgt = len(cur_src), len(cur_tgt)
 
                 if n_src == 0 and n_tgt == 0:
                     continue
                 if n_src == 0:
-                    for poly in cur_tgt:
-                        unmatched_tgt.append((poly.exterior, poly.centroid, is_hole))
+                    for poly, did in cur_tgt:
+                        ref = (
+                            Point(all_src_centroids[0])
+                            if all_src_centroids.size
+                            else poly.centroid
+                        )
+                        unmatched_tgt.append((poly.exterior, ref, is_hole, did))
                     continue
                 if n_tgt == 0:
-                    for poly in cur_src:
-                        unmatched_src.append((poly.exterior, poly.centroid, is_hole))
+                    for poly, sid in cur_src:
+                        ref = (
+                            Point(all_tgt_centroids[0])
+                            if all_tgt_centroids.size
+                            else poly.centroid
+                        )
+                        unmatched_src.append((poly.exterior, ref, is_hole, sid))
                     continue
 
-                src_centroids = np.array([poly.centroid.coords[0] for poly in cur_src])
-                tgt_centroids = np.array([poly.centroid.coords[0] for poly in cur_tgt])
-                src_areas = np.array([poly.area for poly in cur_src])
-                tgt_areas = np.array([poly.area for poly in cur_tgt])
+                src_areas = np.array([p.area for p, _ in cur_src])
+                tgt_areas = np.array([p.area for p, _ in cur_tgt])
+                src_centroids = np.array([p.centroid.coords[0] for p, _ in cur_src])
+                tgt_centroids = np.array([p.centroid.coords[0] for p, _ in cur_tgt])
 
                 # 1) Centroid distance (normalised)
                 diff = src_centroids[:, None, :] - tgt_centroids[None, :, :]
@@ -1304,10 +1309,10 @@ class Shape:
                 candidate_cols = np.argpartition(costs, kth=k - 1, axis=1)[:, :k]
 
                 for i, cols in enumerate(candidate_cols):
-                    poly_i = cur_src[i]
+                    poly_i = cur_src[i][0]
                     area_i = src_areas[i]
                     for j in cols:
-                        poly_j = cur_tgt[j]
+                        poly_j = cur_tgt[j][0]
                         inter_area = 0.0
                         if poly_i.intersects(poly_j):
                             inter_area = poly_i.intersection(poly_j).area
@@ -1325,7 +1330,13 @@ class Shape:
                 for i, j in zip(row_ind, col_ind):
                     if cost_threshold is None or costs[i, j] <= cost_threshold:
                         matched.append(
-                            (cur_src[i].exterior, cur_tgt[j].exterior, is_hole)
+                            (
+                                cur_src[i][0].exterior,
+                                cur_tgt[j][0].exterior,
+                                is_hole,
+                                cur_src[i][1],
+                                cur_tgt[j][1],
+                            )
                         )
                         used_src.add(i)
                         used_tgt.add(j)
@@ -1337,36 +1348,58 @@ class Shape:
                 # Optionally force-pair shells so that they always morph into something.
                 if ensure_shell_pairs and not is_hole and n_src > 0 and n_tgt > 0:
                     # Pair every remaining source shell with its minimum-cost target shell
-                    for i in list(unmatched_src_idx):
+                    for i in unmatched_src_idx:
                         j = int(np.argmin(costs[i]))
                         matched.append(
-                            (cur_src[i].exterior, cur_tgt[j].exterior, is_hole)
+                            (
+                                cur_src[i][0].exterior,
+                                cur_tgt[j][0].exterior,
+                                is_hole,
+                                cur_src[i][1],
+                                cur_tgt[j][1],
+                            )
                         )
-                        unmatched_src_idx.remove(i)
-
-                    # Pair every remaining target shell with its minimum-cost source shell
-                    for j in list(unmatched_tgt_idx):
+                        used_src.add(i)
+                    for j in unmatched_tgt_idx:
                         i = int(np.argmin(costs[:, j]))
                         matched.append(
-                            (cur_src[i].exterior, cur_tgt[j].exterior, is_hole)
+                            (
+                                cur_src[i][0].exterior,
+                                cur_tgt[j][0].exterior,
+                                is_hole,
+                                cur_src[i][1],
+                                cur_tgt[j][1],
+                            )
                         )
-                        unmatched_tgt_idx.remove(j)
+                        used_tgt.add(j)
 
                 # Any ring still left unmatched will be matched to the closest centroid.
-                for idx in unmatched_src_idx:
-                    poly = cur_src[idx]
+                un_src_idx = set(range(n_src)) - used_src
+                un_tgt_idx = set(range(n_tgt)) - used_tgt
+
+                for idx in un_src_idx:
+                    poly, source_id = cur_src[idx]
                     src_cent = src_centroids[idx]
                     nn = np.argmin(np.linalg.norm(all_tgt_centroids - src_cent, axis=1))
                     unmatched_src.append(
-                        (poly.exterior, Point(all_tgt_centroids[nn]), is_hole)
+                        (
+                            poly.exterior,
+                            Point(all_tgt_centroids[nn]),
+                            is_hole,
+                            source_id,
+                        )
                     )
-
-                for idx in unmatched_tgt_idx:
-                    poly = cur_tgt[idx]
+                for idx in un_tgt_idx:
+                    poly, target_id = cur_tgt[idx]
                     tgt_cent = tgt_centroids[idx]
                     nn = np.argmin(np.linalg.norm(all_src_centroids - tgt_cent, axis=1))
                     unmatched_tgt.append(
-                        (poly.exterior, Point(all_src_centroids[nn]), is_hole)
+                        (
+                            poly.exterior,
+                            Point(all_src_centroids[nn]),
+                            is_hole,
+                            target_id,
+                        )
                     )
 
             return matched, unmatched_src, unmatched_tgt
@@ -1431,18 +1464,31 @@ class Shape:
             return LinearRing(new_coords)
 
         # --- Execute the pipeline ---
-        # 0) Flatten and split into short lines to have more points to work with
-        src_shape = Shape(src_cmds).split(max_len, tolerance)
-        tgt_shape = Shape(tgt_cmds).split(max_len, tolerance)
+        # 1) Flatten and split each shape into short lines to have more points to work with,
+        #    then convert to polygons and extract rings.
+        source_rings_meta: list[tuple[Polygon, bool, str]] = []
+        target_rings_meta: list[tuple[Polygon, bool, str]] = []
 
-        # 1) Decompose into compounds (shell with holes)
-        src_compounds = src_shape.to_multipolygon()
-        tgt_compounds = tgt_shape.to_multipolygon()
+        for source_id, source_cmds in source_ids_and_cmds:
+            shape_mp = Shape(source_cmds).split(max_len, tolerance).to_multipolygon()
+            for poly in shape_mp.geoms:
+                source_rings_meta.append((Polygon(poly.exterior), False, source_id))
+                source_rings_meta.extend(
+                    (Polygon(inter), True, source_id) for inter in poly.interiors
+                )
+
+        for target_id, target_cmds in target_ids_and_cmds:
+            shape_mp = Shape(target_cmds).split(max_len, tolerance).to_multipolygon()
+            for poly in shape_mp.geoms:
+                target_rings_meta.append((Polygon(poly.exterior), False, target_id))
+                target_rings_meta.extend(
+                    (Polygon(inter), True, target_id) for inter in poly.interiors
+                )
 
         # 2) Pair individual rings extracted from those compounds
-        paired_rings, src_unmatched, tgt_unmatched = _pair_compounds(
-            src_compounds,
-            tgt_compounds,
+        matched, unmatched_src, unmatched_tgt = _pair_rings(
+            source_rings_meta,
+            target_rings_meta,
             w_dist,
             w_area,
             w_overlap,
@@ -1451,20 +1497,22 @@ class Shape:
         )
 
         # 3) Resample each paired ring so that both have the same vertex count
-        resampled_pairs: list[tuple[LinearRing, LinearRing, bool]] = []
+        resampled: list[tuple[LinearRing, LinearRing, bool, str, str]] = []
+        for src_r, tgt_r, is_hole, source_id, target_id in matched:
+            n_src = len(src_r.coords) - 1
+            n_tgt = len(tgt_r.coords) - 1
+            n_pts = max(n_src, n_tgt, 4)
+            resampled.append(
+                (
+                    _resample_loop(src_r, n_pts),
+                    _resample_loop(tgt_r, n_pts),
+                    is_hole,
+                    source_id,
+                    target_id,
+                )
+            )
 
-        for src_ring, tgt_ring, is_hole in paired_rings:
-            # Decide target vertex count (at least 4 and large enough to accommodate both rings)
-            n_src = len(src_ring.coords) - 1  # exclude duplicate closing vertex
-            n_tgt = len(tgt_ring.coords) - 1
-            n_points = max(n_src, n_tgt, 4)
-
-            res_src = _resample_loop(src_ring, n_points)
-            res_tgt = _resample_loop(tgt_ring, n_points)
-
-            resampled_pairs.append((res_src, res_tgt, is_hole))
-
-        return resampled_pairs, src_unmatched, tgt_unmatched
+        return resampled, unmatched_src, unmatched_tgt
 
     def morph(
         self,
@@ -1516,6 +1564,106 @@ class Shape:
             return self
         if t == 1:
             return target
+
+        # Use the multi-shape morphing routine to get intermediate geometries.
+        chunks = Shape.morph_multi(
+            {"_": self},
+            {"_": target},
+            t,
+            max_len=max_len,
+            tolerance=tolerance,
+            min_point_spacing=min_point_spacing,
+            w_dist=w_dist,
+            w_area=w_area,
+            w_overlap=w_overlap,
+            cost_threshold=cost_threshold,
+            ensure_shell_pairs=ensure_shell_pairs,
+        )
+
+        combined_shape = chunks[0].shape
+        for chunk in chunks[1:]:
+            combined_shape = combined_shape.boolean(
+                chunk.shape,
+                op="union",
+                tolerance=tolerance,
+                min_point_spacing=min_point_spacing,
+            )
+
+        return combined_shape
+
+    @staticmethod
+    def morph_multi(
+        src_shapes: dict[str, Shape],
+        tgt_shapes: dict[str, Shape],
+        t: float,
+        *,
+        max_len: float = 16.0,
+        tolerance: float = 1.0,
+        min_point_spacing: float = 0.5,
+        w_dist: float = 0.55,
+        w_area: float = 0.35,
+        w_overlap: float = 0.1,
+        cost_threshold: float = 2.5,
+        ensure_shell_pairs: bool = True,
+    ) -> list[MorphChunk]:
+        """Interpolates **multiple** shapes at once and returns a list of
+        :class:`MorphChunk` objects, one for every *source → destination* flow.
+
+        This is a higher-level variant of :py:meth:`morph` that works on two
+        *collections* of shapes rather than a single pair. Rings from all
+        sources are matched against rings from all destinations using the
+        same cost function (centroid distance, area similarity, overlap),
+        then each matched pair is interpolated at the requested point in
+        time *t*.
+
+        Parameters:
+            src_shapes (dict[str, Shape]): Dictionary ``id →`` *starting* shape.
+            tgt_shapes (dict[str, Shape]): Dictionary ``id →`` *ending* shape.
+            t (float): Interpolation factor (``0`` = *src*, ``1`` = *dst*).
+            max_len (int or float): Maximum length of line segments after splitting.
+            tolerance (float): Angle in degrees to consider a Bézier curve flat during flattening.
+            min_point_spacing (float): Minimum per-axis spacing when converting back from polygons to shapes.
+            w_dist (float): Weight of the centroid-distance term in the cost function.
+            w_area (float): Weight of the relative area-difference term.
+            w_overlap (float): Weight of the overlap / IoU penalty term.
+            cost_threshold (float): Maximum acceptable pairing cost; above this value rings are treated as unmatched.
+            ensure_shell_pairs (bool): Force every *shell* to morph into something even if the best match is above *cost_threshold*.
+
+        Returns:
+            list[MorphChunk]: a list where each item contains src_id (the key of the originating shape or ``None`` if the geometry *appears*), tgt_id (the key of the destination shape or ``None`` if the geometry *disappears*) and shape (the interpolated :class:`Shape` at the given *t*).
+
+        Examples:
+            ..  code-block:: python3
+
+                start = {
+                    'A': Shape.star(5, 20, 40),
+                    'B': Shape.ellipse(50, 30).move(100, 0),
+                }
+                end = {
+                    'X': Shape.polygon(6, 45),
+                }
+                for chunk in Shape.morph_multi(start, end, t=0.5):
+                    print(chunk.src_id, '→', chunk.tgt_id, chunk.shape)
+        """
+        # Basic validation
+        if not 0 <= t <= 1:
+            raise ValueError("t must be between 0 and 1")
+        if any(not isinstance(s, Shape) for s in src_shapes.values()):
+            raise TypeError("All src_shapes values must be Shape instances")
+        if any(not isinstance(s, Shape) for s in tgt_shapes.values()):
+            raise TypeError("All tgt_shapes values must be Shape instances")
+
+        # Fast-paths
+        if t == 0:
+            return [
+                MorphChunk(src_id=k, tgt_id=None, shape=v)
+                for k, v in src_shapes.items()
+            ]
+        if t == 1:
+            return [
+                MorphChunk(src_id=None, tgt_id=k, shape=v)
+                for k, v in tgt_shapes.items()
+            ]
 
         def _morph_transition(
             ring: LinearRing,
@@ -1629,37 +1777,79 @@ class Shape:
                 raise ValueError("Combined geometry is not a Polygon or MultiPolygon")
 
         # 1) Retrieve pairing & resampling information (cached)
+        src_cmds = tuple(sorted((k, s.drawing_cmds) for k, s in src_shapes.items()))
+        dst_cmds = tuple(sorted((k, s.drawing_cmds) for k, s in tgt_shapes.items()))
+
         paired, src_unmatched, tgt_unmatched = Shape._prepare_morph(
-            self.drawing_cmds,
-            target.drawing_cmds,
-            max_len=max_len,
-            tolerance=tolerance,
-            w_dist=w_dist,
-            w_area=w_area,
-            w_overlap=w_overlap,
-            cost_threshold=cost_threshold,
-            ensure_shell_pairs=ensure_shell_pairs,
+            src_cmds,
+            dst_cmds,
+            max_len,
+            tolerance,
+            w_dist,
+            w_area,
+            w_overlap,
+            cost_threshold,
+            ensure_shell_pairs,
         )
 
         # 2) Interpolate matched rings
-        result_rings: list[tuple[LinearRing, bool]] = [
-            (_interpolate_rings(src, tgt, t), is_hole) for src, tgt, is_hole in paired
+        result_rings: list[tuple[LinearRing, bool, str | None, str | None]] = [
+            (_interpolate_rings(src, tgt, t), is_hole, src_id, tgt_id)
+            for src, tgt, is_hole, src_id, tgt_id in paired
         ]
 
         # 3) Handle disappearing / appearing rings
-        for ring, dest_pt, is_hole in src_unmatched:
+        for ring, dest_pt, is_hole, src_id in src_unmatched:
             result_rings.append(
-                (_morph_transition(ring, dest_pt, t, appearing=False), is_hole)
+                (
+                    _morph_transition(ring, dest_pt, t, appearing=False),
+                    is_hole,
+                    src_id,
+                    None,
+                )
             )
-        for ring, origin_pt, is_hole in tgt_unmatched:
+        for ring, origin_pt, is_hole, tgt_id in tgt_unmatched:
             result_rings.append(
-                (_morph_transition(ring, origin_pt, t, appearing=True), is_hole)
+                (
+                    _morph_transition(ring, origin_pt, t, appearing=True),
+                    is_hole,
+                    None,
+                    tgt_id,
+                )
             )
 
-        # 4) Convert back to Shape and return
-        return Shape.from_multipolygon(
-            _rings_to_multipolygon(result_rings), min_point_spacing
-        )
+        # 4) Group by (shape_id, target_id)
+        #    Holes coming from / going to *None* (i.e. appearing/disappearing) must be
+        #    subtracted from *every* shape – they are collected in `global_holes` and
+        #    later injected into every flow.
+
+        global_holes: list[tuple[LinearRing, bool]] = []  # always [(ring, True)]
+        flows: dict[tuple[str | None, str | None], list[tuple[LinearRing, bool]]] = {}
+
+        for ring, is_hole, src_id, tgt_id in result_rings:
+            # If the ring is a hole and one side of the morph is missing, treat it as
+            # a *global* hole that has to be removed from every resulting geometry.
+            if is_hole and (src_id is None or tgt_id is None):
+                global_holes.append((ring, True))
+                continue
+
+            flows.setdefault((src_id, tgt_id), []).append((ring, is_hole))
+
+        # Inject global holes into every shape flow so they are diffed out.
+        if global_holes:
+            for ring_list in flows.values():
+                ring_list.extend(global_holes)
+
+        # 5) Convert back to Shape and pack into MorphChunk objects
+        out: list[MorphChunk] = []
+        for (src_id, tgt_id), ring_list in flows.items():
+            mp = _rings_to_multipolygon(ring_list)
+            out.append(
+                MorphChunk(
+                    src_id, tgt_id, Shape.from_multipolygon(mp, min_point_spacing)
+                )
+            )
+        return out
 
     @staticmethod
     def polygon(edges: int, side_length: float) -> Shape:
@@ -1945,3 +2135,9 @@ class Shape:
             A shape object as a string representing a glance.
         """
         return Shape._glance_or_star(edges, inner_size, outer_size, "b")
+
+
+class MorphChunk(NamedTuple):
+    src_id: str | None  # None  ⇒  chunk is *appearing*
+    tgt_id: str | None  # None  ⇒  chunk is *disappearing*
+    shape: Shape  # interpolated geometry at the given t
