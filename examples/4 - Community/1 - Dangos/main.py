@@ -699,7 +699,9 @@ class Dango:
             target.x += move_offset
 
             # Fade-out during the last part of the drag
-            fade_alpha = frame_util.add(drag_duration - fade_duration, drag_duration, 255)
+            fade_alpha = frame_util.add(
+                drag_duration - fade_duration, drag_duration, 255
+            )
             self.alpha = fade_alpha
             target.alpha = fade_alpha
 
