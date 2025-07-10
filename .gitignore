@@ -127,9 +127,7 @@ pip-selfcheck.json
 docs/build/
 
 # Example & test outputs
-examples/Output.ass
-examples/*/Output.ass
-tests/Output.ass
+output.ass
 
 # Misc
 tests/Ass - Crazy/
