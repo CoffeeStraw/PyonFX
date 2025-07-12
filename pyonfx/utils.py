@@ -16,13 +16,147 @@
 
 from __future__ import annotations
 import re
-from typing import overload, TYPE_CHECKING
+import bisect
+from typing import Literal, overload, TYPE_CHECKING, Protocol
 from video_timestamps import ABCTimestamps, TimeType
 
 from .convert import Convert, ColorModel
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
+
+
+class Accelerator(Protocol):
+    """Protocol for timing/easing functions that transform progress values.
+
+    An accelerator takes a normalized time value (0.0 to 1.0) and returns
+    a transformed value, typically also in the range [0.0, 1.0]
+    representing the acceleration progress.
+    """
+
+    def __call__(self, t: float) -> float: ...
+
+
+class Power:
+    """Power-based acceleration function.
+
+    Applies a power transformation to the input: f(t) = t^exp
+
+    Common use cases:
+    - exp = 2.0: Quadratic ease-in
+    - exp = 0.5: Square root ease-out
+    - exp > 1.0: Accelerating (ease-in)
+    - exp < 1.0: Decelerating (ease-out)
+    """
+
+    __slots__ = ("exp",)
+
+    def __init__(self, exp: float = 1.0):
+        self.exp = float(exp)
+
+    def __call__(self, t: float) -> float:
+        return t**self.exp
+
+
+class CubicBezier:
+    """Cubic-Bézier acceleration function for smooth easing curves.
+
+    This class implements a cubic Bézier curve as a timing function.
+    The curve is defined by four control points: P0(0,0), P1(p1x, p1y), P2(p2x, p2y), and P3(1,1).
+
+    Note:
+        The X coordinates (p1x, p2x) must stay in the [0,1] domain to ensure a monotonically increasing function.
+        The Y coordinates (p1y, p2y) can be any value.
+    """
+
+    __slots__ = ("_control_points", "_lut_x", "_lut_y")
+
+    def __init__(
+        self,
+        p1x: float,
+        p1y: float,
+        p2x: float,
+        p2y: float,
+        *,
+        samples: int = 60,
+    ) -> None:
+        self._control_points = (float(p1x), float(p1y), float(p2x), float(p2y))
+
+        # Pre-compute lookup table for fast initial guesses
+        self._lut_x = [i / samples for i in range(samples + 1)]
+        self._lut_y = [self._evaluate_y_at_parameter(u) for u in self._lut_x]
+
+    def __call__(self, t: float) -> float:
+        # Handle boundary cases
+        if t <= 0.0 or t >= 1.0:
+            return max(0.0, min(1.0, t))
+
+        # Find the appropriate segment in our lookup table using binary search and get its x values
+        segment_idx = bisect.bisect_left(self._lut_x, t) - 1
+        segment_idx = max(0, min(segment_idx, len(self._lut_x) - 2))
+        x_start, x_end = self._lut_x[segment_idx], self._lut_x[segment_idx + 1]
+
+        # Calculate normalized position within the segment
+        if x_end != x_start:
+            segment_progress = (t - x_start) / (x_end - x_start)
+        else:
+            segment_progress = 0.0
+
+        # Initial parameter guess based on linear interpolation
+        samples_count = len(self._lut_x) - 1
+        initial_guess = segment_idx / samples_count + segment_progress / samples_count
+
+        # Refine the guess using one Newton-Raphson iteration
+        x_value, x_derivative = self._compute_x_and_derivative(initial_guess)
+        if x_derivative != 0.0:
+            refined_guess = initial_guess - (x_value - t) / x_derivative
+            refined_guess = max(0.0, min(1.0, refined_guess))
+        else:
+            refined_guess = initial_guess
+
+        return self._evaluate_y_at_parameter(refined_guess)
+
+    def _compute_x_and_derivative(self, u: float) -> tuple[float, float]:
+        """Compute both X coordinate and its derivative at parameter u.
+
+        X(u) = 3*p1x*u + 3*(p2x-p1x)*u² + (1-3*p2x+3*p1x)*u³
+        """
+        p1x, _, p2x, _ = self._control_points
+
+        a = 3 * p1x - 3 * p2x + 1
+        b = -6 * p1x + 3 * p2x
+        c = 3 * p1x
+
+        # Horner's method
+        x = ((a * u + b) * u + c) * u
+
+        # Derivative: dx/du = 3*a*u² + 2*b*u + c
+        dx_du = (3 * a * u + 2 * b) * u + c
+
+        return x, dx_du
+
+    def _evaluate_y_at_parameter(self, u: float) -> float:
+        """Evaluate the Y coordinate of the Bézier curve at parameter u.
+
+        Y(u) = 3*p1y*u + 3*(p2y-p1y)*u² + (1-3*p2y+3*p1y)*u³
+        """
+        _, p1y, _, p2y = self._control_points
+
+        a = 3 * p1y - 3 * p2y + 1
+        b = -6 * p1y + 3 * p2y
+        c = 3 * p1y
+
+        # Horner's method
+        return ((a * u + b) * u + c) * u
+
+
+# Registry of commonly used easing functions
+PRESET_ACCELERATORS: dict[str, Accelerator] = {
+    "ease": CubicBezier(0.25, 0.1, 0.25, 1.0),  # Default ease
+    "ease-in": CubicBezier(0.42, 0.0, 1.0, 1.0),  # Slow start
+    "ease-out": CubicBezier(0.0, 0.0, 0.58, 1.0),  # Slow end
+    "ease-in-out": CubicBezier(0.42, 0.0, 0.58, 1.0),  # Slow start and end
+}
 
 
 class Utils:
@@ -81,10 +215,39 @@ class Utils:
         return ""
 
     @staticmethod
-    def accelerate(pct: float, accelerator: float) -> float:
-        # Modifies pct according to the acceleration provided.
-        # TODO: Implement acceleration based on bezier's curve
-        return pct**accelerator
+    def accelerate(
+        pct: float,
+        acc: (
+            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
+        ) = 1.0,
+    ) -> float:
+        """Applies an acceleration function to transform a percentage value.
+
+        Parameters:
+            pct (float): Progress percentage value, typically between 0.0 and 1.0.
+            acc (float | str | Accelerator, optional): Acceleration function to apply:
+                - float: Power value (1.0 = linear, >1.0 = ease-in, <1.0 = ease-out)
+                - str: Preset name ("ease", "ease-in", "ease-out", "ease-in-out")
+                - Accelerator: Custom accelerator function
+
+        Returns:
+            float: The transformed percentage value.
+        """
+        if acc == 1.0:
+            return pct
+
+        if isinstance(acc, (int, float)):
+            fn: Accelerator = Power(acc)
+        elif isinstance(acc, str):
+            try:
+                fn = PRESET_ACCELERATORS[acc]
+            except KeyError:
+                raise ValueError(f"Unknown accelerator preset: {acc!r}")
+        elif callable(acc):
+            fn = acc  # Assume it follows the protocol.
+        else:
+            raise TypeError("accelerator must be float, str or callable")
+        return fn(pct)
 
     @overload
     @staticmethod
@@ -92,7 +255,9 @@ class Utils:
         pct: float,
         val1: float,
         val2: float,
-        acc: float = 1.0,
+        acc: (
+            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
+        ) = 1.0,
     ) -> float: ...
 
     @overload
@@ -101,7 +266,9 @@ class Utils:
         pct: float,
         val1: str,
         val2: str,
-        acc: float = 1.0,
+        acc: (
+            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
+        ) = 1.0,
     ) -> str: ...
 
     @staticmethod
@@ -109,19 +276,22 @@ class Utils:
         pct: float,
         val1: float | str,
         val2: float | str,
-        acc: float = 1.0,
+        acc: (
+            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
+        ) = 1.0,
     ) -> str | float:
         """
-        | Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value as decimal number.
-        | You can also provide a http://cubic-bezier.com to accelerate based on bezier curves. (TO DO)
-        |
-        | You could use that for the calculation of color/alpha gradients.
+        Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value.
+        Supports various acceleration/easing functions for smooth animations.
 
         Parameters:
-            pct (float): Percent value of the interpolation.
+            pct (float): Percent value of the interpolation (0.0 to 1.0).
             val1 (int, float or str): First value to interpolate (either string or number).
             val2 (int, float or str): Second value to interpolate (either string or number).
-            acc (float, optional): Optional acceleration that influences final percent value.
+            acc (float | str | Accelerator, optional): Acceleration function to apply:
+                - float: Power value (1.0 = linear, >1.0 = ease-in, <1.0 = ease-out), same as in ASS `\\t` tag.
+                - str: Preset name ("ease", "ease-in", "ease-out", "ease-in-out").
+                - Accelerator: Custom accelerator object. You can check out :class:`CubicBezier` or build your own.
 
         Returns:
             Interpolated value of given 2 values (so either a string or a number).
@@ -131,17 +301,21 @@ class Utils:
 
                 print( Utils.interpolate(0.5, 10, 20) )
                 print( Utils.interpolate(0.9, "&HFFFFFF&", "&H000000&") )
+                print( Utils.interpolate(0.5, 10, 20, "ease-in") )
+                print( Utils.interpolate(0.5, 10, 20, 2.0) )
 
-            >>> 15
+            >>> 15.0
             >>> &HE5E5E5&
+            >>> 13.05
+            >>> 12.5
         """
         if pct > 1.0 or pct < 0:
             raise ValueError(
                 f"Percent value must be a float between 0.0 and 1.0, but yours was {pct}"
             )
 
-        # Calculating acceleration (if requested)
-        pct = Utils.accelerate(pct, acc) if acc != 1.0 else pct
+        # Apply acceleration function
+        pct = Utils.accelerate(pct, acc)
 
         def interpolate_numbers(val1: float, val2: float) -> float:
             nonlocal pct
