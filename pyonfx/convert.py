@@ -22,7 +22,6 @@ import os
 import sys
 from enum import Enum
 from typing import (
-    NamedTuple,
     TYPE_CHECKING,
     cast,
     overload,
@@ -34,18 +33,11 @@ from shapely.vectorized import contains as _shapely_contains
 from PIL import Image
 
 from .font_utility import Font
+from .shape import Pixel
 
 if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
     from .shape import Shape
-
-
-# A simple NamedTuple to represent pixels
-class Pixel(NamedTuple):
-    x: int
-    y: int
-    color: str | tuple[int, int, int] = "&HFFFFFF&"
-    alpha: str | int = "&H00&"
 
 
 class ColorModel(Enum):
@@ -627,7 +619,7 @@ class Convert:
         return Convert.shape_to_pixels(shape, supersampling)
 
     @staticmethod
-    def shape_to_pixels(shape: Shape, supersampling: int = 8) -> list[Pixel]:
+    def shape_to_pixels(shape: Shape, supersampling: int = 8, output_rgba: bool = False) -> list[Pixel]:
         """Converts a Shape object to a list of pixel data.
 
         It is highly suggested to use a dedicated style for pixels,
@@ -641,6 +633,7 @@ class Convert:
         Parameters:
             shape (Shape): An object of class Shape.
             supersampling (int): Supersampling factor (≥ 1). Higher values mean smoother anti-aliasing but slower generation.
+            output_rgba (bool): If True, output RGBA values instead of ASS color and alpha.
 
         Returns:
             A list of ``Pixel``, representing each individual pixel of the input shape.
@@ -702,7 +695,7 @@ class Convert:
             Pixel(
                 x=int(xi - shift_x_low),
                 y=int(yi - shift_y_low),
-                alpha=Convert.alpha_dec_to_ass(int(alpha_arr[yi, xi])),
+                alpha=int(alpha_arr[yi, xi]) if output_rgba else Convert.alpha_dec_to_ass(int(alpha_arr[yi, xi])),
             )
             for yi, xi in non_transparent
         ]

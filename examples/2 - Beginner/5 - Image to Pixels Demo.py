@@ -57,14 +57,29 @@ def image_effect(line: Line, l: Line):
 
 @io.track
 def sub(line: Line, l: Line):
-    """Original subtitle effect with fade."""
+    """Test effect: Convert text to shape and apply texture from 'stock_texture.jpg'."""
     l.start_time = line.start_time - line.leadin // 2
     l.end_time = line.end_time + line.leadout // 2
 
-    tags = rf"\fad({line.leadin // 2}, {line.leadout // 2})"
-    l.text = f"{{{tags}}}{line.text}"
+    fad = rf"\fad({line.leadin // 2}, {line.leadout // 2})"
+    l.text = f"{{{fad}}}{line.text}"
 
     io.write_line(l)
+
+    l.style = "p"
+    shape_obj = Convert.text_to_shape(line).move(line.left % 1, line.top % 1)
+    # Apply texture using the image 'stock_texture.jpg' with 'stretch' mode
+    textured_pixels = shape_obj.apply_texture("stock_texture.jpg", mode="repeat_h", supersampling=8)
+
+    # Output each textured pixel as a separate line with a pixel drawing command
+    for pixel in textured_pixels:
+        # Compute absolute position for the pixel based on the original line position
+        x = int(line.left) + pixel.x
+        y = int(line.top) + pixel.y
+
+        # Create a simple drawing command using \p1. This draws a tiny rectangle representing a pixel.
+        l.text = f"{{\\p1\\pos({x},{y})\\1c{pixel.color}\\alpha{pixel.alpha}{fad}}}{Shape.PIXEL}"
+        io.write_line(l)
 
 
 # Generate lines
