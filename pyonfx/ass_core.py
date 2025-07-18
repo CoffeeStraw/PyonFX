@@ -407,6 +407,20 @@ class Line:
         """
         return copy.deepcopy(self)
 
+    def serialize(self) -> str:
+        return (
+            f"{'Comment' if self.comment else 'Dialogue'}: {self.layer},"
+            f"{Convert.time(max(0, int(self.start_time)))},"
+            f"{Convert.time(max(0, int(self.end_time)))},"
+            f"{self.style},"
+            f"{self.actor},"
+            f"{self.margin_l:04d},"
+            f"{self.margin_r:04d},"
+            f"{self.margin_v:04d},"
+            f"{self.effect},"
+            f"{self.text}\n"
+        )
+
 
 class _LinesWithProgress(list[Line]):
     """A list-like wrapper to list[Line] that injects progress-bar and timing when iterated."""
@@ -1480,22 +1494,7 @@ class Ass:
         Parameters:
             line (:class:`Line`): A line object. If not valid, TypeError is raised.
         """
-        self.__output.append(
-            "\n%s: %d,%s,%s,%s,%s,%04d,%04d,%04d,%s,%s"
-            % (
-                "Comment" if line.comment else "Dialogue",
-                line.layer,
-                Convert.time(max(0, int(line.start_time))),
-                Convert.time(max(0, int(line.end_time))),
-                line.style,
-                line.actor,
-                line.margin_l,
-                line.margin_r,
-                line.margin_v,
-                line.effect,
-                line.text,
-            )
-        )
+        self.__output.append(line.serialize())
         self._plines += 1
 
     def save(self, quiet: bool = False) -> None:
@@ -1507,7 +1506,7 @@ class Ass:
 
         # Writing to file
         with open(self.path_output, "w", encoding="utf-8-sig") as f:
-            f.writelines(self.__output + ["\n"])
+            f.writelines(self.__output)
             if self.__output_extradata:
                 f.write("\n[Aegisub Extradata]\n")
                 f.writelines(self.__output_extradata)
