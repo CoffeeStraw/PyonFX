@@ -691,10 +691,26 @@ class Ass:
 
     def _process_extended_line_data(self, vertical_kanji: bool) -> None:
         """Process extended line data including positioning, words, syllables, and characters."""
-        lines_by_styles = {}
+        # Preprocess: split lines at \N and keep track of split offsets
+        new_lines = []
+        split_offsets = []
+
+        for line in self.lines:
+            raw_segments = line.raw_text.split("\\N")
+            text_segments = re.sub(r"\{.*?\}", "", line.raw_text).split("\\N")
+            
+            for seg_idx, (raw_seg, text_seg) in enumerate(zip(raw_segments, text_segments)):
+                seg_line = line.copy()
+                seg_line.raw_text = raw_seg
+                seg_line.text = text_seg
+                new_lines.append(seg_line)
+                split_offsets.append(seg_idx)
+
+        self.lines = new_lines
 
         # Let the fun begin (Pyon!)
-        for line in self.lines:
+        lines_by_styles = {}
+        for line, split_offset in zip(self.lines, split_offsets):
             # Group lines by style for leadin/leadout calculation
             if line.style not in lines_by_styles:
                 lines_by_styles[line.style] = []
@@ -780,6 +796,14 @@ class Ass:
                         line.middle = line.top + line.height / 2
                         line.bottom = line.top + line.height
                         line.y = line.bottom
+
+                    # Apply vertical offset for split lines
+                    if split_offset > 0:
+                        offset = split_offset * line.height
+                        line.top += offset
+                        line.middle += offset
+                        line.bottom += offset
+                        line.y += offset
 
                 # Calculating space width and saving spacing
                 space_width = font.get_text_extents(" ")[0]
