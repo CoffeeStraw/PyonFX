@@ -42,6 +42,7 @@ Tracker = "https://github.com/CoffeeStraw/PyonFX/issues/"
 
 [project.optional-dependencies]
 dev = [
+  "isort",
   "black",
   "pytest",
   "pytest-check",
@@ -57,3 +58,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["pyonfx*"]
+
+[tool.isort]
+profile = "black"
