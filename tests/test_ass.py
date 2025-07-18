@@ -224,7 +224,7 @@ def test_ass_values():
     check.equal(
         os.path.realpath(io.path_output),
         os.path.realpath(
-            os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "Output.ass")
+            os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "output.ass")
         ),
     )
     # io.meta is tested in test_meta_values()
@@ -232,5 +232,5 @@ def test_ass_values():
     # io.lines is tested in test_line_values()
     check.equal(
         io.input_timestamps,
-        FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction("23.976000")),
+        FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction("23.976000")),  # type: ignore[attr-defined]
     )
