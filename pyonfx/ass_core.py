@@ -376,9 +376,11 @@ class _LinesWithProgress(list[Line]):
         bar = tqdm(
             raw_iter,
             total=len(self),
-            desc="Progress",
+            desc="Processed lines",
             unit="line",
             leave=False,
+            ascii=" ▖▘▝▗▚▞█",
+            bar_format="🐰 {desc}: |{bar}| {percentage:3.0f}% [{n_fmt}/{total_fmt}] ⏱️  {elapsed}<{remaining}, {rate_fmt}{postfix}",
         )
 
         for line in bar:
