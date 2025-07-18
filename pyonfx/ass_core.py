@@ -1366,7 +1366,7 @@ class Ass:
                 )
 
             headers = [
-                "Effect",
+                "Name",
                 "Calls",
                 "Lines",
                 "Time (s)",
