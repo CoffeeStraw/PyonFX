@@ -15,7 +15,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 import re
-from typing import Callable, Literal, TypeVar, Iterable
+from typing import Callable, Iterable, Literal, TypeVar
 
 import rpeasings
 from tqdm import tqdm
@@ -73,7 +73,8 @@ class Utils:
             ascii=kwargs.pop("ascii", " ▖▘▝▗▚▞█"),
             bar_format=kwargs.pop(
                 "bar_format",
-                emoji[obj_name] + " {desc}: |{bar}| {percentage:3.0f}% [{n_fmt}/{total_fmt}] "
+                emoji[obj_name]
+                + " {desc}: |{bar}| {percentage:3.0f}% [{n_fmt}/{total_fmt}] "
                 "⏱️  {elapsed}<{remaining}, {rate_fmt}{postfix}",
             ),
             **kwargs,
@@ -96,7 +97,7 @@ class Utils:
             filter_empty_duration (bool, optional): If True, objects are filtered based on their duration attribute.
             renumber_indexes (bool, optional): If True, the ``i``, ``word_i`` and ``syl_i`` attributes of the surviving objects are re-assigned to reflect their new position in the returned list.
             progress_bar (bool, optional): If True, the result is wrapped with :func:`progress_bar`.
-            
+
         Returns:
             The filtered objects list.
         """
@@ -109,6 +110,7 @@ class Utils:
             out.append(obj)
 
         if renumber_indexes:
+
             def _renumber_attr(attr_name: str) -> None:
                 if out and not hasattr(out[0], attr_name):
                     return

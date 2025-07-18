@@ -70,12 +70,10 @@ def sub(line: Line, l: Line):
 
     io.write_line(l)
 
-    l.style = "p"
-    shape_obj = Convert.text_to_shape(line).move(line.left % 1, line.top % 1)
     # Apply texture using the image 'stock_texture.jpg' with 'stretch' mode
-    textured_pixels = shape_obj.apply_texture(
-        "stock_texture.jpg", mode="repeat_h", supersampling=8
-    )
+    l.style = "p"
+    shape_pixels = Convert.text_to_pixels(line)
+    textured_pixels = shape_pixels.apply_texture("stock_texture.jpg")
 
     # Output each textured pixel as a separate line with a pixel drawing command
     for pixel in textured_pixels:
