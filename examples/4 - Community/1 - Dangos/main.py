@@ -188,6 +188,7 @@ class Dango:
             l.text = f"{{\\an7{style_tags}\\p1}}{shape}"
             io.write_line(l)
 
+    @io.track
     def morph_from_shapes(
         self,
         source_shape_parts: dict[str, Shape],
@@ -304,7 +305,7 @@ class Dango:
         new_x: float,
         new_y: float,
         duration: int,
-        easing: Literal["linear", "ease_out", "ease_in"] = "linear",
+        easing: Literal["ease", "ease-out", "ease-in"] | float = 1.0,
         layer_offset: int = 0,
         fade_duration: int | None = None,
     ) -> "Dango":
@@ -319,15 +320,9 @@ class Dango:
         for start, end, frame_idx, total_frames in frame_util:
             progress = frame_idx / total_frames
 
-            # Apply easing
-            if easing == "ease_out":
-                progress = 1 - (1 - progress) ** 2
-            elif easing == "ease_in":
-                progress = progress**2
-
             # Update position
-            self.x = Utils.interpolate(progress, start_x, new_x)
-            self.y = Utils.interpolate(progress, start_y, new_y)
+            self.x = Utils.interpolate(progress, start_x, new_x, easing)
+            self.y = Utils.interpolate(progress, start_y, new_y, easing)
 
             # Apply fade-out if requested
             if fade_duration is not None:
@@ -346,6 +341,7 @@ class Dango:
         self.current_time += duration
         return self
 
+    @io.track
     def exit_jump_down_fall(
         self,
         charge_duration: int = 100,
@@ -428,6 +424,7 @@ class Dango:
         self.current_time += total_duration
         return self
 
+    @io.track
     def exit_furious_dash(
         self,
         shake_duration: int = 2000,
@@ -442,11 +439,12 @@ class Dango:
         # Phase 2: Dash movement with fade-out using enhanced move_to
         target_x = self.x + dash_distance
         self.move_to(
-            target_x, self.y, dash_duration, "ease_out", fade_duration=fade_duration
+            target_x, self.y, dash_duration, "ease", fade_duration=fade_duration
         )
 
         return self
 
+    @io.track
     def exit_slow_steps(
         self,
         duration: int = 3000,
@@ -479,12 +477,13 @@ class Dango:
                 target_x,
                 self.y,
                 current_step_duration,
-                "ease_out",  # Ease-out within each step
+                "ease",
                 fade_duration=fade_for_step,
             )
 
         return self
 
+    @io.track
     def exit_heart_spiral(
         self,
         hold_duration: int = 1300,
@@ -499,7 +498,7 @@ class Dango:
 
         # Phase 1: Gradual drift left
         drift_target_x = self.x + drift_x_total
-        self.move_to(drift_target_x, self.y, hold_duration, "ease_out")
+        self.move_to(drift_target_x, self.y, hold_duration, "ease")
 
         # Phase 2: Spiral motion phase (custom animation for complex movement)
         start_x, start_y = self.x, self.y
@@ -539,6 +538,7 @@ class Dango:
         self.current_time += move_duration
         return self
 
+    @io.track
     def piggyback_onto(
         self,
         carrier: "Dango",
@@ -585,7 +585,7 @@ class Dango:
         carrier_y = carrier.y
         self_x = carrier_x
         self_y = carrier_y - 18
-        self.move_to(self_x, self_y, climb_duration, "ease_out", layer_offset=1)
+        self.move_to(self_x, self_y, climb_duration, "ease", layer_offset=1)
         carrier.idle("static", climb_duration)
 
         # Travel phase
@@ -658,6 +658,7 @@ class Dango:
         self.current_time = carrier.current_time = start_time + travel_duration
         return self
 
+    @io.track
     def tug_away(
         self,
         target: "Dango",
@@ -676,9 +677,7 @@ class Dango:
 
         # Phase 1: Angry approaches cute
         approach_target_x = target.x + gap
-        self.move_to(
-            approach_target_x, self.y, pre_duration, "ease_out", layer_offset=1
-        )
+        self.move_to(approach_target_x, self.y, pre_duration, "ease", layer_offset=1)
         target.idle("static", pre_duration, layer_offset=0)
 
         # Phase 2: Both move together in drag motion with fade-out
@@ -744,6 +743,7 @@ class Dango:
         io.write_line(h)
 
 
+@io.track
 def leadin_effect(
     line: Line,
     char: Char,
@@ -776,6 +776,7 @@ def leadin_effect(
     io.write_line(l)
 
 
+@io.track
 def main_effect(
     line: Line, char: Char, dango_style: dict[str, dict[str, str | float]]
 ) -> None:
@@ -893,7 +894,7 @@ def process_romaji_line(line: Line, l: Line) -> None:
         # Piggyback pairing
         elif is_piggy_line and i + 1 < len(contexts) and i + 1 not in paired:
             dango2 = contexts[i + 1][1]
-            dango.morph_from_shapes(*curr_context, MORPH_DURATION)
+            dango.morph_from_shapes(*curr_context, MORPH_DURATION, 1)
             dango2.morph_from_shapes(*contexts[i + 1][0], MORPH_DURATION)
             dango.piggyback_onto(dango2)
             paired.update([i, i + 1])
