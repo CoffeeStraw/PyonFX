@@ -26,6 +26,10 @@ from typing import (
     overload,
 )
 
+import numpy as np
+from shapely.affinity import scale as _shapely_scale, translate as _shapely_translate
+from shapely.vectorized import contains as _shapely_contains
+
 from .font_utility import Font
 
 if TYPE_CHECKING:
@@ -33,7 +37,7 @@ if TYPE_CHECKING:
     from .shape import Shape
 
 # A simple NamedTuple to represent pixels
-Pixel = NamedTuple("Pixel", [("x", float), ("y", float), ("alpha", int)])
+Pixel = NamedTuple("Pixel", [("x", int), ("y", int), ("alpha", int)])
 
 
 class ColorModel(Enum):
@@ -616,176 +620,89 @@ class Convert:
 
     @staticmethod
     def shape_to_pixels(shape: Shape, supersampling: int = 8) -> list[Pixel]:
-        """| Converts a Shape object to a list of pixel data.
-        | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
+        """Converts a Shape object to a list of pixel data.
 
         It is highly suggested to create a dedicated style for pixels,
         because you will write less tags for line in your pixels, which means less size for your .ass file.
 
-        | The style suggested (named "p" in the example) is:
-        | - **an=7 (very important!);**
-        | - bord=0;
-        | - shad=0;
-        | - For Font informations leave whatever the default is;
+        The style suggested (named "p" in the example) is:
+        - **an=7 (very important!);**
+        - bord=0;
+        - shad=0;
+        - For Font informations leave whatever the default is;
 
         **Tips:** *As for text, even shapes can decay!*
 
         Parameters:
             shape (Shape): An object of class Shape.
-            supersampling (int): Value used for supersampling. Higher value means smoother and more precise anti-aliasing (and more computational time for generation).
+            supersampling (int): Supersampling factor (≥ 1). Higher values mean smoother anti-aliasing but slower generation.
 
         Returns:
-            A list of dictionaries representing each individual pixel of the input shape.
-
-        Examples:
-            ..  code-block:: python3
-
-                l.style = "p"
-                p_sh = Shape.polygon(4, 1)
-                for pixel in Convert.shape_to_pixels(Shape.heart(100)):
-                    x, y = math.floor(l.left) + pixel.x, math.floor(l.top) + pixel.y
-                    alpha = "\\alpha" + Convert.alpha_dec_to_ass(pixel.alpha) if pixel.alpha != 0 else ""
-
-                    l.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, p_sh)
-                    io.write_line(l)
+            A list of ``Pixel``, representing each individual pixel of the input shape.
+            A pixel is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
         """
-        # Scale values for supersampled rendering
-        upscale = supersampling
-        downscale = 1 / upscale
-
-        # Upscale shape for later downsampling
-        shape.map(lambda x, y: (x * upscale, y * upscale))
-
-        # Bring shape near origin in positive room
-        x1, y1, x2, y2 = shape.bounding()
-        shift_x, shift_y = -1 * (x1 - x1 % upscale), -1 * (y1 - y1 % upscale)
-        shape.move(shift_x, shift_y)
-
-        # Create image
-        width, height = (
-            math.ceil((x2 + shift_x) * downscale) * upscale,
-            math.ceil((y2 + shift_y) * downscale) * upscale,
-        )
-        image = [False for i in range(width * height)]
-
-        # Renderer (on binary image with aliasing)
-        lines, last_point, last_move = [], {}, {}
-
-        def collect_lines(x: float, y: float, typ: str) -> tuple[float, float]:
-            # Collect lines (points + vectors)
-            nonlocal lines, last_point, last_move
-            x, y = int(round(x)), int(round(y))  # Use integers to avoid rounding errors
-
-            # Move
-            if typ == "m":
-                # Close figure with non-horizontal line in image
-                if (
-                    last_move
-                    and last_move["y"] != last_point["y"]
-                    and not (last_point["y"] < 0 and last_move["y"] < 0)
-                    and not (last_point["y"] > height and last_move["y"] > height)
-                ):
-                    lines.append(
-                        [
-                            last_point["x"],
-                            last_point["y"],
-                            last_move["x"] - last_point["x"],
-                            last_move["y"] - last_point["y"],
-                        ]
-                    )
-
-                last_move = {"x": x, "y": y}
-            # Non-horizontal line in image
-            elif (
-                last_point
-                and last_point["y"] != y
-                and not (last_point["y"] < 0 and y < 0)
-                and not (last_point["y"] > height and y > height)
-            ):
-                lines.append(
-                    [
-                        last_point["x"],
-                        last_point["y"],
-                        x - last_point["x"],
-                        y - last_point["y"],
-                    ]
-                )
-
-            # Remember last point
-            last_point = {"x": x, "y": y}
-            return (x, y)
-
-        shape.flatten().map(collect_lines)
-
-        # Close last figure with non-horizontal line in image
-        if (
-            last_move
-            and last_move["y"] != last_point["y"]
-            and not (last_point["y"] < 0 and last_move["y"] < 0)
-            and not (last_point["y"] > height and last_move["y"] > height)
-        ):
-            lines.append(
-                [
-                    last_point["x"],
-                    last_point["y"],
-                    last_move["x"] - last_point["x"],
-                    last_move["y"] - last_point["y"],
-                ]
+        # Validate input
+        if supersampling < 1 or not isinstance(supersampling, int):
+            raise ValueError(
+                "supersampling must be a positive integer (got %r)" % supersampling
             )
 
-        # Calculates line x horizontal line intersection
-        def line_x_hline(
-            x: float, y: float, vx: float, vy: float, y2: float
-        ) -> float | None:
-            if vy != 0:
-                s = (y2 - y) / vy
-                if s >= 0 and s <= 1:
-                    return x + s * vx
-            return None
+        # Convert to Shapely geometry
+        multipolygon = shape.to_multipolygon()
+        if multipolygon.is_empty:
+            return []
 
-        # Scan image rows in shape
-        _, y1, _, y2 = shape.bounding()
-        for y in range(max(math.floor(y1), 0), min(math.ceil(y2), height)):
-            # Collect row intersections with lines
-            row_stops = []
-            for line in lines:
-                cx = line_x_hline(line[0], line[1], line[2], line[3], y + 0.5)
-                if cx is not None:
-                    row_stops.append(
-                        [max(0, min(cx, width)), 1 if line[3] > 0 else -1]
-                    )  # image trimmed stop position & line vertical direction
+        # Upscale and shift so the bbox is in +ve quadrant
+        multipolygon = _shapely_scale(
+            multipolygon, xfact=supersampling, yfact=supersampling, origin=(0.0, 0.0)
+        )
 
-            # Enough intersections / something to render?
-            if len(row_stops) > 1:
-                # Sort row stops by horizontal position
-                row_stops.sort(key=lambda x: x[0])
-                # Render!
-                status, row_index = 0, y * width
-                for i in range(0, len(row_stops) - 1):
-                    status = status + row_stops[i][1]
-                    if status != 0:
-                        for x in range(
-                            math.ceil(row_stops[i][0] - 0.5),
-                            math.floor(row_stops[i + 1][0] + 0.5),
-                        ):
-                            image[row_index + x] = True
+        min_x, min_y, max_x, max_y = multipolygon.bounds
+        shift_x = -1 * (min_x - (min_x % supersampling))
+        shift_y = -1 * (min_y - (min_y % supersampling))
+        multipolygon = _shapely_translate(multipolygon, xoff=shift_x, yoff=shift_y)
 
-        # Extract pixels from image
-        pixels = []
-        for y in range(0, height, upscale):
-            for x in range(0, width, upscale):
-                opacity = 0
-                for yy in range(0, upscale):
-                    for xx in range(0, upscale):
-                        if image[(y + yy) * width + (x + xx)]:
-                            opacity += 255
+        # Compute high-res grid size (multiple of supersampling)
+        _, _, max_x, max_y = multipolygon.bounds
+        high_w = int(math.ceil(max_x))
+        high_h = int(math.ceil(max_y))
+        if high_w % supersampling:
+            high_w += supersampling - (high_w % supersampling)
+        if high_h % supersampling:
+            high_h += supersampling - (high_h % supersampling)
 
-                if opacity > 0:
+        # Mark which high-res pixels fall inside the geometry (centre sampling)
+        xs = np.arange(0.5, high_w + 0.5, 1.0, dtype=np.float64)
+        ys = np.arange(0.5, high_h + 0.5, 1.0, dtype=np.float64)
+        X, Y = np.meshgrid(xs, ys)
+        mask = _shapely_contains(multipolygon, X, Y)
+
+        # Downsample mask to screen resolution
+        low_h = high_h // supersampling
+        low_w = high_w // supersampling
+        mask_rs = mask.reshape(low_h, supersampling, low_w, supersampling)
+        coverage_cnt = mask_rs.sum(axis=(1, 3))
+
+        # Convert coverage to alpha
+        denom = supersampling * supersampling
+        alpha_arr = (255 - np.rint(coverage_cnt * 255 / denom)).astype(np.int16)
+
+        # Build output list, skipping fully transparent pixels
+        downscale = 1 / supersampling
+        shift_x_low = shift_x * downscale
+        shift_y_low = shift_y * downscale
+
+        pixels: list[Pixel] = []
+        for yi in range(low_h):
+            alpha_row = alpha_arr[yi]
+            for xi in range(low_w):
+                alpha_val: int = int(alpha_row[xi])
+                if alpha_val < 255:
                     pixels.append(
                         Pixel(
-                            x=(x - shift_x) * downscale,
-                            y=(y - shift_y) * downscale,
-                            alpha=255 - round(opacity * downscale**2),
+                            x=int(xi - shift_x_low),
+                            y=int(yi - shift_y_low),
+                            alpha=alpha_val,
                         )
                     )
 
