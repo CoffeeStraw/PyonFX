@@ -14,22 +14,23 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-from __future__ import annotations
-from dataclasses import dataclass
-import re
+from collections import defaultdict
+import copy
+from dataclasses import dataclass, fields
+from fractions import Fraction
+import json
 import os
+from pathlib import Path
+import re
+import shutil
+import socket
+import subprocess
 import sys
 import time
-import copy
-import subprocess
-from fractions import Fraction
-from pathlib import Path
-from collections import defaultdict
 from typing import Any, Callable
-from tqdm.auto import tqdm
-from tabulate import tabulate
-from dataclasses import fields
 
+from tabulate import tabulate
+from tqdm.auto import tqdm
 from video_timestamps import (
     ABCTimestamps,
     FPSTimestamps,
@@ -37,8 +38,8 @@ from video_timestamps import (
     VideoTimestamps,
 )
 
-from .font_utility import Font
 from .convert import Convert
+from .font_utility import Font
 
 
 @dataclass(slots=True)
@@ -131,13 +132,39 @@ class Style:
         underline = "-1" if self.underline else "0"
         strikeout = "-1" if self.strikeout else "0"
         border = "3" if self.border_style else "1"
-        fontsize = str(int(self.fontsize)) if self.fontsize == int(self.fontsize) else str(self.fontsize)
-        scale_x = str(int(self.scale_x)) if self.scale_x == int(self.scale_x) else str(self.scale_x)
-        scale_y = str(int(self.scale_y)) if self.scale_y == int(self.scale_y) else str(self.scale_y)
-        spacing = str(int(self.spacing)) if self.spacing == int(self.spacing) else str(self.spacing)
-        angle = str(int(self.angle)) if self.angle == int(self.angle) else str(self.angle)
-        outline_width = str(int(self.outline)) if self.outline == int(self.outline) else str(self.outline)
-        shadow = str(int(self.shadow)) if self.shadow == int(self.shadow) else str(self.shadow)
+        fontsize = (
+            str(int(self.fontsize))
+            if self.fontsize == int(self.fontsize)
+            else str(self.fontsize)
+        )
+        scale_x = (
+            str(int(self.scale_x))
+            if self.scale_x == int(self.scale_x)
+            else str(self.scale_x)
+        )
+        scale_y = (
+            str(int(self.scale_y))
+            if self.scale_y == int(self.scale_y)
+            else str(self.scale_y)
+        )
+        spacing = (
+            str(int(self.spacing))
+            if self.spacing == int(self.spacing)
+            else str(self.spacing)
+        )
+        angle = (
+            str(int(self.angle)) if self.angle == int(self.angle) else str(self.angle)
+        )
+        outline_width = (
+            str(int(self.outline))
+            if self.outline == int(self.outline)
+            else str(self.outline)
+        )
+        shadow = (
+            str(int(self.shadow))
+            if self.shadow == int(self.shadow)
+            else str(self.shadow)
+        )
         primary = f"&H{self.alpha1}{self.color1}"
         secondary = f"&H{self.alpha2}{self.color2}"
         outline_col = f"&H{self.alpha3}{self.color3}"
@@ -373,7 +400,7 @@ class Line:
     def __repr__(self):
         return pretty_print(self)
 
-    def copy(self) -> Line:
+    def copy(self) -> "Line":
         """
         Returns:
             A deep copy of this object (line)
@@ -473,7 +500,7 @@ class Ass:
         margin_l=0,
         margin_r=0,
         margin_v=0,
-        encoding=1
+        encoding=1,
     )
     """Lightweight style for pixels."""
 
@@ -1421,7 +1448,7 @@ class Ass:
 
     def add_style(self, style_name: str, style: Style) -> None:
         """Adds a given ASS style into the output if it doesn't already exist.
-        
+
         The style is serialized and inserted into the [V4+ Styles] section.
         """
         if style_name in self.styles:
@@ -1439,7 +1466,7 @@ class Ass:
                 break
         if insertion_index is None:
             insertion_index = len(self.__output)
-        
+
         style_line = style.serialize(style_name)
         self.__output.insert(insertion_index, style_line)
         self.styles[style_name] = style
@@ -1564,62 +1591,111 @@ class Ass:
         return 0
 
     def open_mpv(
-        self, video_path: str = "", video_start: str = "", full_screen: bool = False
-    ) -> int:
-        """Open the output (specified in self.path_output) in softsub with the MPV player.
-        To utilize this function, MPV player is required. Additionally if you're on Windows, MPV must be in the PATH (check https://pyonfx.readthedocs.io/en/latest/quick%20start.html#installation-extra-step).
+        self,
+        video_path: str | None = None,
+        *,
+        video_start: str | None = None,
+        full_screen: bool = False,
+        extra_mpv_options: list[str] = [],
+        aegisub_fallback: bool = True,
+    ) -> bool:
+        """Opens the output subtitle file using MPV media player along with the associated video.
 
-        This is one of the fastest way to reproduce your output in a comfortable way.
+        This method attempts to:
+          - Use an already running MPV instance to hot-reload subtitles via an IPC socket if detected.
+          - Launch a new MPV process with IPC enabled if no such instance exists.
+          - Fall back to opening the output in Aegisub if MPV is not available and aegisub_fallback is True.
 
         Parameters:
-            video_path (string): The video file path (absolute) to reproduce. If not specified, **meta.video** is automatically taken.
-            video_start (string): The start time for the video (more info: https://mpv.io/manual/master/#options-start). If not specified, 0 is automatically taken.
-            full_screen (bool): If True, it will reproduce the output in full screen. If not specified, False is automatically taken.
-        """
+            video_path (str | None): The absolute path to the video file to be played. If None, the video path from meta.video is used.
+            video_start (str | None): The starting time for video playback (e.g., "00:01:23"). If None, playback starts from the beginning.
+            full_screen (bool): If True, launches MPV in full-screen mode; otherwise, in windowed mode.
+            extra_mpv_options (list[str]): Additional command-line options to pass to MPV.
+            aegisub_fallback (bool): If True, falls back to opening the output with Aegisub when MPV is not found in the system PATH.
 
-        # Check if it was saved
+        Returns:
+            True if MPV is successfully launched or the subtitles are hot-reloaded in an existing MPV instance; False otherwise (e.g., if the output file has not been saved or MPV is unavailable).
+        """
         if not self._saved:
             print(
                 "[ERROR] You've tried to open the output with MPV before having saved. Check your code."
             )
-            return -1
+            return False
 
-        # Check if mpv is usable
-        if self.meta.video and self.meta.video.startswith("?dummy") and not video_path:
-            print(
-                "[WARNING] Cannot use MPV (if you have it in your PATH) for file preview, since your .ass contains a dummy video.\n"
-                "You can specify a new video source using video_path parameter, check the documentation of the function."
-            )
-            return -1
-
-        # Setting up the command to execute
-        cmd = ["mpv"]
-
-        if not video_path:
-            if self.meta.video:
-                cmd.append(self.meta.video)
+        if not shutil.which("mpv"):
+            if aegisub_fallback:
+                print(
+                    "[WARNING] MPV not found in your environment variables"
+                    "(please refer to the documentation's 'Quick Start' section).\n\n"
+                    "Falling back to Aegisub."
+                )
+                self.open_aegisub()
             else:
-                print("[ERROR] No video file specified and meta.video is None.")
-                return -1
-        else:
-            cmd.append(video_path)
-        if video_start:
+                print(
+                    "[ERROR] MPV not found in your environment variables"
+                    "(please refer to the documentation's 'Quick Start' section).\n\n"
+                    "Exiting."
+                )
+            return False
+
+        if video_path is None:
+            if self.meta.video and not self.meta.video.startswith("?dummy"):
+                video_path = self.meta.video
+            else:
+                print(
+                    "[ERROR] No video file specified and meta.video is None or is a dummy video."
+                )
+                return False
+
+        # Define IPC socket path for mpv communication
+        ipc_socket = (
+            r"\\.\pipe\mpv_pyonfx" if sys.platform == "win32" else "/tmp/mpv_pyonfx"
+        )
+
+        # Attempt hot-reload
+        if (
+            sys.platform == "win32" and "mpv_pyonfx" in os.listdir(r"\\.\pipe")
+        ) or os.path.exists(ipc_socket):
+            try:
+                if sys.platform == "win32":
+                    with open(ipc_socket, "r+b", buffering=0) as pipe:
+                        pipe.write(
+                            json.dumps({"command": ["sub-reload"]}).encode("utf-8")
+                            + b"\n"
+                        )
+                else:
+                    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+                        sock.connect(ipc_socket)
+                        sock.sendall(
+                            json.dumps({"command": ["sub-reload"]}).encode("utf-8")
+                            + b"\n"
+                        )
+                print("Hot-reload: Subtitles reloaded in existing mpv instance.")
+                return True
+            except OSError as e:
+                print("Hot-reload failed with OSError:", e)
+                return False
+
+        # Build command to launch mpv with IPC enabled
+        cmd = ["mpv", "--input-ipc-server=" + ipc_socket]
+        cmd.append(video_path)
+        if video_start is not None:
             cmd.append("--start=" + video_start)
         if full_screen:
             cmd.append("--fs")
-
         cmd.append("--sub-file=" + self.path_output)
+        cmd.extend(extra_mpv_options)
 
         try:
-            subprocess.call(cmd)
+            subprocess.Popen(cmd)
         except FileNotFoundError:
             print(
                 "[WARNING] MPV not found in your environment variables.\n"
-                "Please refer to the documentation's \"Quick Start\" section if you don't know how to solve it."
+                "Please refer to the documentation's 'Quick Start' section."
             )
-            return -1
+            return False
 
-        return 0
+        return True
 
     def track(self, func: Callable[..., Any]) -> Callable[..., Any]:
         """Decorator to track function performance, gathering timing statistics and monitoring progress.
