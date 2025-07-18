@@ -17,13 +17,11 @@
 from __future__ import annotations
 import re
 import bisect
-from typing import Literal, overload, TYPE_CHECKING, Protocol
+from typing import Literal, TypeVar, Protocol
 from video_timestamps import ABCTimestamps, TimeType
 
 from .convert import Convert, ColorModel
-
-if TYPE_CHECKING:
-    from .ass_core import Line, Word, Syllable, Char
+from .ass_core import Line, Word, Syllable, Char
 
 
 class Accelerator(Protocol):
@@ -164,44 +162,20 @@ class Utils:
     This class is a collection of static methods that will help the user in some tasks.
     """
 
-    @overload
-    @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: list[Line],
-    ) -> list[Line]: ...
-
-    @overload
-    @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: list[Word],
-    ) -> list[Word]: ...
-
-    @overload
-    @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: list[Syllable],
-    ) -> list[Syllable]: ...
-
-    @overload
-    @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: list[Char],
-    ) -> list[Char]: ...
+    _LineWordSyllableChar = TypeVar("_LineWordSyllableChar", Line, Word, Syllable, Char)
 
     @staticmethod
     def all_non_empty(
-        lines_chars_syls_or_words: (
-            list[Line] | list[Word] | list[Syllable] | list[Char]
-        ),
+        lines_words_syls_or_chars: list[_LineWordSyllableChar],
         *,
         filter_whitespace_text: bool = True,
         filter_empty_duration: bool = False,
         renumber_indexes: bool = True,
-    ) -> list[Line] | list[Word] | list[Syllable] | list[Char]:
+    ) -> list[_LineWordSyllableChar]:
         """Return a filtered copy of the given objects list excluding the *empty* ones.
 
         Parameters:
-            lines_chars_syls_or_words (list of :class:`Line<pyonfx.ass_utility.Line>`, :class:`Char<pyonfx.ass_utility.Char>`, :class:`Syllable<pyonfx.ass_utility.Syllable>` or :class:`Word<pyonfx.ass_utility.Word>`)
+            lines_words_syls_or_chars (list of :class:`Line<pyonfx.ass_utility.Line>`, :class:`Word<pyonfx.ass_utility.Word>`, :class:`Syllable<pyonfx.ass_utility.Syllable>` or :class:`Char<pyonfx.ass_utility.Char>`)
             filter_whitespace_text (bool, optional): If True, objects are filtered based on their text attribute.
             filter_empty_duration (bool, optional): If True, objects are filtered based on their duration attribute.
             renumber_indexes (bool, optional): If True, the ``i``, ``word_i`` and ``syl_i`` attributes of the surviving objects are re-assigned to reflect their new position in the returned list.
@@ -210,7 +184,7 @@ class Utils:
             The filtered objects list.
         """
         out = []
-        for obj in lines_chars_syls_or_words:
+        for obj in lines_words_syls_or_chars:
             empty_for_text = filter_whitespace_text and not obj.text.strip()
             empty_for_duration = filter_empty_duration and obj.duration <= 0
             if empty_for_text or empty_for_duration:
@@ -272,37 +246,17 @@ class Utils:
             raise TypeError("accelerator must be float, str or callable")
         return fn(pct)
 
-    @overload
-    @staticmethod
-    def interpolate(
-        pct: float,
-        val1: float,
-        val2: float,
-        acc: (
-            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
-        ) = 1.0,
-    ) -> float: ...
-
-    @overload
-    @staticmethod
-    def interpolate(
-        pct: float,
-        val1: str,
-        val2: str,
-        acc: (
-            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
-        ) = 1.0,
-    ) -> str: ...
+    _FloatStr = TypeVar("_FloatStr", float, str)
 
     @staticmethod
     def interpolate(
         pct: float,
-        val1: float | str,
-        val2: float | str,
+        val1: _FloatStr,
+        val2: _FloatStr,
         acc: (
             float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
         ) = 1.0,
-    ) -> str | float:
+    ) -> _FloatStr:
         """
         Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value.
         Supports various acceleration/easing functions for smooth animations.

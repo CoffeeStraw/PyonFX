@@ -811,19 +811,17 @@ def main_effect(
 
 def process_romaji_line(line: Line, l: Line) -> None:
     # Character collection and context setup
-    chars = [char for char in line.chars if char.text.strip()]
+    chars = Utils.all_non_empty(line.chars)
     contexts: list[
         tuple[tuple[dict[str, Shape], dict[str, dict[str, str | float]]], Dango]
     ] = []
-    variant_used_syl_i = set()
 
     # Process each character
     for char in chars:
         fx_name = (getattr(char, "inline_fx", "") or "").strip().lower()
 
         # Determine variant and config
-        if fx_name in VARIANT_LOOKUP and char.syl_i not in variant_used_syl_i:
-            variant_used_syl_i.add(char.syl_i)
+        if fx_name in VARIANT_LOOKUP and char.syl_char_i == 0:
             name = fx_name
             shape_parts, style_config = VARIANT_LOOKUP[fx_name]
         else:
@@ -831,6 +829,7 @@ def process_romaji_line(line: Line, l: Line) -> None:
             shape_parts, style_config = VARIANT_LOOKUP["base"][0], random.choice(
                 VARIANT_BASE_CONFIGS
             )
+        continue
 
         # Create leadin and main effects
         leadin_effect(line, char, style_config)
@@ -862,6 +861,8 @@ def process_romaji_line(line: Line, l: Line) -> None:
             },
         )
         contexts.append((source_context, dango))
+
+    return
 
     # Leadout effect
     MORPH_DURATION = 400
@@ -928,12 +929,12 @@ def process_subtitle_line(line: Line, l: Line) -> None:
 
 
 # Main
-for line in lines:
+for line in lines[1:2]:
     if line.styleref.alignment >= 7:
         process_romaji_line(line, line.copy())
     else:
         process_subtitle_line(line, line.copy())
 
-# Save and open in MPV
+# Save and open in Aegisub
 io.save()
 io.open_aegisub()
