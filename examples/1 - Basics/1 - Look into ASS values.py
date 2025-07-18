@@ -25,7 +25,7 @@ from pyonfx import *
 # Open the input ASS file and get the data
 #     Note that by default, PyonFX will show a progress bar when iterating over lines.
 #     In this example, we'll disable it through progress=False to avoid cluttering the output.
-io = Ass("in.ass", progress=False)
+io = Ass("in.ass")
 meta, styles, lines = io.get_data()
 
 # Print the META object

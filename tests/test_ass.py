@@ -33,6 +33,7 @@ def test_meta_values():
         FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction("23.976000")),  # type: ignore[attr-defined]
     )
 
+
 def test_line_values():
     # Comment recognition
     check.equal(lines[0].comment, True)
@@ -250,7 +251,9 @@ def test_syllable_values():
         ("\\-3\\k10\\-4", "3", "asu"),
         ("\\-in\\-before\\k13\\-after", "in", "re"),
     ]
-    assert actual == expected, f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
+    assert (
+        actual == expected
+    ), f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
 
     # Check lines 14 (other difficult parsing case)
     syls = lines[14].syls
@@ -261,7 +264,9 @@ def test_syllable_values():
         ("\\-test\\-test2\\-3\\k10\\-4", "test", "asu"),
         ("\\-in\\-before\\k13\\-after", "in", "re"),
     ]
-    assert actual == expected, f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
+    assert (
+        actual == expected
+    ), f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
 
     # Check lines 15 (other difficult parsing case)
     syls = lines[15].syls
@@ -272,7 +277,9 @@ def test_syllable_values():
         ("\\-more\\-test\\-more\\-test2\\-more\\-3\\k10\\-more\\-4", "more", "asu"),
         ("\\-more\\-in\\-more\\-before\\k13\\-more\\-after", "more", "re"),
     ]
-    assert actual == expected, f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
+    assert (
+        actual == expected
+    ), f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
 
 
 def test_ass_values():
