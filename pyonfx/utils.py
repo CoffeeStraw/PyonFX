@@ -238,11 +238,6 @@ class Utils:
         return out
 
     @staticmethod
-    def clean_tags(text: str) -> str:
-        # TODO: Cleans up ASS subtitle lines of badly-formed override. Returns a cleaned up text.
-        return ""
-
-    @staticmethod
     def accelerate(
         pct: float,
         acc: (
