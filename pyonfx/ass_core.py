@@ -24,6 +24,11 @@ import copy
 import subprocess
 from fractions import Fraction
 from pathlib import Path
+from collections import defaultdict
+from typing import Any, Callable
+from tqdm.auto import tqdm
+from tabulate import tabulate
+
 from video_timestamps import (
     ABCTimestamps,
     FPSTimestamps,
@@ -354,6 +359,39 @@ class Line:
         return copy.deepcopy(self)
 
 
+class _LinesWithProgress(list[Line]):
+    """A list-like wrapper that injects progress-bar and timing when iterated."""
+
+    def __init__(self, original: list[Line], progress_enabled: bool):
+        super().__init__(original)
+        self._progress_enabled = progress_enabled
+
+    def __getitem__(self, key):
+        result = super().__getitem__(key)
+        if isinstance(key, slice):
+            return _LinesWithProgress(result, self._progress_enabled)
+        return result
+
+    def __iter__(self):
+        if not self._progress_enabled:
+            yield from super().__iter__()
+            return
+
+        raw_iter = super().__iter__()
+        bar = tqdm(
+            raw_iter,
+            total=len(self),
+            desc="Progress",
+            unit="line",
+            leave=False,
+        )
+
+        for line in bar:
+            yield line
+
+        bar.close()
+
+
 class Ass:
     """Contains all the informations about a file in the ASS format and the methods to work with it for both input and output.
 
@@ -397,21 +435,26 @@ class Ass:
 
     def __init__(
         self,
-        path_input: str = "",
-        path_output: str = "Output.ass",
+        path_input: str,
+        path_output: str = "output.ass",
         keep_original: bool = True,
         extended: bool = True,
         vertical_kanji: bool = False,
+        progress: bool = True,
         video_index: int = 0,
         rounding_method: RoundingMethod = RoundingMethod.ROUND,  # type: ignore[attr-defined]
         time_scale: Fraction = Fraction(1000),
         first_timestamps: Fraction = Fraction(0),
     ):
-        # Starting to take process time
-        self.__saved = False
-        self.__plines = 0
-        self.__ptime = time.time()
+        # Progress/statistics
+        self._saved = False
+        self._plines = 0  # Total produced lines
+        self._ptime = time.time()  # Total processing time
+        self._stats_by_effect: defaultdict[str, dict[str, float | int]] = defaultdict(
+            lambda: {"lines": 0, "time": 0.0, "calls": 0}
+        )
 
+        # Public attributes
         self.meta: Meta
         self.styles: dict[str, Style]
         self.lines: list[Line]
@@ -476,6 +519,9 @@ class Ass:
         # Add extended information to lines and meta?
         if extended:
             self._process_extended_line_data(vertical_kanji)
+
+        # Wrap lines with progress-aware sequence
+        self.lines = _LinesWithProgress(self.lines, progress)
 
     def _get_media_absolute_path(self, mediafile: str) -> str:
         """Attempt to convert relative media file paths defined in the meta section to absolute paths."""
@@ -1287,7 +1333,7 @@ class Ass:
                 line.text,
             )
         )
-        self.__plines += 1
+        self._plines += 1
 
     def save(self, quiet: bool = False) -> None:
         """Write everything inside the private output list to a file.
@@ -1303,12 +1349,55 @@ class Ass:
                 f.write("\n[Aegisub Extradata]\n")
                 f.writelines(self.__output_extradata)
 
-        self.__saved = True
+        self._saved = True
 
-        if not quiet:
+        if quiet:
+            return
+
+        total_runtime = time.time() - self._ptime
+        avg_per_gen_line = total_runtime / self._plines if self._plines else 0.0
+
+        print(f"🐰 Produced lines: {self._plines}")
+        print(
+            f"⏱️  Total runtime: {total_runtime:.1f}s"
+            f" (avg {avg_per_gen_line:.3f}s per generated line)"
+        )
+
+        if self._stats_by_effect:
+            print("\n📊 STATISTICS")
+
+            table_data = []
+            for eff, data in self._stats_by_effect.items():
+                calls = data["calls"]
+                lines = data["lines"]
+                time_s = data["time"]
+                avg_call = time_s / calls if calls else 0.0
+
+                table_data.append(
+                    [
+                        eff,
+                        calls,
+                        lines,
+                        f"{time_s:.3f}",
+                        f"{avg_call:.3f}",
+                    ]
+                )
+
+            headers = [
+                "Effect",
+                "Calls",
+                "Lines",
+                "Time (s)",
+                "Avg/Call (s)",
+                "Avg/Line (s)",
+            ]
             print(
-                "Produced lines: %d\nProcess duration (in seconds): %.3f"
-                % (self.__plines, time.time() - self.__ptime)
+                tabulate(
+                    table_data,
+                    headers=headers,
+                    tablefmt="rounded_grid",
+                    numalign="right",
+                )
             )
 
     def open_aegisub(self) -> int:
@@ -1321,7 +1410,7 @@ class Ass:
         """
 
         # Check if it was saved
-        if not self.__saved:
+        if not self._saved:
             print(
                 "[WARNING] You've tried to open the output with Aegisub before having saved. Check your code."
             )
@@ -1353,7 +1442,7 @@ class Ass:
         """
 
         # Check if it was saved
-        if not self.__saved:
+        if not self._saved:
             print(
                 "[ERROR] You've tried to open the output with MPV before having saved. Check your code."
             )
@@ -1395,6 +1484,35 @@ class Ass:
             return -1
 
         return 0
+
+    def track(self, func: Callable[..., Any]) -> Callable[..., Any]:
+        """Decorator to track function performance, gathering timing statistics and monitoring progress.
+
+        This decorator automatically measures execution time, counts function calls,
+        and tracks the number of lines produced by the decorated function.
+        All statistics are displayed in the final output when save() is called.
+
+        Usage::
+
+            @io.track
+            def my_function(...):
+                ...
+        """
+
+        def wrapper(*args: Any, **kwargs: Any):
+            prev_produced_lines = self._plines
+            start = time.perf_counter()
+
+            try:
+                return func(*args, **kwargs)
+            finally:
+                end = time.perf_counter()
+                stats = self._stats_by_effect[func.__name__]
+                stats["calls"] += 1
+                stats["lines"] += self._plines - prev_produced_lines
+                stats["time"] += end - start
+
+        return wrapper
 
 
 def pretty_print(
