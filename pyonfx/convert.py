@@ -28,7 +28,7 @@ from shapely.affinity import scale as _shapely_scale
 from shapely.affinity import translate as _shapely_translate
 from shapely.vectorized import contains as _shapely_contains
 
-from .font_utility import Font
+from .font import Font
 from .pixel import Pixel, PixelCollection
 
 if TYPE_CHECKING:

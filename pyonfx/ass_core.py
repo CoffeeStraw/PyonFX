@@ -39,7 +39,7 @@ from video_timestamps import (
 )
 
 from .convert import Convert
-from .font_utility import Font
+from .font import Font
 
 
 @dataclass(slots=True)
