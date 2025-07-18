@@ -709,7 +709,7 @@ class Ass:
         self.lines = new_lines
 
         # Let the fun begin (Pyon!)
-        lines_by_styles = {}
+        lines_by_styles: dict[str, list[Line]] = {}
         for line, split_offset in zip(self.lines, split_offsets):
             # Group lines by style for leadin/leadout calculation
             if line.style not in lines_by_styles:
@@ -1291,17 +1291,40 @@ class Ass:
         # Add durations between dialogs
         for style in lines_by_styles:
             lines_by_styles[style].sort(key=lambda x: x.start_time)
-            for li, line in enumerate(lines_by_styles[style]):
-                line.leadin = (
+
+            # Group consecutive lines with the same line.i
+            grouped_lines: list[list[Line]] = []
+            current_group: list[Line] = []
+
+            for line in lines_by_styles[style]:
+                if not current_group or line.i == current_group[-1].i:
+                    current_group.append(line)
+                else:
+                    grouped_lines.append(current_group)
+                    current_group = [line]
+            if current_group:
+                grouped_lines.append(current_group)
+
+            # Assign leadin and leadout based on groups
+            for gi, group in enumerate(grouped_lines):
+                first_line = group[0]
+                last_line = group[-1]
+
+                leadin = (
                     1001
-                    if li == 0
-                    else line.start_time - lines_by_styles[style][li - 1].end_time
+                    if gi == 0
+                    else first_line.start_time - grouped_lines[gi - 1][-1].end_time
                 )
-                line.leadout = (
+                leadout = (
                     1001
-                    if li == len(lines_by_styles[style]) - 1
-                    else lines_by_styles[style][li + 1].start_time - line.end_time
+                    if gi == len(grouped_lines) - 1
+                    else grouped_lines[gi + 1][0].start_time - last_line.end_time
                 )
+
+                # Assign values to all lines in the group
+                for line in group:
+                    line.leadin = leadin
+                    line.leadout = leadout
 
     def get_data(self) -> tuple[Meta, dict[str, Style], list[Line]]:
         """Utility function to retrieve easily meta styles and lines.
