@@ -15,6 +15,7 @@ dependencies = [
     "shapely",
     "scipy",
     "VideoTimestamps>=0.2",
+    "Pillow",
     "pywin32; platform_system=='Windows'",
     "pycairo; platform_system=='Linux' or platform_system=='Darwin'",
     "PyGObject; platform_system=='Linux' or platform_system=='Darwin'",

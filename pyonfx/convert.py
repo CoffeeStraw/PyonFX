@@ -29,6 +29,7 @@ from typing import (
 import numpy as np
 from shapely.affinity import scale as _shapely_scale, translate as _shapely_translate
 from shapely.vectorized import contains as _shapely_contains
+from PIL import Image
 
 from .font_utility import Font
 
@@ -36,8 +37,15 @@ if TYPE_CHECKING:
     from .ass_core import Line, Word, Syllable, Char
     from .shape import Shape
 
+
 # A simple NamedTuple to represent pixels
-Pixel = NamedTuple("Pixel", [("x", int), ("y", int), ("alpha", int)])
+class Pixel(NamedTuple):
+    x: int
+    y: int
+    r: int = 255  # Red component (0-255), defaults to white
+    g: int = 255  # Green component (0-255), defaults to white
+    b: int = 255  # Blue component (0-255), defaults to white
+    alpha: int = 0  # Alpha/transparency (0-255), defaults to fully opaque
 
 
 class ColorModel(Enum):
@@ -709,9 +717,36 @@ class Convert:
         return pixels
 
     @staticmethod
-    def image_to_ass(image):
-        pass
+    def image_to_pixels(
+        image: str,
+        skip_transparent: bool = True,
+    ) -> list[Pixel]:
+        """Converts an image to a list of pixel data with color information.
 
-    @staticmethod
-    def image_to_pixels(image):
-        pass
+        Parameters:
+            image (str): A file path to an image.
+            skip_transparent (bool): If True, skip fully transparent pixels (i.e. alpha == 255).
+
+        Returns:
+            A list of ``Pixel`` objects, each containing x, y, r, g, b, alpha values.
+        """
+        img = Image.open(image)
+        if img.mode != "RGBA":
+            img = img.convert("RGBA")
+
+        width, height = img.size
+        pixels_data = list(img.getdata())
+
+        pixels: list[Pixel] = []
+        for y in range(height):
+            for x in range(width):
+                idx = y * width + x
+                r, g, b, a = pixels_data[idx]
+
+                ass_alpha = 255 - a
+                if skip_transparent and ass_alpha >= 255:
+                    continue
+
+                pixels.append(Pixel(x=x, y=y, r=r, g=g, b=b, alpha=ass_alpha))
+
+        return pixels
