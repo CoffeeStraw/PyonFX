@@ -15,9 +15,10 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 import re
-from typing import Callable, Literal, TypeVar
+from typing import Callable, Literal, TypeVar, Iterable
 
 import rpeasings
+from tqdm import tqdm
 from video_timestamps import ABCTimestamps, TimeType
 
 from .ass_core import Char, Line, Syllable, Word
@@ -32,13 +33,61 @@ class Utils:
     _LineWordSyllableChar = TypeVar("_LineWordSyllableChar", Line, Word, Syllable, Char)
 
     @staticmethod
+    def progress_bar(
+        iterable: Iterable[_LineWordSyllableChar], **kwargs
+    ) -> Iterable[_LineWordSyllableChar]:
+        """Wraps an iterable of Lines, Words, Syllables, or Chars with a tqdm progress bar.
+
+        Args:
+            iterable: The iterable to wrap (list of Lines, Words, Syllables, Chars).
+            **kwargs: Additional arguments for tqdm.
+
+        Returns:
+            An iterator with a progress bar.
+        """
+        # Convert to list to support multiple passes and len()
+        items = list(iterable)
+        if not items:
+            raise ValueError(
+                "Iterable is empty; cannot determine type for progress bar."
+            )
+
+        first = items[0]
+        obj_name = type(first).__name__.lower()
+        if obj_name not in ("line", "word", "syllable", "char"):
+            raise TypeError(
+                f"with_progress only supports Line, Word, Syllable, or Char (got {type(first)})."
+            )
+        emoji = {
+            "line": "🐰",
+            "word": "🔤",
+            "syllable": "🎤",
+            "char": "🔠",
+        }
+
+        return tqdm(
+            items,
+            desc=kwargs.pop("desc", f"Processed {obj_name}s"),
+            unit=kwargs.pop("unit", obj_name),
+            leave=kwargs.pop("leave", False),
+            ascii=kwargs.pop("ascii", " ▖▘▝▗▚▞█"),
+            bar_format=kwargs.pop(
+                "bar_format",
+                emoji[obj_name] + " {desc}: |{bar}| {percentage:3.0f}% [{n_fmt}/{total_fmt}] "
+                "⏱️  {elapsed}<{remaining}, {rate_fmt}{postfix}",
+            ),
+            **kwargs,
+        )
+
+    @staticmethod
     def all_non_empty(
-        lines_words_syls_or_chars: list[_LineWordSyllableChar],
+        lines_words_syls_or_chars: Iterable[_LineWordSyllableChar],
         *,
         filter_whitespace_text: bool = True,
         filter_empty_duration: bool = False,
         renumber_indexes: bool = True,
-    ) -> list[_LineWordSyllableChar]:
+        progress_bar: bool = True,
+    ) -> Iterable[_LineWordSyllableChar]:
         """Return a filtered copy of the given objects list excluding the *empty* ones.
 
         Parameters:
@@ -46,11 +95,12 @@ class Utils:
             filter_whitespace_text (bool, optional): If True, objects are filtered based on their text attribute.
             filter_empty_duration (bool, optional): If True, objects are filtered based on their duration attribute.
             renumber_indexes (bool, optional): If True, the ``i``, ``word_i`` and ``syl_i`` attributes of the surviving objects are re-assigned to reflect their new position in the returned list.
-
+            progress_bar (bool, optional): If True, the result is wrapped with :func:`progress_bar`.
+            
         Returns:
             The filtered objects list.
         """
-        out = []
+        out: list[Utils._LineWordSyllableChar] = []
         for obj in lines_words_syls_or_chars:
             empty_for_text = filter_whitespace_text and not obj.text.strip()
             empty_for_duration = filter_empty_duration and obj.duration <= 0
@@ -59,7 +109,6 @@ class Utils:
             out.append(obj)
 
         if renumber_indexes:
-
             def _renumber_attr(attr_name: str) -> None:
                 if out and not hasattr(out[0], attr_name):
                     return
@@ -76,7 +125,11 @@ class Utils:
 
             for secondary in ("i", "word_i", "syl_i"):
                 _renumber_attr(secondary)
-        return out
+
+        if progress_bar:
+            return Utils.progress_bar(out)
+
+        return iter(out)
 
     @staticmethod
     def accelerate(

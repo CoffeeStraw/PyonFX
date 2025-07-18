@@ -31,7 +31,6 @@ from pathlib import Path
 from typing import Any, Callable
 
 from tabulate import tabulate
-from tqdm.auto import tqdm
 from video_timestamps import (
     ABCTimestamps,
     FPSTimestamps,
@@ -587,41 +586,6 @@ class Line:
         )
 
 
-class _LinesWithProgress(list[Line]):
-    """A list-like wrapper to list[Line] that injects progress-bar and timing when iterated."""
-
-    def __init__(self, original: list[Line], progress_enabled: bool):
-        super().__init__(original)
-        self._progress_enabled = progress_enabled
-
-    def __getitem__(self, key):
-        result = super().__getitem__(key)
-        if isinstance(key, slice):
-            return _LinesWithProgress(result, self._progress_enabled)
-        return result
-
-    def __iter__(self):
-        if not self._progress_enabled:
-            yield from super().__iter__()
-            return
-
-        raw_iter = super().__iter__()
-        bar = tqdm(
-            raw_iter,
-            total=len(self),
-            desc="Processed lines",
-            unit="line",
-            leave=False,
-            ascii=" ▖▘▝▗▚▞█",
-            bar_format="🐰 {desc}: |{bar}| {percentage:3.0f}% [{n_fmt}/{total_fmt}] ⏱️  {elapsed}<{remaining}, {rate_fmt}{postfix}",
-        )
-
-        for line in bar:
-            yield line
-
-        bar.close()
-
-
 class Ass:
     """Contains all the informations about a file in the ASS format and the methods to work with it for both input and output.
 
@@ -691,7 +655,6 @@ class Ass:
         keep_original: bool = True,
         extended: bool = True,
         vertical_kanji: bool = False,
-        progress: bool = True,
     ):
         # Progress/statistics
         self._saved = False
@@ -761,9 +724,6 @@ class Ass:
         # Add extended information to lines and meta?
         if extended:
             self._process_extended_line_data(vertical_kanji)
-
-        # Wrap lines with progress-aware sequence
-        self.lines = _LinesWithProgress(self.lines, progress)
 
     def _process_extended_line_data(self, vertical_kanji: bool) -> None:
         """Process extended line data including positioning, words, syllables, and characters."""
