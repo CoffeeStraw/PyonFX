@@ -483,7 +483,9 @@ class FrameUtility:
         start_time: float,
         end_time: float,
         end_value: float,
-        accelerator: float = 1.0,
+        accelerator: (
+            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
+        ) = 1.0,
     ) -> float:
         """Frame-by-frame equivalent of the ASS ``\\t`` tag.
 
@@ -499,7 +501,7 @@ class FrameUtility:
             start_time (float): Initial time.
             end_time (float): Final time.
             end_value (float): Numeric value reached at end_time.
-            accelerator (float): Accelerator value.
+            accelerator (float | str | Accelerator, optional): Acceleration/easing to apply (check Utils.accelerate for more details).
 
         Returns:
             The transformed numeric value at the current frame of this FrameUtility object.
