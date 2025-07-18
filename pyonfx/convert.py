@@ -619,7 +619,9 @@ class Convert:
         return Convert.shape_to_pixels(shape, supersampling)
 
     @staticmethod
-    def shape_to_pixels(shape: Shape, supersampling: int = 8, output_rgba: bool = False) -> list[Pixel]:
+    def shape_to_pixels(
+        shape: Shape, supersampling: int = 8, output_rgba: bool = False
+    ) -> list[Pixel]:
         """Converts a Shape object to a list of pixel data.
 
         It is highly suggested to use a dedicated style for pixels,
@@ -695,7 +697,11 @@ class Convert:
             Pixel(
                 x=int(xi - shift_x_low),
                 y=int(yi - shift_y_low),
-                alpha=int(alpha_arr[yi, xi]) if output_rgba else Convert.alpha_dec_to_ass(int(alpha_arr[yi, xi])),
+                alpha=(
+                    int(alpha_arr[yi, xi])
+                    if output_rgba
+                    else Convert.alpha_dec_to_ass(int(alpha_arr[yi, xi]))
+                ),
             )
             for yi, xi in non_transparent
         ]

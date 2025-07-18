@@ -42,11 +42,7 @@ def romaji(line, l):
         for pixel in Convert.text_to_pixels(syl):
             x, y = math.floor(syl.left) + pixel.x, math.floor(syl.top) + pixel.y
             x2, y2 = x + random.uniform(-off, off), y + random.uniform(-off, off)
-            alpha = (
-                f"\\1a{pixel.alpha}"
-                if pixel.alpha != "&H00&"
-                else ""
-            )
+            alpha = f"\\1a{pixel.alpha}" if pixel.alpha != "&H00&" else ""
 
             l.text = "{\\p1\\move(%d,%d,%d,%d)%s\\fad(0,%d)}%s" % (
                 x,
@@ -69,11 +65,7 @@ def romaji(line, l):
             math.floor(line.top) + pixel.y,
         )
         x2, y2 = x + 10 * (-1) ** pi, y + 10 * (-1) ** pi
-        alpha = (
-            "\\1a" + pixel.alpha
-            if pixel.alpha != "&H00&"
-            else ""
-        )
+        alpha = "\\1a" + pixel.alpha if pixel.alpha != "&H00&" else ""
 
         l.text = "{\\p1\\move(%d,%d,%d,%d)%s\\fad(0,%d)}%s" % (
             x,

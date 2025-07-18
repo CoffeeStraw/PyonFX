@@ -43,6 +43,7 @@ class Pixel(NamedTuple):
     color: str | tuple[int, int, int] = "&HFFFFFF&"
     alpha: str | int = "&H00&"
 
+
 class ShapeElement:
     """Represents a single drawing command with its associated coordinates."""
 
@@ -2138,7 +2139,14 @@ class Shape:
     PIXEL: str = "m 0 1 l 0 0 1 0 1 1"
     """A string representing a pixel."""
 
-    def apply_texture(self, image_path: str, mode: Literal["stretch", "repeat", "repeat_h", "repeat_v"] = "stretch", supersampling: int = 8, skip_transparent: bool = False, output_rgba: bool = False) -> list[Pixel]:
+    def apply_texture(
+        self,
+        image_path: str,
+        mode: Literal["stretch", "repeat", "repeat_h", "repeat_v"] = "stretch",
+        supersampling: int = 8,
+        skip_transparent: bool = False,
+        output_rgba: bool = False,
+    ) -> list[Pixel]:
         """Applies a texture from an image onto this shape.
 
         This method maps the provided texture image onto the shape using the shape's pixel mask (obtained via conversion to pixels).
@@ -2147,14 +2155,14 @@ class Shape:
             - "repeat": Use the texture's natural resolution and tile it across both dimensions.
             - "repeat_h": Scale the texture so its height fits the shape's bounding box and tile it horizontally.
             - "repeat_v": Scale the texture so its width fits the shape's bounding box and tile it vertically.
-        
+
         Parameters:
             image_path (str): Path to the texture image.
             mode (str): Texture mapping mode, one of "stretch", "repeat", "repeat_h", or "repeat_v".
             supersampling (int): Supersampling factor for the shape-to-pixel conversion.
             skip_transparent (bool): Whether to skip transparent pixels in the texture image.
             output_rgba (bool): If True, returns texture pixels in RGBA tuple format; otherwise in ASS color format.
-        
+
         Returns:
             list[Pixel]: A list of Pixel objects representing the textured shape.
         """
@@ -2162,7 +2170,9 @@ class Shape:
         from .convert import Convert
 
         # Get the mask pixels for this shape
-        mask_pixels = Convert.shape_to_pixels(self, supersampling, output_rgba=output_rgba)
+        mask_pixels = Convert.shape_to_pixels(
+            self, supersampling, output_rgba=output_rgba
+        )
         print("mask_pixels")
         if not mask_pixels:
             return []
@@ -2177,15 +2187,35 @@ class Shape:
 
         # Get the texture pixels from the image
         if mode == "stretch":
-            texture_pixels = Convert.image_to_pixels(image_path, width=bb_width, height=bb_height, skip_transparent=skip_transparent, output_rgba=output_rgba)
+            texture_pixels = Convert.image_to_pixels(
+                image_path,
+                width=bb_width,
+                height=bb_height,
+                skip_transparent=skip_transparent,
+                output_rgba=output_rgba,
+            )
         elif mode == "repeat_h":
-            texture_pixels = Convert.image_to_pixels(image_path, height=bb_height, skip_transparent=skip_transparent, output_rgba=output_rgba)
+            texture_pixels = Convert.image_to_pixels(
+                image_path,
+                height=bb_height,
+                skip_transparent=skip_transparent,
+                output_rgba=output_rgba,
+            )
         elif mode == "repeat_v":
-            texture_pixels = Convert.image_to_pixels(image_path, width=bb_width, skip_transparent=skip_transparent, output_rgba=output_rgba)
+            texture_pixels = Convert.image_to_pixels(
+                image_path,
+                width=bb_width,
+                skip_transparent=skip_transparent,
+                output_rgba=output_rgba,
+            )
         elif mode == "repeat":
-            texture_pixels = Convert.image_to_pixels(image_path, skip_transparent=skip_transparent, output_rgba=output_rgba)
+            texture_pixels = Convert.image_to_pixels(
+                image_path, skip_transparent=skip_transparent, output_rgba=output_rgba
+            )
         else:
-            raise ValueError(f"Unknown texture mode: {mode}. Use 'stretch', 'repeat', 'repeat_h' or 'repeat_v'.")
+            raise ValueError(
+                f"Unknown texture mode: {mode}. Use 'stretch', 'repeat', 'repeat_h' or 'repeat_v'."
+            )
         print("texture_pixels")
         if not texture_pixels:
             raise ValueError("Texture image did not produce any pixels.")
@@ -2217,7 +2247,9 @@ class Shape:
                 tex_x = int(u * (tex_width - 1))
                 tex_y = (mpx.y - min_y) % tex_height
             else:
-                raise ValueError(f"Unknown texture mode: {mode}. Use 'stretch', 'repeat', 'repeat_h' or 'repeat_v'.")
+                raise ValueError(
+                    f"Unknown texture mode: {mode}. Use 'stretch', 'repeat', 'repeat_h' or 'repeat_v'."
+                )
 
             # Retrieve the corresponding texture pixel; default if missing
             tp = tex_dict.get((tex_x, tex_y))
@@ -2227,6 +2259,8 @@ class Shape:
                 else:
                     tp = Pixel(x=tex_x, y=tex_y, color="&HFFFFFF&", alpha="&HFF&")
 
-            textured_pixels.append(Pixel(x=mpx.x, y=mpx.y, color=tp.color, alpha=mpx.alpha))
+            textured_pixels.append(
+                Pixel(x=mpx.x, y=mpx.y, color=tp.color, alpha=mpx.alpha)
+            )
 
         return textured_pixels

@@ -20,33 +20,36 @@ io.add_style("p", Ass.PIXEL_STYLE)
 
 # Prepare png file
 image_path = "lighthouse.png"
-lighthouse_pixels = Convert.image_to_pixels(image_path, skip_transparent=True, width=80, height=80)
+lighthouse_pixels = Convert.image_to_pixels(
+    image_path, skip_transparent=True, width=80, height=80
+)
 min_x = min(p.x for p in lighthouse_pixels)
 min_y = min(p.y for p in lighthouse_pixels)
 max_y = max(p.y for p in lighthouse_pixels)
 image_height = max_y - min_y + 1
 
+
 # Check if image exists
 @io.track
 def image_effect(line: Line, l: Line):
     """Display the lighthouse image next to the line."""
-    
+
     # Position image to the right of the line
     image_start_x = line.right + 30
     image_start_y = line.top - (image_height - line.height) // 2
-    
+
     # Create pixel elements
     for pixel in lighthouse_pixels:
         # Calculate final position
         final_x = image_start_x + (pixel.x - min_x)
         final_y = image_start_y + (pixel.y - min_y)
-        
+
         # Create timing
         l.start_time = line.start_time
         l.end_time = line.end_time
         l.layer = 1
         l.style = "p"
-        
+
         color_tag = f"\\1c{pixel.color}"
         alpha_tag = f"\\alpha{pixel.alpha if pixel.alpha != '&H00&' else ''}"
         tags = rf"\\p1\pos({final_x},{final_y}){color_tag}{alpha_tag}\fad(300,300)"
@@ -69,7 +72,9 @@ def sub(line: Line, l: Line):
     l.style = "p"
     shape_obj = Convert.text_to_shape(line).move(line.left % 1, line.top % 1)
     # Apply texture using the image 'stock_texture.jpg' with 'stretch' mode
-    textured_pixels = shape_obj.apply_texture("stock_texture.jpg", mode="repeat_h", supersampling=8)
+    textured_pixels = shape_obj.apply_texture(
+        "stock_texture.jpg", mode="repeat_h", supersampling=8
+    )
 
     # Output each textured pixel as a separate line with a pixel drawing command
     for pixel in textured_pixels:
@@ -86,7 +91,7 @@ def sub(line: Line, l: Line):
 for line in lines[1:2]:
     # Apply image effect only to the first line
     image_effect(line, line.copy())
-    
+
     # Apply subtitle effect to all lines
     sub(line, line.copy())
 
