@@ -18,6 +18,8 @@ from __future__ import annotations
 import colorsys
 import math
 import re
+import os
+import sys
 from enum import Enum
 from typing import (
     NamedTuple,
@@ -42,10 +44,8 @@ if TYPE_CHECKING:
 class Pixel(NamedTuple):
     x: int
     y: int
-    r: int = 255  # Red component (0-255), defaults to white
-    g: int = 255  # Green component (0-255), defaults to white
-    b: int = 255  # Blue component (0-255), defaults to white
-    alpha: int = 0  # Alpha/transparency (0-255), defaults to fully opaque
+    color: str | tuple[int, int, int] = "&HFFFFFF&"
+    alpha: str | int = "&H00&"
 
 
 class ColorModel(Enum):
@@ -630,14 +630,11 @@ class Convert:
     def shape_to_pixels(shape: Shape, supersampling: int = 8) -> list[Pixel]:
         """Converts a Shape object to a list of pixel data.
 
-        It is highly suggested to create a dedicated style for pixels,
+        It is highly suggested to use a dedicated style for pixels,
         because you will write less tags for line in your pixels, which means less size for your .ass file.
 
-        The style suggested (named "p" in the example) is:
-        - **an=7 (very important!);**
-        - bord=0;
-        - shad=0;
-        - For Font informations leave whatever the default is;
+        PyonFX provides ``io.insert_pixel_style()`` to take care of this for you,
+        so be sure to call it before using this function.
 
         **Tips:** *As for text, even shapes can decay!*
 
@@ -693,60 +690,86 @@ class Convert:
 
         # Convert coverage to alpha
         denom = supersampling * supersampling
-        alpha_arr = (255 - np.rint(coverage_cnt * 255 / denom)).astype(np.int16)
+        alpha_arr = np.rint((denom - coverage_cnt) * 255 / denom).astype(np.int16)
 
-        # Build output list, skipping fully transparent pixels
+        # Build output list, skipping fully transparent pixels using vectorized selection
         downscale = 1 / supersampling
         shift_x_low = shift_x * downscale
         shift_y_low = shift_y * downscale
 
-        pixels: list[Pixel] = []
-        for yi in range(low_h):
-            alpha_row = alpha_arr[yi]
-            for xi in range(low_w):
-                alpha_val: int = int(alpha_row[xi])
-                if alpha_val < 255:
-                    pixels.append(
-                        Pixel(
-                            x=int(xi - shift_x_low),
-                            y=int(yi - shift_y_low),
-                            alpha=alpha_val,
-                        )
-                    )
-
-        return pixels
+        non_transparent = np.argwhere(alpha_arr < 255)
+        return [
+            Pixel(
+                x=int(xi - shift_x_low),
+                y=int(yi - shift_y_low),
+                alpha=Convert.alpha_dec_to_ass(int(alpha_arr[yi, xi])),
+            )
+            for yi, xi in non_transparent
+        ]
 
     @staticmethod
     def image_to_pixels(
-        image: str,
+        image_path: str,
+        width: int | None = None,
+        height: int | None = None,
         skip_transparent: bool = True,
+        output_rgba: bool = False,
     ) -> list[Pixel]:
         """Converts an image to a list of pixel data with color information.
 
         Parameters:
-            image (str): A file path to an image.
+            image_path (str): A file path to an image (either absolute or relative to the script).
+            width (int, optional): Target width for rescaling. If None, original width is used.
+            height (int, optional): Target height for rescaling. If None, original height is used.
+                                 If only one dimension is specified, aspect ratio is maintained.
             skip_transparent (bool): If True, skip fully transparent pixels (i.e. alpha == 255).
+            output_rgba (bool): If True, output RGBA values instead of ASS color and alpha.
 
         Returns:
-            A list of ``Pixel`` objects, each containing x, y, r, g, b, alpha values.
+            A list of ``Pixel`` objects, each containing x, y, color, alpha values.
         """
-        img = Image.open(image)
+        dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
+        if not os.path.isabs(image_path):
+            image_path = os.path.join(dirname, image_path)
+        try:
+            img = Image.open(image_path)
+        except Exception as e:
+            raise ValueError(f"Could not open image at '{image_path}': {e}")
         if img.mode != "RGBA":
             img = img.convert("RGBA")
 
+        # Rescale image if width or height is specified
+        if width is not None or height is not None:
+            try:
+                # If only one dimension is specified, maintain aspect ratio
+                original_width, original_height = img.size
+                if width is not None and height is None:
+                    ratio = width / original_width
+                    height = int(original_height * ratio)
+                elif height is not None and width is None:
+                    ratio = height / original_height
+                    width = int(original_width * ratio)
+
+                if width is not None and height is not None:
+                    img = img.resize((width, height), Image.Resampling.LANCZOS)
+            except Exception as e:
+                raise ValueError(f"Error resizing image: {e}")
+
         width, height = img.size
-        pixels_data = list(img.getdata())
+        pixels_data = list(img.getdata())  # type: ignore[arg-type]
 
         pixels: list[Pixel] = []
-        for y in range(height):
-            for x in range(width):
-                idx = y * width + x
-                r, g, b, a = pixels_data[idx]
-
-                ass_alpha = 255 - a
-                if skip_transparent and ass_alpha >= 255:
-                    continue
-
-                pixels.append(Pixel(x=x, y=y, r=r, g=g, b=b, alpha=ass_alpha))
+        for i, (r, g, b, a) in enumerate(pixels_data):
+            if skip_transparent and a == 0:
+                continue
+            x = i % width
+            y = i // width
+            if output_rgba:
+                pixel_color = (r, g, b)
+                pixel_alpha = 255 - a
+            else:
+                pixel_color = Convert.color_rgb_to_ass((r, g, b))
+                pixel_alpha = Convert.alpha_dec_to_ass(255 - a)
+            pixels.append(Pixel(x=x, y=y, color=pixel_color, alpha=pixel_alpha))
 
         return pixels

@@ -2127,3 +2127,6 @@ class Shape:
             A shape object as a string representing a glance.
         """
         return Shape._glance_or_star(edges, inner_size, outer_size, "b")
+
+    PIXEL: str = "m 0 1 l 0 0 1 0 1 1"
+    """A string representing a pixel."""

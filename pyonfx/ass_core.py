@@ -124,6 +124,33 @@ class Style:
     encoding: int
     """Font encoding/codepage."""
 
+    def serialize(self, style_name: str) -> str:
+        """Serializes a Style object into an ASS style line."""
+        bold = "-1" if self.bold else "0"
+        italic = "-1" if self.italic else "0"
+        underline = "-1" if self.underline else "0"
+        strikeout = "-1" if self.strikeout else "0"
+        border = "3" if self.border_style else "1"
+        fontsize = str(int(self.fontsize)) if self.fontsize == int(self.fontsize) else str(self.fontsize)
+        scale_x = str(int(self.scale_x)) if self.scale_x == int(self.scale_x) else str(self.scale_x)
+        scale_y = str(int(self.scale_y)) if self.scale_y == int(self.scale_y) else str(self.scale_y)
+        spacing = str(int(self.spacing)) if self.spacing == int(self.spacing) else str(self.spacing)
+        angle = str(int(self.angle)) if self.angle == int(self.angle) else str(self.angle)
+        outline_width = str(int(self.outline)) if self.outline == int(self.outline) else str(self.outline)
+        shadow = str(int(self.shadow)) if self.shadow == int(self.shadow) else str(self.shadow)
+        primary = f"&H{self.alpha1}{self.color1}"
+        secondary = f"&H{self.alpha2}{self.color2}"
+        outline_col = f"&H{self.alpha3}{self.color3}"
+        back = f"&H{self.alpha4}{self.color4}"
+        style_line = (
+            f"Style: {style_name},{self.fontname},{fontsize},{primary},{secondary},"
+            f"{outline_col},{back},{bold},{italic},{underline},{strikeout},"
+            f"{scale_x},{scale_y},{spacing},{angle},{border},{outline_width},"
+            f"{shadow},{self.alignment},{self.margin_l},{self.margin_r},"
+            f"{self.margin_v},{self.encoding}\n"
+        )
+        return style_line
+
 
 @dataclass(slots=True)
 class Char:
@@ -419,6 +446,36 @@ class Ass:
             io = Ass("in.ass")
             meta, styles, lines = io.get_data()
     """
+
+    PIXEL_STYLE = Style(
+        fontname="Arial",
+        fontsize=20,
+        color1="FFFFFF",
+        alpha1="00",
+        color2="FFFFFF",
+        alpha2="00",
+        color3="000000",
+        alpha3="0000",
+        color4="000000",
+        alpha4="0000",
+        bold=False,
+        italic=False,
+        underline=False,
+        strikeout=False,
+        scale_x=100,
+        scale_y=100,
+        spacing=0,
+        angle=0,
+        border_style=False,
+        outline=0,
+        shadow=0,
+        alignment=7,
+        margin_l=0,
+        margin_r=0,
+        margin_v=0,
+        encoding=1
+    )
+    """Lightweight style for pixels."""
 
     def __init__(
         self,
@@ -1355,12 +1412,37 @@ class Ass:
                     line.leadout = leadout
 
     def get_data(self) -> tuple[Meta, dict[str, Style], list[Line]]:
-        """Utility function to retrieve easily meta styles and lines.
+        """Utility function to retrieve easily meta, styles and lines.
 
         Returns:
             :attr:`meta`, :attr:`styles` and :attr:`lines`
         """
         return self.meta, self.styles, self.lines
+
+    def add_style(self, style_name: str, style: Style) -> None:
+        """Adds a given ASS style into the output if it doesn't already exist.
+        
+        The style is serialized and inserted into the [V4+ Styles] section.
+        """
+        if style_name in self.styles:
+            raise ValueError(f"Style {style_name} already exists.")
+
+        insertion_index = None
+        in_styles_section = False
+        for i, line in enumerate(self.__output):
+            stripped = line.strip()
+            if stripped.startswith("[") and "V4+ Styles" in stripped:
+                in_styles_section = True
+                continue
+            if in_styles_section and stripped.startswith("["):
+                insertion_index = i - 1
+                break
+        if insertion_index is None:
+            insertion_index = len(self.__output)
+        
+        style_line = style.serialize(style_name)
+        self.__output.insert(insertion_index, style_line)
+        self.styles[style_name] = style
 
     def write_line(self, line: Line) -> None:
         """Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
