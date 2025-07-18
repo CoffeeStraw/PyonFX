@@ -67,7 +67,7 @@ class CubicBezier:
         The Y coordinates (p1y, p2y) can be any value.
     """
 
-    __slots__ = ("_control_points", "_lut_x", "_lut_y")
+    __slots__ = ("_control_points", "_lut_x", "_lut_params")
 
     def __init__(
         self,
@@ -80,33 +80,55 @@ class CubicBezier:
     ) -> None:
         self._control_points = (float(p1x), float(p1y), float(p2x), float(p2y))
 
-        # Pre-compute lookup table for fast initial guesses
+        # Pre-compute lookup table: for evenly spaced X values, what are the parameter values?
         self._lut_x = [i / samples for i in range(samples + 1)]
-        self._lut_y = [self._evaluate_y_at_parameter(u) for u in self._lut_x]
+        self._lut_params = []
+        
+        for target_x in self._lut_x:
+            if target_x == 0.0:
+                param = 0.0
+            elif target_x == 1.0:
+                param = 1.0
+            else:
+                # Use Newton-Raphson to find parameter for this X coordinate
+                param = self._find_parameter_for_x(target_x)
+            self._lut_params.append(param)
+
+    def _find_parameter_for_x(self, target_x: float) -> float:
+        """Find the parameter value that produces the given X coordinate."""
+        u = target_x  # Initial guess
+        
+        for _ in range(8):  # A few Newton-Raphson iterations
+            x_value, x_derivative = self._compute_x_and_derivative(u)
+            if abs(x_derivative) < 1e-10:
+                break
+            u = u - (x_value - target_x) / x_derivative
+            u = max(0.0, min(1.0, u))
+        
+        return u
 
     def __call__(self, t: float) -> float:
         # Handle boundary cases
         if t <= 0.0 or t >= 1.0:
             return max(0.0, min(1.0, t))
 
-        # Find the appropriate segment in our lookup table using binary search and get its x values
+        # Find the appropriate segment
         segment_idx = bisect.bisect_left(self._lut_x, t) - 1
         segment_idx = max(0, min(segment_idx, len(self._lut_x) - 2))
+        
         x_start, x_end = self._lut_x[segment_idx], self._lut_x[segment_idx + 1]
-
-        # Calculate normalized position within the segment
+        param_start, param_end = self._lut_params[segment_idx], self._lut_params[segment_idx + 1]
+        
+        # Linear interpolation in parameter space
         if x_end != x_start:
-            segment_progress = (t - x_start) / (x_end - x_start)
+            progress = (t - x_start) / (x_end - x_start)
+            initial_guess = param_start + progress * (param_end - param_start)
         else:
-            segment_progress = 0.0
+            initial_guess = param_start
 
-        # Initial parameter guess based on linear interpolation
-        samples_count = len(self._lut_x) - 1
-        initial_guess = segment_idx / samples_count + segment_progress / samples_count
-
-        # Refine the guess using one Newton-Raphson iteration
+        # Refine with Newton-Raphson
         x_value, x_derivative = self._compute_x_and_derivative(initial_guess)
-        if x_derivative != 0.0:
+        if abs(x_derivative) > 1e-10:
             refined_guess = initial_guess - (x_value - t) / x_derivative
             refined_guess = max(0.0, min(1.0, refined_guess))
         else:
