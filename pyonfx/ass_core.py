@@ -980,6 +980,13 @@ class Ass:
                     postspace = len(syl_data["text"]) - len(syl_data["text"].rstrip())
                     text_stripped = syl_data["text"].strip()
 
+                    # Avoid double-counting when the syllable itself is only made of spaces
+                    # (e.g. a pattern like "{\k25} {\k34}"). In that case we want exactly the
+                    # amount of spaces present, not twice that amount.
+                    if text_stripped == "":
+                        prespace = len(syl_data["text"])
+                        postspace = 0
+
                     # Calculate timing for the syllable
                     if syl_data["k_tag"] is not None:
                         duration = int(syl_data["k_duration"]) * 10
