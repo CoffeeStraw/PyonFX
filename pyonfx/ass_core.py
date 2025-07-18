@@ -28,6 +28,7 @@ from collections import defaultdict
 from typing import Any, Callable
 from tqdm.auto import tqdm
 from tabulate import tabulate
+from dataclasses import fields
 
 from video_timestamps import (
     ABCTimestamps,
@@ -64,9 +65,6 @@ class Meta:
 
     video: str | None = None
     """Loaded video file path (absolute)."""
-
-    def __repr__(self):
-        return pretty_print(self)
 
 
 @dataclass
@@ -125,9 +123,6 @@ class Style:
     """Vertical margin (pixels)."""
     encoding: int
     """Font encoding/codepage."""
-
-    def __repr__(self):
-        return pretty_print(self)
 
 
 @dataclass
@@ -360,7 +355,7 @@ class Line:
 
 
 class _LinesWithProgress(list[Line]):
-    """A list-like wrapper that injects progress-bar and timing when iterated."""
+    """A list-like wrapper to list[Line] that injects progress-bar and timing when iterated."""
 
     def __init__(self, original: list[Line], progress_enabled: bool):
         super().__init__(original)
@@ -1497,33 +1492,49 @@ class Ass:
         return wrapper
 
 
-def pretty_print(
-    obj: Meta | Style | Line | Word | Syllable | Char, indent: int = 0, name: str = ""
-) -> str:
-    # Utility function to print object Meta, Style, Line, Word, Syllable and Char (this is a dirty solution probably)
-    if type(obj) == Line:
-        out = " " * indent + f"lines[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Word:
-        out = " " * indent + f"words[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Syllable:
-        out = " " * indent + f"syls[{obj.i}] ({type(obj).__name__}):\n"
-    elif type(obj) == Char:
-        out = " " * indent + f"chars[{obj.i}] ({type(obj).__name__}):\n"
-    else:
-        out = " " * indent + f"{name}({type(obj).__name__}):\n"
+def pretty_print(obj):
+    """Create a pretty string representation for dataclass objects.
 
-    # Let's print all this object fields
-    indent += 4
-    for k, v in obj.__dict__.items():
-        if "__dict__" in dir(v):
-            # Work recursively to print another object
-            out += pretty_print(v, indent, k + " ")
-        elif type(v) == list:
-            for i, el in enumerate(v):
-                # Work recursively to print other objects inside a list
-                out += pretty_print(el, indent, f"{k}[{i}] ")
+    Special handling for Style objects and list-based fields.
+    """
+    # Get all fields of the object
+    obj_fields = fields(obj.__class__)
+
+    # Prepare field representations
+    field_reprs = []
+    for field in obj_fields:
+        value = getattr(obj, field.name)
+
+        # For Style objects, we'll show only the fontname and ellipsis
+        if (
+            field.name == "styleref"
+            and value is not None
+            and value.__class__.__name__ == "Style"
+        ):
+            field_reprs.append(f"{field.name}=Style(fontname={value.fontname!r}, ...)")
+
+        # For list fields, we'll show only the first item with i and text
+        elif isinstance(value, list):
+            if len(value) > 0:
+                first_item = value[0]
+                if hasattr(first_item, "i") and hasattr(first_item, "text"):
+                    first_item_repr = f"{first_item.__class__.__name__}(i={first_item.i!r}, text={first_item.text!r}, ...)"
+                else:
+                    first_item_repr = pretty_print(first_item)
+
+                # Add count of omitted elements
+                if len(value) > 1:
+                    field_reprs.append(
+                        f"{field.name}=[{first_item_repr}, ... (+{len(value)-1} more)]"
+                    )
+                else:
+                    field_reprs.append(f"{field.name}=[{first_item_repr}]")
+            else:
+                field_reprs.append(f"{field.name}=[]")
+
+        # Default handling for other fields
         else:
-            # Just print a field of this object
-            out += " " * indent + f"{k}: {str(v)}\n"
+            field_reprs.append(f"{field.name}={value!r}")
 
-    return out
+    # Construct the final representation
+    return f"{obj.__class__.__name__}({', '.join(field_reprs)})"
