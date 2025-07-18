@@ -693,24 +693,37 @@ class Ass:
         """Process extended line data including positioning, words, syllables, and characters."""
         # Preprocess: split lines at \N and keep track of split offsets
         new_lines = []
-        split_offsets = []
+        split_indexes = []
+        split_k_offsets = []
 
         for line in self.lines:
             raw_segments = line.raw_text.split("\\N")
             text_segments = re.sub(r"\{.*?\}", "", line.raw_text).split("\\N")
-            
-            for seg_idx, (raw_seg, text_seg) in enumerate(zip(raw_segments, text_segments)):
+            seg_k_durations = [
+                sum(int(m) * 10 for m in re.findall(r"\\[kK][of]?(\d+)", seg))
+                for seg in raw_segments
+            ]
+            cumulative_k_durations = [
+                sum(seg_k_durations[:i]) for i in range(len(seg_k_durations))
+            ]
+
+            for seg_idx, (raw_seg, text_seg) in enumerate(
+                zip(raw_segments, text_segments)
+            ):
                 seg_line = line.copy()
                 seg_line.raw_text = raw_seg
                 seg_line.text = text_seg
                 new_lines.append(seg_line)
-                split_offsets.append(seg_idx)
+                split_indexes.append(seg_idx)
+                split_k_offsets.append(cumulative_k_durations[seg_idx])
 
         self.lines = new_lines
 
         # Let the fun begin (Pyon!)
         lines_by_styles: dict[str, list[Line]] = {}
-        for line, split_offset in zip(self.lines, split_offsets):
+        for line, split_index, split_k_offset in zip(
+            self.lines, split_indexes, split_k_offsets
+        ):
             # Group lines by style for leadin/leadout calculation
             if line.style not in lines_by_styles:
                 lines_by_styles[line.style] = []
@@ -725,7 +738,7 @@ class Ass:
                 font = Font(line.styleref)
                 font_metrics = font.get_metrics()
 
-                line.width, line.height = font.get_text_extents(line.text)
+                line.width, line.height = font.get_text_extents(line.text.strip())
                 (
                     line.ascent,
                     line.descent,
@@ -798,8 +811,8 @@ class Ass:
                         line.y = line.bottom
 
                     # Apply vertical offset for split lines
-                    if split_offset > 0:
-                        offset = split_offset * line.height
+                    if split_index > 0:
+                        offset = split_index * line.height
                         line.top += offset
                         line.middle += offset
                         line.bottom += offset
@@ -851,11 +864,12 @@ class Ass:
                 ):
                     if line.styleref.alignment > 6 or line.styleref.alignment < 4:
                         cur_x = line.left
-                        for word in line.words:
-                            # Horizontal position
-                            cur_x = cur_x + word.prespace * (
-                                space_width + style_spacing
-                            )
+                        for i, word in enumerate(line.words):
+                            # Add prespace offset for all words except the first one
+                            if i > 0:
+                                cur_x = cur_x + word.prespace * (
+                                    space_width + style_spacing
+                                )
 
                             word.left = cur_x
                             word.center = word.left + word.width / 2
@@ -1019,22 +1033,19 @@ class Ass:
 
                 # Build Syllable objects from parsed syllable data
                 si = 0
-                last_time = 0
+                last_time = split_k_offset
                 syl_char_idx = 0
                 for syl_data in syllable_data:
                     # Extract inline effect (\-EFFECT) if present
                     curr_inline_fx = re.search(r"\\\-([^\s\\}]+)", syl_data["tags"])
                     inline_fx_val = curr_inline_fx.group(1) if curr_inline_fx else ""
-                    prespace = len(syl_data["text"]) - len(syl_data["text"].lstrip())
-                    postspace = len(syl_data["text"]) - len(syl_data["text"].rstrip())
                     text_stripped = syl_data["text"].strip()
-
-                    # Avoid double-counting when the syllable itself is only made of spaces
-                    # (e.g. a pattern like "{\k25} {\k34}"). In that case we want exactly the
-                    # amount of spaces present, not twice that amount.
-                    if text_stripped == "":
-                        prespace = len(syl_data["text"])
-                        postspace = 0
+                    prespace = len(syl_data["text"]) - len(syl_data["text"].lstrip())
+                    postspace = (
+                        len(syl_data["text"]) - len(syl_data["text"].rstrip())
+                        if text_stripped != ""
+                        else 0
+                    )
 
                     # Calculate timing for the syllable
                     if syl_data["k_tag"] is not None:
@@ -1097,8 +1108,19 @@ class Ass:
                         or not vertical_kanji
                     ):
                         cur_x = line.left
+                        found_first_text_syl = False
                         for syl in line.syls:
-                            cur_x = cur_x + syl.prespace * (space_width + style_spacing)
+                            # Add prespace offset only after we've found the first syllable with text
+                            if found_first_text_syl:
+                                cur_x = cur_x + syl.prespace * (
+                                    space_width + style_spacing
+                                )
+                            elif syl.text:
+                                found_first_text_syl = True
+                                cur_x = cur_x + syl.prespace * (
+                                    space_width + style_spacing
+                                )
+
                             # Horizontal position
                             syl.left = cur_x
                             syl.center = syl.left + syl.width / 2
@@ -1218,6 +1240,7 @@ class Ass:
                         or not vertical_kanji
                     ):
                         cur_x = line.left
+                        found_first_non_whitespace = False
                         for char in line.chars:
                             # Horizontal position
                             char.left = cur_x
@@ -1231,7 +1254,12 @@ class Ass:
                             else:
                                 char.x = char.right
 
-                            cur_x = cur_x + char.width + style_spacing
+                            # Update cur_x only after we've found the first non-whitespace character
+                            if found_first_non_whitespace:
+                                cur_x = cur_x + char.width + style_spacing
+                            elif not char.text.isspace():
+                                found_first_non_whitespace = True
+                                cur_x = cur_x + char.width + style_spacing
 
                             # Vertical position
                             char.top = line.top
