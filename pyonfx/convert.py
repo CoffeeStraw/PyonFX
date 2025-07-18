@@ -29,7 +29,7 @@ from shapely.affinity import translate as _shapely_translate
 from shapely.vectorized import contains as _shapely_contains
 
 from .font_utility import Font
-from .shape import Pixel
+from .pixel import Pixel, PixelCollection
 
 if TYPE_CHECKING:
     from .ass_core import Char, Line, Syllable, Word
@@ -577,8 +577,8 @@ class Convert:
     def text_to_pixels(
         obj: "Line | Word | Syllable | Char",
         supersampling: int = 8,
-    ) -> list[Pixel]:
-        """| Converts text with given style information to a list of pixel data.
+    ) -> PixelCollection:
+        """| Converts text with given style information to a PixelCollection.
         | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
 
         It is highly suggested to create a dedicated style for pixels,
@@ -617,8 +617,8 @@ class Convert:
     @staticmethod
     def shape_to_pixels(
         shape: "Shape", supersampling: int = 8, output_rgba: bool = False
-    ) -> list[Pixel]:
-        """Converts a Shape object to a list of pixel data.
+    ) -> PixelCollection:
+        """Converts a Shape object to a PixelCollection.
 
         It is highly suggested to use a dedicated style for pixels,
         because you will write less tags for line in your pixels, which means less size for your .ass file.
@@ -634,8 +634,8 @@ class Convert:
             output_rgba (bool): If True, output RGBA values instead of ASS color and alpha.
 
         Returns:
-            A list of ``Pixel``, representing each individual pixel of the input shape.
-            A pixel is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
+            A ``PixelCollection`` containing ``Pixel`` objects, representing each individual pixel of the input shape.
+            Each pixel contains 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
         """
         # Validate input
         if supersampling < 1 or not isinstance(supersampling, int):
@@ -646,7 +646,7 @@ class Convert:
         # Convert to Shapely geometry
         multipolygon = shape.to_multipolygon()
         if multipolygon.is_empty:
-            return []
+            return PixelCollection([])
 
         # Upscale and shift so the bbox is in +ve quadrant
         multipolygon = _shapely_scale(
@@ -683,13 +683,13 @@ class Convert:
         denom = supersampling * supersampling
         alpha_arr = np.rint((denom - coverage_cnt) * 255 / denom).astype(np.int16)
 
-        # Build output list, skipping fully transparent pixels using vectorized selection
+        # Build output PixelCollection, skipping fully transparent pixels using vectorized selection
         downscale = 1 / supersampling
         shift_x_low = shift_x * downscale
         shift_y_low = shift_y * downscale
 
         non_transparent = np.argwhere(alpha_arr < 255)
-        return [
+        pixels = [
             Pixel(
                 x=int(xi - shift_x_low),
                 y=int(yi - shift_y_low),
@@ -702,6 +702,8 @@ class Convert:
             for yi, xi in non_transparent
         ]
 
+        return PixelCollection(pixels)
+
     @staticmethod
     def image_to_pixels(
         image_path: str,
@@ -709,8 +711,8 @@ class Convert:
         height: int | None = None,
         skip_transparent: bool = True,
         output_rgba: bool = False,
-    ) -> list[Pixel]:
-        """Converts an image to a list of pixel data with color information.
+    ) -> PixelCollection:
+        """Converts an image to a PixelCollection.
 
         Parameters:
             image_path (str): A file path to an image (either absolute or relative to the script).
@@ -721,7 +723,7 @@ class Convert:
             output_rgba (bool): If True, output RGBA values instead of ASS color and alpha.
 
         Returns:
-            A list of ``Pixel`` objects, each containing x, y, color, alpha values.
+            A ``PixelCollection`` containing ``Pixel`` objects, each containing x, y, color, alpha values.
         """
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
         if not os.path.isabs(image_path):
@@ -753,7 +755,7 @@ class Convert:
         width, height = img.size
         pixels_data = list(img.getdata())  # type: ignore[arg-type]
 
-        pixels: list[Pixel] = []
+        pixels = []
         for i, (r, g, b, a) in enumerate(pixels_data):
             if skip_transparent and a == 0:
                 continue
@@ -767,4 +769,4 @@ class Convert:
                 pixel_alpha = Convert.alpha_dec_to_ass(255 - a)
             pixels.append(Pixel(x=x, y=y, color=pixel_color, alpha=pixel_alpha))
 
-        return pixels
+        return PixelCollection(pixels)
