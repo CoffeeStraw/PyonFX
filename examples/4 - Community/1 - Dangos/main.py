@@ -829,7 +829,6 @@ def process_romaji_line(line: Line, l: Line) -> None:
             shape_parts, style_config = VARIANT_LOOKUP["base"][0], random.choice(
                 VARIANT_BASE_CONFIGS
             )
-        continue
 
         # Create leadin and main effects
         leadin_effect(line, char, style_config)
@@ -861,8 +860,6 @@ def process_romaji_line(line: Line, l: Line) -> None:
             },
         )
         contexts.append((source_context, dango))
-
-    return
 
     # Leadout effect
     MORPH_DURATION = 400
@@ -929,7 +926,7 @@ def process_subtitle_line(line: Line, l: Line) -> None:
 
 
 # Main
-for line in lines[1:2]:
+for line in lines:
     if line.styleref.alignment >= 7:
         process_romaji_line(line, line.copy())
     else:
