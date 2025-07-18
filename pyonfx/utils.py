@@ -193,20 +193,48 @@ class Utils:
         lines_chars_syls_or_words: (
             list[Line] | list[Word] | list[Syllable] | list[Char]
         ),
+        *,
+        filter_whitespace_text: bool = True,
+        filter_empty_duration: bool = False,
+        renumber_indexes: bool = True,
     ) -> list[Line] | list[Word] | list[Syllable] | list[Char]:
-        """
-        Helps to not check everytime for text containing only spaces or object's duration equals to zero.
+        """Return a filtered copy of the given objects list excluding the *empty* ones.
 
         Parameters:
             lines_chars_syls_or_words (list of :class:`Line<pyonfx.ass_utility.Line>`, :class:`Char<pyonfx.ass_utility.Char>`, :class:`Syllable<pyonfx.ass_utility.Syllable>` or :class:`Word<pyonfx.ass_utility.Word>`)
+            filter_whitespace_text (bool, optional): If True, objects are filtered based on their text attribute.
+            filter_empty_duration (bool, optional): If True, objects are filtered based on their duration attribute.
+            renumber_indexes (bool, optional): If True, the ``i``, ``word_i`` and ``syl_i`` attributes of the surviving objects are re-assigned to reflect their new position in the returned list.
 
         Returns:
-            A list containing lines_chars_syls_or_words without objects with duration equals to zero or blank text (no text or only spaces).
+            The filtered objects list.
         """
         out = []
         for obj in lines_chars_syls_or_words:
-            if obj.text.strip() and obj.duration > 0:
-                out.append(obj)
+            empty_for_text = filter_whitespace_text and not obj.text.strip()
+            empty_for_duration = filter_empty_duration and obj.duration <= 0
+            if empty_for_text or empty_for_duration:
+                continue
+            out.append(obj)
+
+        if renumber_indexes:
+
+            def _renumber_attr(attr_name: str) -> None:
+                if out and not hasattr(out[0], attr_name):
+                    return
+
+                first_seen: dict[int, int] = {}
+                next_idx = 0
+
+                for obj in out:
+                    old_val = getattr(obj, attr_name)
+                    if old_val not in first_seen:
+                        first_seen[old_val] = next_idx
+                        next_idx += 1
+                    setattr(obj, attr_name, first_seen[old_val])
+
+            for secondary in ("i", "word_i", "syl_i"):
+                _renumber_attr(secondary)
         return out
 
     @staticmethod
