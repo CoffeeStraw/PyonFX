@@ -1215,9 +1215,6 @@ class Ass:
                                 )
                             elif syl.text:
                                 found_first_text_syl = True
-                                cur_x = cur_x + syl.prespace * (
-                                    space_width + style_spacing
-                                )
 
                             # Horizontal position
                             syl.left = cur_x
