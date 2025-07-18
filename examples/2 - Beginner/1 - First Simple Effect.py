@@ -19,149 +19,96 @@ then we create our first main effect by using a simple trasformation, obtaining 
 Remember to always set the layer for the line. Usually, main effects should have an higher value than leadin and leadout,
 beacuse they are more important, so by doing this they will be drawn over the other effects.
 
-For the kanji function, you can just notice that it is a lazy CTRL+C and CTRL+V of the romaji function,
-but using chars instead of syls. Try yourself what happens if you use syllables for kanji!
+For the kanji function, we are calling the same functions of romaji, but using chars instead of syls.
 """
 
 from pyonfx import *
 
-io = Ass("in.ass")
+io = Ass("in.ass", vertical_kanji=True)
 meta, styles, lines = io.get_data()
 
 
-def romaji(line, l):
-    for syl in Utils.all_non_empty(line.syls):
-        # Leadin Effect
-        l.layer = 0
+@io.track
+def leadin_effect(line: Line, obj: Syllable | Char, l: Line):
+    l.layer = 0
+    l.start_time = line.start_time - line.leadin // 2
+    l.end_time = line.start_time + obj.start_time
 
-        l.start_time = line.start_time - line.leadin / 2
-        l.end_time = line.start_time + syl.start_time
-        l.dur = l.end_time - l.start_time
-
-        l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,0)}%s" % (
-            syl.center,
-            syl.middle,
-            line.leadin / 2,
-            syl.text,
-        )
-
-        io.write_line(l)
-
-        # Main Effect
-        l.layer = 1
-
-        l.start_time = line.start_time + syl.start_time
-        l.end_time = line.start_time + syl.end_time
-        l.dur = l.end_time - l.start_time
-
-        l.text = (
-            "{\\an5\\pos(%.3f,%.3f)"
-            "\\t(0,%d,0.5,\\1c&HFFFFFF&\\3c&HABABAB&\\fscx125\\fscy125)"
-            "\\t(%d,%d,1.5,\\fscx100\\fscy100\\1c%s\\3c%s)}%s"
-            % (
-                syl.center,
-                syl.middle,
-                l.dur / 3,
-                l.dur / 3,
-                l.dur,
-                line.styleref.color1,
-                line.styleref.color3,
-                syl.text,
-            )
-        )
-
-        io.write_line(l)
-
-        # Leadout Effect
-        l.layer = 0
-
-        l.start_time = line.start_time + syl.end_time
-        l.end_time = line.end_time + line.leadout / 2
-        l.dur = l.end_time - l.start_time
-
-        l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(0,%d)}%s" % (
-            syl.center,
-            syl.middle,
-            line.leadout / 2,
-            syl.text,
-        )
-
-        io.write_line(l)
-
-
-def kanji(line, l):
-    for char in Utils.all_non_empty(line.chars):
-        # Leadin Effect
-        l.layer = 0
-
-        l.start_time = line.start_time - line.leadin / 2
-        l.end_time = line.start_time + char.start_time
-        l.dur = l.end_time - l.start_time
-
-        l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(%d,0)}%s" % (
-            char.center,
-            char.middle,
-            line.leadin / 2,
-            char.text,
-        )
-
-        io.write_line(l)
-
-        # Main Effect
-        l.layer = 1
-
-        l.start_time = line.start_time + char.start_time
-        l.end_time = line.start_time + char.end_time
-        l.dur = l.end_time - l.start_time
-
-        l.text = (
-            "{\\an5\\pos(%.3f,%.3f)"
-            "\\t(0,%d,0.5,\\1c&HFFFFFF&\\3c&HABABAB&\\fscx125\\fscy125)"
-            "\\t(%d,%d,1.5,\\fscx100\\fscy100\\1c%s\\3c%s)}%s"
-            % (
-                char.center,
-                char.middle,
-                l.dur / 3,
-                l.dur / 3,
-                l.dur,
-                line.styleref.color1,
-                line.styleref.color3,
-                char.text,
-            )
-        )
-
-        io.write_line(l)
-
-        # Leadout Effect
-        l.layer = 0
-
-        l.start_time = line.start_time + char.end_time
-        l.end_time = line.end_time + line.leadout / 2
-        l.dur = l.end_time - l.start_time
-
-        l.text = "{\\an5\\pos(%.3f,%.3f)\\fad(0,%d)}%s" % (
-            char.center,
-            char.middle,
-            line.leadout / 2,
-            char.text,
-        )
-
-        io.write_line(l)
-
-
-def sub(line, l):
-    # Translation Effect
-    l.start_time = line.start_time - line.leadin / 2
-    l.end_time = line.end_time + line.leadout / 2
-    l.dur = l.end_time - l.start_time
-
-    l.text = "{\\fad(%d,%d)}%s" % (line.leadin / 2, line.leadout / 2, line.text)
+    tags = rf"\an5\pos({obj.center},{obj.middle})\fad({line.leadin // 2},0)"
+    l.text = f"{{{tags}}}{obj.text}"
 
     io.write_line(l)
 
 
+@io.track
+def main_effect(line: Line, obj: Syllable | Char, l: Line):
+    l.layer = 1
+    l.start_time = line.start_time + obj.start_time
+    l.end_time = line.start_time + obj.end_time
+
+    # Original values
+    c1 = line.styleref.color1
+    c3 = line.styleref.color3
+    fscx = line.styleref.scale_x
+    fscy = line.styleref.scale_y
+
+    # New values
+    new_fscx = fscx * 1.25
+    new_fscy = fscy * 1.25
+    new_c1 = "&HFFFFFF&"
+    new_c3 = "&HABABAB&"
+
+    tags = (
+        rf"\an5\pos({obj.center},{obj.middle})"
+        rf"\t(0,{obj.duration // 3},0.5, \fscx{new_fscx}\fscy{new_fscy}\1c{new_c1}\3c{new_c3})"
+        rf"\t({obj.duration // 3},{obj.duration},1.5, \fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
+    )
+    l.text = f"{{{tags}}}{obj.text}"
+
+    io.write_line(l)
+
+
+@io.track
+def leadout_effect(line: Line, obj: Syllable | Char, l: Line):
+    l.layer = 0
+    l.start_time = line.start_time + obj.end_time
+    l.end_time = line.end_time + line.leadout // 2
+
+    tags = rf"\an5\pos({obj.center},{obj.middle})\fad(0,{line.leadout // 2})"
+    l.text = f"{{{tags}}}{obj.text}"
+
+    io.write_line(l)
+
+
+@io.track
+def romaji(line: Line, l: Line):
+    for syl in Utils.all_non_empty(line.syls):
+        leadin_effect(line, syl, l)
+        main_effect(line, syl, l)
+        leadout_effect(line, syl, l)
+
+
+@io.track
+def kanji(line: Line, l: Line):
+    for char in Utils.all_non_empty(line.chars):
+        leadin_effect(line, char, l)
+        main_effect(line, char, l)
+        leadout_effect(line, char, l)
+
+
+@io.track
+def sub(line: Line, l: Line):
+    l.start_time = line.start_time - line.leadin // 2
+    l.end_time = line.end_time + line.leadout // 2
+
+    tags = rf"\fad({line.leadin // 2}, {line.leadout // 2})"
+    l.text = f"{{{tags}}}{line.text}"
+
+    io.write_line(l)
+
+
+# Generating lines
 for line in lines:
-    # Generating lines
     if line.styleref.alignment >= 7:
         romaji(line, line.copy())
     elif line.styleref.alignment >= 4:
