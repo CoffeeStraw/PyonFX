@@ -336,7 +336,7 @@ class FrameUtility:
         self,
         start_ms: int,
         end_ms: int,
-        timestamps: ABCTimestamps,
+        timestamps: ABCTimestamps | None,
         n_fr: int = 1,
     ):
         # Check for invalid values
@@ -346,6 +346,10 @@ class FrameUtility:
             raise ValueError("Parameter 'start_ms' is expected to be <= 'end_ms'.")
         if n_fr <= 0:
             raise ValueError("Parameter 'n_fr' must be > 0.")
+        if timestamps is None:
+            raise ValueError(
+                "Parameter 'timestamps' cannot be None (hint: does your ASS file have a video specified?)."
+            )
 
         self.timestamps = timestamps
         self.start_ms = start_ms
