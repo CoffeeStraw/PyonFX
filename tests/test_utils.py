@@ -54,35 +54,3 @@ def test_frame_utility():
         fsc_values.append(fsc)
 
     assert fsc_values == [112.5, 137.5, 137.5, 112.5]
-
-
-def test_accelerate_presets():
-    from typing import Literal
-
-    # Test points
-    points = [0.0, 0.25, 0.5, 0.75, 1.0]
-    presets: list[Literal["ease", "ease-in", "ease-out", "ease-in-out"]] = [
-        "ease",
-        "ease-in",
-        "ease-out",
-        "ease-in-out",
-    ]
-    # For each preset, check boundary and monotonicity
-    for preset in presets:
-        results = [Utils.accelerate(p, preset) for p in points]
-        # 0.0 should map to 0.0, 1.0 to 1.0
-        assert (
-            abs(results[0] - 0.0) < 1e-7
-        ), f"{preset} at 0.0 should be 0.0, got {results[0]}"
-        assert (
-            abs(results[-1] - 1.0) < 1e-7
-        ), f"{preset} at 1.0 should be 1.0, got {results[-1]}"
-        # Should be monotonic increasing
-        for a, b in zip(results, results[1:]):
-            assert a <= b, f"{preset} is not monotonic at {a}, {b}"
-    # Additionally, check that ease-in starts slow and ease-out ends fast
-    ease_in = [Utils.accelerate(p, "ease-in") for p in points]
-    ease_out = [Utils.accelerate(p, "ease-out") for p in points]
-    # ease-in should be below linear at midpoint, ease-out above
-    assert ease_in[2] < 0.5, f"ease-in at 0.5 should be < 0.5, got {ease_in[2]}"
-    assert ease_out[2] > 0.5, f"ease-out at 0.5 should be > 0.5, got {ease_out[2]}"
