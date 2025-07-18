@@ -16,167 +16,12 @@
 
 from __future__ import annotations
 import re
-import bisect
-from typing import Literal, TypeVar, Protocol
+import rpeasings
+from typing import Literal, TypeVar, Callable
 from video_timestamps import ABCTimestamps, TimeType
 
 from .convert import Convert, ColorModel
 from .ass_core import Line, Word, Syllable, Char
-
-
-class Accelerator(Protocol):
-    """Protocol for timing/easing functions that transform progress values.
-
-    An accelerator takes a normalized time value (0.0 to 1.0) and returns
-    a transformed value, typically also in the range [0.0, 1.0]
-    representing the acceleration progress.
-    """
-
-    def __call__(self, t: float) -> float: ...
-
-
-class Power:
-    """Power-based acceleration function.
-
-    Applies a power transformation to the input: f(t) = t^exp
-
-    Common use cases:
-    - exp = 2.0: Quadratic ease-in
-    - exp = 0.5: Square root ease-out
-    - exp > 1.0: Accelerating (ease-in)
-    - exp < 1.0: Decelerating (ease-out)
-    """
-
-    __slots__ = ("exp",)
-
-    def __init__(self, exp: float = 1.0):
-        self.exp = float(exp)
-
-    def __call__(self, t: float) -> float:
-        return t**self.exp
-
-
-class CubicBezier:
-    """Cubic-Bézier acceleration function for smooth easing curves.
-
-    This class implements a cubic Bézier curve as a timing function.
-    The curve is defined by four control points: P0(0,0), P1(p1x, p1y), P2(p2x, p2y), and P3(1,1).
-
-    Note:
-        The X coordinates (p1x, p2x) must stay in the [0,1] domain to ensure a monotonically increasing function.
-        The Y coordinates (p1y, p2y) can be any value.
-    """
-
-    __slots__ = ("_control_points", "_lut_x", "_lut_params")
-
-    def __init__(
-        self,
-        p1x: float,
-        p1y: float,
-        p2x: float,
-        p2y: float,
-        *,
-        samples: int = 60,
-    ) -> None:
-        self._control_points = (float(p1x), float(p1y), float(p2x), float(p2y))
-
-        # Pre-compute lookup table: for evenly spaced X values, what are the parameter values?
-        self._lut_x = [i / samples for i in range(samples + 1)]
-        self._lut_params = []
-        
-        for target_x in self._lut_x:
-            if target_x == 0.0:
-                param = 0.0
-            elif target_x == 1.0:
-                param = 1.0
-            else:
-                # Use Newton-Raphson to find parameter for this X coordinate
-                param = self._find_parameter_for_x(target_x)
-            self._lut_params.append(param)
-
-    def _find_parameter_for_x(self, target_x: float) -> float:
-        """Find the parameter value that produces the given X coordinate."""
-        u = target_x  # Initial guess
-        
-        for _ in range(8):  # A few Newton-Raphson iterations
-            x_value, x_derivative = self._compute_x_and_derivative(u)
-            if abs(x_derivative) < 1e-10:
-                break
-            u = u - (x_value - target_x) / x_derivative
-            u = max(0.0, min(1.0, u))
-        
-        return u
-
-    def __call__(self, t: float) -> float:
-        # Handle boundary cases
-        if t <= 0.0 or t >= 1.0:
-            return max(0.0, min(1.0, t))
-
-        # Find the appropriate segment
-        segment_idx = bisect.bisect_left(self._lut_x, t) - 1
-        segment_idx = max(0, min(segment_idx, len(self._lut_x) - 2))
-        
-        x_start, x_end = self._lut_x[segment_idx], self._lut_x[segment_idx + 1]
-        param_start, param_end = self._lut_params[segment_idx], self._lut_params[segment_idx + 1]
-        
-        # Linear interpolation in parameter space
-        if x_end != x_start:
-            progress = (t - x_start) / (x_end - x_start)
-            initial_guess = param_start + progress * (param_end - param_start)
-        else:
-            initial_guess = param_start
-
-        # Refine with Newton-Raphson
-        x_value, x_derivative = self._compute_x_and_derivative(initial_guess)
-        if abs(x_derivative) > 1e-10:
-            refined_guess = initial_guess - (x_value - t) / x_derivative
-            refined_guess = max(0.0, min(1.0, refined_guess))
-        else:
-            refined_guess = initial_guess
-
-        return self._evaluate_y_at_parameter(refined_guess)
-
-    def _compute_x_and_derivative(self, u: float) -> tuple[float, float]:
-        """Compute both X coordinate and its derivative at parameter u.
-
-        X(u) = 3*p1x*u + 3*(p2x-p1x)*u² + (1-3*p2x+3*p1x)*u³
-        """
-        p1x, _, p2x, _ = self._control_points
-
-        a = 3 * p1x - 3 * p2x + 1
-        b = -6 * p1x + 3 * p2x
-        c = 3 * p1x
-
-        # Horner's method
-        x = ((a * u + b) * u + c) * u
-
-        # Derivative: dx/du = 3*a*u² + 2*b*u + c
-        dx_du = (3 * a * u + 2 * b) * u + c
-
-        return x, dx_du
-
-    def _evaluate_y_at_parameter(self, u: float) -> float:
-        """Evaluate the Y coordinate of the Bézier curve at parameter u.
-
-        Y(u) = 3*p1y*u + 3*(p2y-p1y)*u² + (1-3*p2y+3*p1y)*u³
-        """
-        _, p1y, _, p2y = self._control_points
-
-        a = 3 * p1y - 3 * p2y + 1
-        b = -6 * p1y + 3 * p2y
-        c = 3 * p1y
-
-        # Horner's method
-        return ((a * u + b) * u + c) * u
-
-
-# Registry of commonly used easing functions
-PRESET_ACCELERATORS: dict[str, Accelerator] = {
-    "ease": CubicBezier(0.25, 0.1, 0.25, 1.0),  # Default ease
-    "ease-in": CubicBezier(0.42, 0.0, 1.0, 1.0),  # Slow start
-    "ease-out": CubicBezier(0.0, 0.0, 0.58, 1.0),  # Slow end
-    "ease-in-out": CubicBezier(0.42, 0.0, 0.58, 1.0),  # Slow start and end
-}
 
 
 class Utils:
@@ -237,7 +82,40 @@ class Utils:
     def accelerate(
         pct: float,
         acc: (
-            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
+            float
+            | Literal[
+                "in_back",
+                "out_back",
+                "in_out_back",
+                "in_bounce",
+                "out_bounce",
+                "in_out_bounce",
+                "in_circ",
+                "out_circ",
+                "in_out_circ",
+                "in_cubic",
+                "out_cubic",
+                "in_out_cubic",
+                "in_elastic",
+                "out_elastic",
+                "in_out_elastic",
+                "in_expo",
+                "out_expo",
+                "in_out_expo",
+                "in_quad",
+                "out_quad",
+                "in_out_quad",
+                "in_quart",
+                "out_quart",
+                "in_out_quart",
+                "in_quint",
+                "out_quint",
+                "in_out_quint",
+                "in_sine",
+                "out_sine",
+                "in_out_sine",
+            ]
+            | Callable[[float], float]
         ) = 1.0,
     ) -> float:
         """Applies an acceleration function to transform a percentage value.
@@ -246,26 +124,27 @@ class Utils:
             pct (float): Progress percentage value, typically between 0.0 and 1.0.
             acc (float | str | Accelerator, optional): Acceleration function to apply:
                 - float: Power value (1.0 = linear, >1.0 = ease-in, <1.0 = ease-out)
-                - str: Preset name ("ease", "ease-in", "ease-out", "ease-in-out")
+                - str: Preset easing function name. Consult this website to help you choose: https://easings.net/
                 - Accelerator: Custom accelerator function
 
         Returns:
             float: The transformed percentage value.
         """
-        if acc == 1.0:
+        if pct == 0.0 or pct == 1.0:
             return pct
 
         if isinstance(acc, (int, float)):
-            fn: Accelerator = Power(acc)
+            fn: Callable[[float], float] = lambda x: x**acc
         elif isinstance(acc, str):
             try:
-                fn = PRESET_ACCELERATORS[acc]
+                fn = getattr(rpeasings, acc)
             except KeyError:
-                raise ValueError(f"Unknown accelerator preset: {acc!r}")
+                raise ValueError(f"Unknown easing function: {acc!r}")
         elif callable(acc):
-            fn = acc  # Assume it follows the protocol.
+            fn = acc  # Assume it follows the Accelerator protocol
         else:
-            raise TypeError("accelerator must be float, str or callable")
+            raise TypeError("Accelerator must be float, str, or callable")
+
         return fn(pct)
 
     _FloatStr = TypeVar("_FloatStr", float, str)
@@ -276,7 +155,40 @@ class Utils:
         val1: _FloatStr,
         val2: _FloatStr,
         acc: (
-            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
+            float
+            | Literal[
+                "in_back",
+                "out_back",
+                "in_out_back",
+                "in_bounce",
+                "out_bounce",
+                "in_out_bounce",
+                "in_circ",
+                "out_circ",
+                "in_out_circ",
+                "in_cubic",
+                "out_cubic",
+                "in_out_cubic",
+                "in_elastic",
+                "out_elastic",
+                "in_out_elastic",
+                "in_expo",
+                "out_expo",
+                "in_out_expo",
+                "in_quad",
+                "out_quad",
+                "in_out_quad",
+                "in_quart",
+                "out_quart",
+                "in_out_quart",
+                "in_quint",
+                "out_quint",
+                "in_out_quint",
+                "in_sine",
+                "out_sine",
+                "in_out_sine",
+            ]
+            | Callable[[float], float]
         ) = 1.0,
     ) -> _FloatStr:
         """
@@ -483,7 +395,40 @@ class FrameUtility:
         end_time: float,
         end_value: float,
         accelerator: (
-            float | Literal["ease", "ease-in", "ease-out", "ease-in-out"] | Accelerator
+            float
+            | Literal[
+                "in_back",
+                "out_back",
+                "in_out_back",
+                "in_bounce",
+                "out_bounce",
+                "in_out_bounce",
+                "in_circ",
+                "out_circ",
+                "in_out_circ",
+                "in_cubic",
+                "out_cubic",
+                "in_out_cubic",
+                "in_elastic",
+                "out_elastic",
+                "in_out_elastic",
+                "in_expo",
+                "out_expo",
+                "in_out_expo",
+                "in_quad",
+                "out_quad",
+                "in_out_quad",
+                "in_quart",
+                "out_quart",
+                "in_out_quart",
+                "in_quint",
+                "out_quint",
+                "in_out_quint",
+                "in_sine",
+                "out_sine",
+                "in_out_sine",
+            ]
+            | Callable[[float], float]
         ) = 1.0,
     ) -> float:
         """Frame-by-frame equivalent of the ASS ``\\t`` tag.

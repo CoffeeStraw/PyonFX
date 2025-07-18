@@ -305,7 +305,7 @@ class Dango:
         new_x: float,
         new_y: float,
         duration: int,
-        easing: Literal["ease", "ease-out", "ease-in"] | float = 1.0,
+        easing: Literal["in_back", "out_cubic"] | float = 1.0,
         layer_offset: int = 0,
         fade_duration: int | None = None,
     ) -> "Dango":
@@ -439,7 +439,7 @@ class Dango:
         # Phase 2: Dash movement with fade-out using enhanced move_to
         target_x = self.x + dash_distance
         self.move_to(
-            target_x, self.y, dash_duration, "ease", fade_duration=fade_duration
+            target_x, self.y, dash_duration, "in_back", fade_duration=fade_duration
         )
 
         return self
@@ -477,7 +477,7 @@ class Dango:
                 target_x,
                 self.y,
                 current_step_duration,
-                "ease",
+                "out_cubic",
                 fade_duration=fade_for_step,
             )
 
@@ -498,7 +498,7 @@ class Dango:
 
         # Phase 1: Gradual drift left
         drift_target_x = self.x + drift_x_total
-        self.move_to(drift_target_x, self.y, hold_duration, "ease")
+        self.move_to(drift_target_x, self.y, hold_duration, "out_cubic")
 
         # Phase 2: Spiral motion phase (custom animation for complex movement)
         start_x, start_y = self.x, self.y
@@ -585,7 +585,7 @@ class Dango:
         carrier_y = carrier.y
         self_x = carrier_x
         self_y = carrier_y - 18
-        self.move_to(self_x, self_y, climb_duration, "ease", layer_offset=1)
+        self.move_to(self_x, self_y, climb_duration, "out_cubic", layer_offset=1)
         carrier.idle("static", climb_duration)
 
         # Travel phase
@@ -677,7 +677,9 @@ class Dango:
 
         # Phase 1: Angry approaches cute
         approach_target_x = target.x + gap
-        self.move_to(approach_target_x, self.y, pre_duration, "ease", layer_offset=1)
+        self.move_to(
+            approach_target_x, self.y, pre_duration, "out_cubic", layer_offset=1
+        )
         target.idle("static", pre_duration, layer_offset=0)
 
         # Phase 2: Both move together in drag motion with fade-out
