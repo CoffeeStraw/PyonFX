@@ -41,7 +41,7 @@ from .font_utility import Font
 from .convert import Convert
 
 
-@dataclass
+@dataclass(slots=True)
 class Meta:
     """Meta object contains informations about the Ass.
 
@@ -67,7 +67,7 @@ class Meta:
     """Loaded video file path (absolute)."""
 
 
-@dataclass
+@dataclass(slots=True)
 class Style:
     """Style object contains a set of typographic formatting rules that is applied to dialogue lines."""
 
@@ -125,7 +125,7 @@ class Style:
     """Font encoding/codepage."""
 
 
-@dataclass
+@dataclass(slots=True)
 class Char:
     """Char object contains information about a single character in a line."""
 
@@ -174,7 +174,7 @@ class Char:
         return pretty_print(self)
 
 
-@dataclass
+@dataclass(slots=True)
 class Syllable:
     """Syllable object contains information about a single syllable in a line."""
 
@@ -225,7 +225,7 @@ class Syllable:
         return pretty_print(self)
 
 
-@dataclass
+@dataclass(slots=True)
 class Word:
     """Word object contains information about a single word in a line."""
 
@@ -270,7 +270,7 @@ class Word:
         return pretty_print(self)
 
 
-@dataclass
+@dataclass(slots=True)
 class Line:
     """Line object contains information about a single subtitle line in the ASS file."""
 
