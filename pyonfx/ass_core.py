@@ -404,18 +404,8 @@ class Ass:
         path_output (str): Path for the output file (either relative to your .py file or absolute) (DEFAULT: "Output.ass").
         keep_original (bool): If True, you will find all the lines of the input file commented before the new lines generated.
         extended (bool): Calculate more informations from lines (usually you will not have to touch this).
-        vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically.
-            Additionally, ``line`` fields will be re-calculated based on the re-positioned ``line.chars``.
-        video_index (int): Index of the video stream indicated in the `Video File` element from the `[Aegisub Project Garbage]` section.
-            Only used if the `Video File` is a file.
-        rounding_method (RoundingMethod): The rounding method used to round/floor the PTS (Presentation Time Stamp).
-            Only used if the `Video File` element from the `[Aegisub Project Garbage]` section is a Dummy Video.
-        time_scale (Fraction): Unit of time (in seconds) in terms of which frame timestamps are represented.
-            Important: Don't confuse time_scale with the time_base. As a reminder, time_base = 1 / time_scale.
-            Only used if the `Video File` element from the `[Aegisub Project Garbage]` section is a Dummy Video.
-        first_pts (int): PTS (Presentation Time Stamp) of the first frame of the video.
-            Only used if the `Video File` element from the `[Aegisub Project Garbage]` section is a Dummy Video.
-
+        vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically. Additionally, ``line`` fields will be re-calculated based on the re-positioned ``line.chars``.
+        progress (bool): If True, a progress bar will be displayed when iterating over the lines.
 
     Attributes:
         path_input (str): Path for input file (absolute).
@@ -441,10 +431,6 @@ class Ass:
         extended: bool = True,
         vertical_kanji: bool = False,
         progress: bool = True,
-        video_index: int = 0,
-        rounding_method: RoundingMethod = RoundingMethod.ROUND,  # type: ignore[attr-defined]
-        time_scale: Fraction = Fraction(1000),
-        first_timestamps: Fraction = Fraction(0),
     ):
         # Progress/statistics
         self._saved = False
@@ -500,7 +486,7 @@ class Ass:
                 # Sections parsers
                 if current_section in ("Script Info", "Aegisub Project Garbage"):
                     self._parse_meta_section_line(
-                        line, video_index, rounding_method, time_scale, first_timestamps
+                        line,
                     )
                 elif current_section == "V4+ Styles":
                     self._parse_styles_section_line(line)
@@ -543,10 +529,6 @@ class Ass:
     def _parse_meta_section_line(
         self,
         line: str,
-        video_index: int,
-        rounding_method: RoundingMethod,
-        time_scale: Fraction,
-        first_timestamps: Fraction,
     ) -> None:
         """Parse Script Info and Aegisub Project Garbage sections."""
         line = line.strip()
@@ -573,7 +555,7 @@ class Ass:
             # Set up timestamps based on video file
             if os.path.isfile(self.meta.video):
                 self.input_timestamps = VideoTimestamps.from_video_file(
-                    Path(self.meta.video), video_index
+                    Path(self.meta.video)
                 )
             elif self.meta.video.startswith("?dummy"):
                 # Parse dummy video format: ?dummy:fps:duration
@@ -582,7 +564,7 @@ class Ass:
                     fps_str = parts[1]
                     fps = Fraction(fps_str)
                     self.input_timestamps = FPSTimestamps(
-                        rounding_method, time_scale, fps, Fraction(first_timestamps)
+                        RoundingMethod.ROUND, Fraction(1000), fps, Fraction(0)  # type: ignore[attr-defined]
                     )
 
         self.__output.append(line + "\n")
