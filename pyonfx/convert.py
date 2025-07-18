@@ -450,10 +450,10 @@ class Convert:
 
     @staticmethod
     def text_to_shape(
-        obj: Line | Word | Syllable | Char,
+        obj: "Line | Word | Syllable | Char",
         fscx: float | None = None,
         fscy: float | None = None,
-    ) -> Shape:
+    ) -> "Shape":
         """Converts text with given style information to an ASS shape.
 
         **Tips:** *You can easily create impressive deforming effects.*
@@ -501,11 +501,11 @@ class Convert:
 
     @staticmethod
     def text_to_clip(
-        obj: Line | Word | Syllable | Char,
+        obj: "Line | Word | Syllable | Char",
         an: int = 5,
         fscx: float | None = None,
         fscy: float | None = None,
-    ) -> Shape:
+    ) -> "Shape":
         """Converts text with given style information to an ASS shape, applying some translation/scaling to it since
         it is not possible to position a shape with \\pos() once it is in a clip.
 
@@ -575,7 +575,7 @@ class Convert:
 
     @staticmethod
     def text_to_pixels(
-        obj: Line | Word | Syllable | Char,
+        obj: "Line | Word | Syllable | Char",
         supersampling: int = 8,
     ) -> list[Pixel]:
         """| Converts text with given style information to a list of pixel data.
@@ -616,7 +616,7 @@ class Convert:
 
     @staticmethod
     def shape_to_pixels(
-        shape: Shape, supersampling: int = 8, output_rgba: bool = False
+        shape: "Shape", supersampling: int = 8, output_rgba: bool = False
     ) -> list[Pixel]:
         """Converts a Shape object to a list of pixel data.
 

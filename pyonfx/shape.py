@@ -14,8 +14,6 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-from __future__ import annotations
-
 import functools
 import math
 from inspect import signature
@@ -71,7 +69,7 @@ class ShapeElement:
         )
 
     @classmethod
-    def from_ass_drawing_cmd(cls, command: str, *args: str) -> list[ShapeElement]:
+    def from_ass_drawing_cmd(cls, command: str, *args: str) -> list["ShapeElement"]:
         """Parses a drawing command and its arguments from an ASS drawing string.
 
         Since some commands can be implicit, this method can return more than one element.
@@ -185,7 +183,7 @@ class Shape:
         # We return drawing commands as a string rapresentation of the object
         return self.drawing_cmds
 
-    def __eq__(self, other: Shape):
+    def __eq__(self, other: "Shape"):
         return type(other) is type(self) and self.drawing_cmds == other.drawing_cmds
 
     def __iter__(self):
@@ -344,7 +342,7 @@ class Shape:
     @classmethod
     def from_multipolygon(
         cls, multipolygon: MultiPolygon, min_point_spacing: float = 0.5
-    ) -> Shape:
+    ) -> "Shape":
         """Creates a Shape from a Shapely MultiPolygon.
 
         Parameters:
@@ -535,7 +533,7 @@ class Shape:
         *,
         tolerance: float = 1.0,
         min_point_spacing: float = 0.5,
-    ) -> Shape:
+    ) -> "Shape":
         """Return the boolean combination between *self* and *other*.
 
         The two shapes are converted to Shapely ``MultiPolygon`` objects (curves are
@@ -590,7 +588,7 @@ class Shape:
             Callable[[float, float], tuple[float, float]]
             | Callable[[float, float, str], tuple[float, float]]
         ),
-    ) -> Shape:
+    ) -> "Shape":
         """Sends every point of a shape through given transformation function to change them.
 
         **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
@@ -643,7 +641,7 @@ class Shape:
         self.elements = transformed_elements
         return self
 
-    def move(self, x: float, y: float) -> Shape:
+    def move(self, x: float, y: float) -> "Shape":
         """Moves shape coordinates in given direction.
 
         | This function is a high level function, it just uses Shape.map, which is more advanced.
@@ -667,7 +665,7 @@ class Shape:
 
         return self.map(lambda cx, cy: (cx + x, cy + y))
 
-    def align(self, an: int = 5, anchor: int | None = None) -> Shape:
+    def align(self, an: int = 5, anchor: int | None = None) -> "Shape":
         """Moves the outline so that a chosen **pivot inside the shape** coincides
         with the point that will be used for ``\\pos`` when the line is rendered
         with a given ``{\\an..}`` tag.
@@ -743,7 +741,7 @@ class Shape:
         fscx: float = 100,
         fscy: float = 100,
         origin: tuple[float, float] = (0.0, 0.0),
-    ) -> Shape:
+    ) -> "Shape":
         """Scales shape coordinates horizontally and vertically, similar to ASS \\fscx and \\fscy tags.
 
         Parameters:
@@ -871,7 +869,7 @@ class Shape:
 
         return self.map(lambda x, y: _shear(x, y))
 
-    def flatten(self, tolerance: float = 1.0) -> Shape:
+    def flatten(self, tolerance: float = 1.0) -> "Shape":
         """Splits shape's bezier curves into lines.
 
         | This is a low level function. Instead, you should use :func:`split` which already calls this function.
@@ -1001,7 +999,7 @@ class Shape:
         self.elements = flattened_elements
         return self
 
-    def split(self, max_len: float = 16, tolerance: float = 1.0) -> Shape:
+    def split(self, max_len: float = 16, tolerance: float = 1.0) -> "Shape":
         """Splits shape bezier curves into lines and splits lines into shorter segments with maximum given length.
 
         **Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
@@ -1122,7 +1120,7 @@ class Shape:
         *,
         kind: Literal["fill", "border"] = "border",
         join: Literal["round", "bevel", "mitre"] = "round",
-    ) -> Shape:
+    ) -> "Shape":
         """Return a *buffered* version of the shape.
 
         A *buffer* is the set of points whose distance from the original geometryis <= to *dist*.
@@ -1525,7 +1523,7 @@ class Shape:
 
     def morph(
         self,
-        target: Shape,
+        target: "Shape",
         t: float,
         max_len: float = 16.0,
         tolerance: float = 1.0,
@@ -1535,7 +1533,7 @@ class Shape:
         w_overlap: float = 0.1,
         cost_threshold: float = 2.5,
         ensure_shell_pairs: bool = True,
-    ) -> Shape:
+    ) -> "Shape":
         """Interpolates the current shape towards *target*, returning a new `Shape` that represents the intermediate state at fraction *t*.
 
         Parameters:
@@ -1603,8 +1601,8 @@ class Shape:
 
     @staticmethod
     def morph_multi(
-        src_shapes: dict[str, Shape],
-        tgt_shapes: dict[str, Shape],
+        src_shapes: dict[str, "Shape"],
+        tgt_shapes: dict[str, "Shape"],
         t: float,
         *,
         max_len: float = 16.0,
@@ -1615,7 +1613,7 @@ class Shape:
         w_overlap: float = 0.1,
         cost_threshold: float = 2.5,
         ensure_shell_pairs: bool = True,
-    ) -> dict[tuple[str | None, str | None], Shape]:
+    ) -> dict[tuple[str | None, str | None], "Shape"]:
         """Interpolates **multiple** shapes at once and returns a dictionary mapping
         (src_id, tgt_id) tuples to their interpolated shapes.
 
@@ -1853,7 +1851,7 @@ class Shape:
         return result
 
     @staticmethod
-    def polygon(edges: int, side_length: float) -> Shape:
+    def polygon(edges: int, side_length: float) -> "Shape":
         """Returns a shape representing a regular *n*-sided polygon.
 
         Parameters:
@@ -1887,7 +1885,7 @@ class Shape:
         return Shape(" ".join(cmd_parts)).align()
 
     @staticmethod
-    def ellipse(w: float, h: float) -> Shape:
+    def ellipse(w: float, h: float) -> "Shape":
         """Returns a shape object of an ellipse with given width and height, centered around (0,0).
 
         **Tips:** *You could use that to create rounded stribes or arcs in combination with blurring for light effects.*
@@ -1934,7 +1932,7 @@ class Shape:
         )
 
     @staticmethod
-    def ring(out_r: float, in_r: float) -> Shape:
+    def ring(out_r: float, in_r: float) -> "Shape":
         """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
 
         **Tips:** *A ring with increasing inner radius, starting from 0, can look like an outfading point.*
@@ -2019,7 +2017,7 @@ class Shape:
         )
 
     @staticmethod
-    def heart(size: float, offset: float = 0) -> Shape:
+    def heart(size: float, offset: float = 0) -> "Shape":
         """Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
 
         **Tips:** *An offset=size*(2/3) results in a splitted heart.*
@@ -2060,7 +2058,7 @@ class Shape:
     @staticmethod
     def _glance_or_star(
         edges: int, inner_size: float, outer_size: float, g_or_s: str
-    ) -> Shape:
+    ) -> "Shape":
         """
         General function to create a shape object representing star or glance.
         """
@@ -2106,7 +2104,7 @@ class Shape:
         return shape.align()
 
     @staticmethod
-    def star(edges: int, inner_size: float, outer_size: float) -> Shape:
+    def star(edges: int, inner_size: float, outer_size: float) -> "Shape":
         """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
@@ -2122,7 +2120,7 @@ class Shape:
         return Shape._glance_or_star(edges, inner_size, outer_size, "l")
 
     @staticmethod
-    def glance(edges: int, inner_size: float, outer_size: float) -> Shape:
+    def glance(edges: int, inner_size: float, outer_size: float) -> "Shape":
         """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*

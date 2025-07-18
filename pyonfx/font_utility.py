@@ -13,11 +13,6 @@
 #
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
-"""
-This module contains the Font class definition, which has some functions
-to help getting informations from a specific font
-"""
-from __future__ import annotations
 
 import html
 import sys
@@ -52,7 +47,7 @@ class Font:
     Font class definition
     """
 
-    def __init__(self, style: Style):
+    def __init__(self, style: "Style"):
         self.family = style.fontname
         self.bold = style.bold
         self.italic = style.italic
