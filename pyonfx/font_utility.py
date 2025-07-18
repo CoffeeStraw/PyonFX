@@ -18,16 +18,17 @@ This module contains the Font class definition, which has some functions
 to help getting informations from a specific font
 """
 from __future__ import annotations
-import sys
+
 import html
-from typing import Any, TYPE_CHECKING
+import sys
+from typing import TYPE_CHECKING, Any
 
 from .shape import Shape
 
 if sys.platform == "win32":
+    import win32con  # type: ignore
     import win32gui  # type: ignore
     import win32ui  # type: ignore
-    import win32con  # type: ignore
 elif sys.platform in ["linux", "darwin"] and not "sphinx" in sys.modules:
     import cairo  # type: ignore
     import gi  # type: ignore

@@ -2,9 +2,10 @@
 Just a test to show pixels in action, this file will be removed as soon as I prepare the new examples.
 """
 
-from pyonfx import *
 import math
 import random
+
+from pyonfx import *
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()

@@ -1,7 +1,9 @@
 import os
 import sys
 from fractions import Fraction
+
 import pytest_check as check
+
 from pyonfx import *
 
 # Get ass path

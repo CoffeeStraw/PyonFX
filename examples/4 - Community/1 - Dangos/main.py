@@ -32,18 +32,19 @@ Follow PEP-8, keep the method side-effect-free apart from tweaking
 `self.*` fields, and have fun animating!
 """
 
-from copy import deepcopy
 import math
 import random
+from copy import deepcopy
 from typing import Literal
 
-from pyonfx import *
 from dango_config import (
-    VARIANT_LOOKUP,
-    VARIANT_BASE_CONFIGS,
     DANGO_ALTERNATIVES,
     RENDER_ORDER,
+    VARIANT_BASE_CONFIGS,
+    VARIANT_LOOKUP,
 )
+
+from pyonfx import *
 
 # Load ASS file
 io = Ass("in.ass")

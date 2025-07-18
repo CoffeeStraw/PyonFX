@@ -1,5 +1,6 @@
-from pyonfx import *
 import random
+
+from pyonfx import *
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()

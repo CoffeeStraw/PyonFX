@@ -15,25 +15,26 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
+
 import functools
 import math
-from typing import Callable, cast, Literal, NamedTuple
 from inspect import signature
+from typing import Callable, Literal, NamedTuple, cast
 
 import numpy as np
 from pyquaternion import Quaternion
-from shapely.geometry import (
-    LinearRing,
-    Point,
-    MultiPoint,
-    LineString,
-    Polygon,
-    MultiPolygon,
-    JOIN_STYLE,
-)
-from shapely.ops import unary_union
 from scipy.optimize import linear_sum_assignment
 from shapely.affinity import scale as affine_scale
+from shapely.geometry import (
+    JOIN_STYLE,
+    LinearRing,
+    LineString,
+    MultiPoint,
+    MultiPolygon,
+    Point,
+    Polygon,
+)
+from shapely.ops import unary_union
 
 
 # A simple NamedTuple to represent pixels

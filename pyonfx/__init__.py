@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from .ass_core import Ass, Char, Line, Meta, Style, Syllable, Word
+from .convert import ColorModel, Convert
 from .font_utility import Font
-from .ass_core import Ass, Meta, Style, Line, Word, Syllable, Char
-from .convert import Convert, ColorModel
 from .shape import Shape, ShapeElement
-from .utils import Utils, FrameUtility, ColorUtility
+from .utils import ColorUtility, FrameUtility, Utils

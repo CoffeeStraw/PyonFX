@@ -1,9 +1,11 @@
 import os
 import sys
-import pytest_check as check
 from fractions import Fraction
-from pyonfx import *
+
+import pytest_check as check
 from video_timestamps import FPSTimestamps, RoundingMethod
+
+from pyonfx import *
 
 # Get ass path used for tests
 dir_path = os.path.dirname(os.path.realpath(__file__))

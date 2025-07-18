@@ -15,13 +15,15 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 from __future__ import annotations
+
 import re
+from typing import Callable, Literal, TypeVar
+
 import rpeasings
-from typing import Literal, TypeVar, Callable
 from video_timestamps import ABCTimestamps, TimeType
 
-from .convert import Convert, ColorModel
-from .ass_core import Line, Word, Syllable, Char
+from .ass_core import Char, Line, Syllable, Word
+from .convert import ColorModel, Convert
 
 
 class Utils:

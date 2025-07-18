@@ -13,8 +13,9 @@ For subtitles, we create a vertical static gradient.
 As exercise, you can try to transform it into an horizontal one :)
 """
 
-from pyonfx import *
 import random
+
+from pyonfx import *
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()

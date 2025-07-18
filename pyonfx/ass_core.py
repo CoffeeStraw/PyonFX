@@ -14,19 +14,19 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-from collections import defaultdict
 import copy
-from dataclasses import dataclass, fields
-from fractions import Fraction
 import json
 import os
-from pathlib import Path
 import re
 import shutil
 import socket
 import subprocess
 import sys
 import time
+from collections import defaultdict
+from dataclasses import dataclass, fields
+from fractions import Fraction
+from pathlib import Path
 from typing import Any, Callable
 
 from tabulate import tabulate
@@ -1563,13 +1563,11 @@ class Ass:
                 )
             )
 
-    def open_aegisub(self) -> int:
-        """Open the output (specified in self.path_output) with Aegisub.
-
-        This can be usefull if you don't have MPV installed or you want to look at your output in detailed.
+    def open_aegisub(self) -> bool:
+        """Attempts to open the subtitle output file in Aegisub.
 
         Returns:
-            0 if success, -1 if the output couldn't be opened.
+            True if the file is successfully opened, False otherwise.
         """
 
         # Check if it was saved
@@ -1577,7 +1575,7 @@ class Ass:
             print(
                 "[WARNING] You've tried to open the output with Aegisub before having saved. Check your code."
             )
-            return -1
+            return False
 
         if sys.platform == "win32":
             os.startfile(self.path_output)
@@ -1586,9 +1584,9 @@ class Ass:
                 subprocess.call(["aegisub", os.path.abspath(self.path_output)])
             except FileNotFoundError:
                 print("[WARNING] Aegisub not found.")
-                return -1
+                return False
 
-        return 0
+        return True
 
     def open_mpv(
         self,

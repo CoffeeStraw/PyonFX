@@ -1,6 +1,7 @@
-import pytest
 import math
 from copy import copy
+
+import pytest
 
 from pyonfx.shape import Shape
 

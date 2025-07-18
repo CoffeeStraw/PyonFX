@@ -1,7 +1,9 @@
 import os
 from fractions import Fraction
-from pyonfx import *
+
 from video_timestamps import FPSTimestamps, RoundingMethod
+
+from pyonfx import *
 
 # Get ass path
 dir_path = os.path.dirname(os.path.realpath(__file__))

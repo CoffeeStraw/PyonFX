@@ -9,8 +9,9 @@ The demo creates individual pixel elements for each non-transparent pixel in the
 positioning them relative to the first line and applying fade effects.
 """
 
-from pyonfx import *
 import os
+
+from pyonfx import *
 
 io = Ass("in.ass", vertical_kanji=True)
 meta, styles, lines = io.get_data()

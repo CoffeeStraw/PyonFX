@@ -2,8 +2,9 @@
 Morphing Example. To be refined before considering it complete.
 """
 
-from pyonfx import *
 import random
+
+from pyonfx import *
 
 # Setup I/O
 io = Ass("in.ass")

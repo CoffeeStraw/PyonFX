@@ -16,9 +16,10 @@ You can also make some simpler usage, like just applying color changes to the wh
 It could look like much code for such a simple effect, but it's needed and an easy method with much potential for extensions.
 """
 
-from pyonfx import *
-import random
 import math
+import random
+
+from pyonfx import *
 
 io = Ass("in2.ass")
 meta, styles, lines = io.get_data()

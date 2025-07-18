@@ -14,29 +14,25 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-from __future__ import annotations
 import colorsys
 import math
-import re
 import os
+import re
 import sys
 from enum import Enum
-from typing import (
-    TYPE_CHECKING,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, cast, overload
 
 import numpy as np
-from shapely.affinity import scale as _shapely_scale, translate as _shapely_translate
-from shapely.vectorized import contains as _shapely_contains
 from PIL import Image
+from shapely.affinity import scale as _shapely_scale
+from shapely.affinity import translate as _shapely_translate
+from shapely.vectorized import contains as _shapely_contains
 
 from .font_utility import Font
 from .shape import Pixel
 
 if TYPE_CHECKING:
-    from .ass_core import Line, Word, Syllable, Char
+    from .ass_core import Char, Line, Syllable, Word
     from .shape import Shape
 
 
