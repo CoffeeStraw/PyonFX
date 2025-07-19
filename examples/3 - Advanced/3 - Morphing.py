@@ -89,9 +89,7 @@ def romaji(line: Line, l: Line) -> None:
 
         # 2) Morph stage – shape morphs to text
         if morph_end > bounce_end:
-            FU_morph = FrameUtility(
-                int(bounce_end), int(morph_end), io.input_timestamps
-            )
+            FU_morph = FrameUtility(int(bounce_end), int(morph_end), meta.timestamps)
             for s, e, i, n in FU_morph:
                 l.layer = 0
                 l.start_time = s
