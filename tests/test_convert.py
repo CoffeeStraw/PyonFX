@@ -1,7 +1,9 @@
 import os
 import sys
 from fractions import Fraction
+
 import pytest_check as check
+
 from pyonfx import *
 
 # Get ass path
@@ -212,8 +214,6 @@ def test_text_to_shape_with_spacing():
     _, _, lines_with_spacing = io_with_spacing.get_data()
 
     shape = Convert.text_to_shape(lines_with_spacing[1])
-
-    print(shape)
 
     if sys.platform == "win32":
         assert shape == Shape(

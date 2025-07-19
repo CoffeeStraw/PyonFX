@@ -1,5 +1,6 @@
-from pyonfx import *
 import random
+
+from pyonfx import *
 
 io = Ass("in.ass")
 meta, styles, lines = io.get_data()
@@ -31,7 +32,7 @@ def romaji(line, l):
         FU = FrameUtility(
             line.start_time + syl.start_time,
             line.start_time + syl.end_time,
-            io.input_timestamps,
+            meta.timestamps,
         )
         rand = random.uniform(-10, 10)
 

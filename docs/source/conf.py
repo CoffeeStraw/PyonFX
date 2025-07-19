@@ -4,6 +4,7 @@
 
 import os
 import sys
+
 import sphinx_rtd_theme
 
 # Updating path

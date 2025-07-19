@@ -1,9 +1,12 @@
 import os
 import sys
-import pytest_check as check
 from fractions import Fraction
-from pyonfx import *
+
+import pytest_check as check
 from video_timestamps import FPSTimestamps, RoundingMethod
+
+from pyonfx import *
+from pyonfx.ass_core import resolve_path
 
 # Get ass path used for tests
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -19,12 +22,16 @@ max_deviation = 0.75
 
 def test_meta_values():
     # Tests if all the meta values are taken correctly
-    # check.equal(meta.wrap_style, 0)                     # -> not in this .ass, so let's comment this
-    # check.equal(meta.scaled_border_and_shadow, True)  # -> not in this .ass, so let's comment this
+    check.equal(meta.wrap_style, None)
+    check.equal(meta.scaled_border_and_shadow, None)
     check.equal(meta.play_res_x, 1280)
     check.equal(meta.play_res_y, 720)
-    # check.equal(meta.audio, "")                         # -> not in this .ass, so let's comment this
+    check.equal(meta.audio, None)
     check.equal(meta.video, "?dummy:23.976000:2250:1920:1080:11:135:226:c")
+    check.equal(
+        meta.timestamps,
+        FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction("23.976000")),  # type: ignore[attr-defined]
+    )
 
 
 def test_line_values():
@@ -131,9 +138,13 @@ def test_line_values():
     check.almost_equal(lines[11].width, 941.703125, abs=max_deviation)
     check.almost_equal(lines[11].height, 48.0, abs=max_deviation)
 
+    # Bold - Text with some tags pt.2
+    check.almost_equal(lines[12].width, 118.5625, abs=max_deviation)
+    check.almost_equal(lines[12].height, 48.0, abs=max_deviation)
+
     # Bold - Vertical Text
-    check.almost_equal(lines[12].width, 31.546875, abs=max_deviation)
-    check.almost_equal(lines[12].height, 396.0, abs=max_deviation)
+    check.almost_equal(lines[16].width, 31.546875, abs=max_deviation)
+    check.almost_equal(lines[16].height, 396.0, abs=max_deviation)
 
 
 def test_syllable_values():
@@ -218,19 +229,63 @@ def test_syllable_values():
     check.almost_equal(syl_fx.width, 38.468, abs=max_deviation)
     check.almost_equal(syl_fx.height, 48.0, abs=max_deviation)
 
+    # Check lines 12 (other difficult parsing case)
+    syls = lines[12].syls
+    actual = [(syl.tags, syl.inline_fx, syl.text) for syl in syls]
+    expected = [
+        ("\\-1\\k56", "1", ""),
+        ("\\k50\\-2", "2", ""),
+        ("\\-3\\k10\\-4", "3", "koko"),
+        ("\\-in\\-before\\k13\\-after", "in", "ro"),
+    ]
+    assert (
+        actual == expected
+    ), f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
+
+    # Check lines 13 (other difficult parsing case)
+    syls = lines[13].syls
+    actual = [(syl.tags, syl.inline_fx, syl.text) for syl in syls]
+    expected = [
+        ("\\-1\\k56", "1", ""),
+        ("\\k50\\-2\\-test\\-test2", "2", "nope"),
+        ("\\-3\\k10\\-4", "3", "asu"),
+        ("\\-in\\-before\\k13\\-after", "in", "re"),
+    ]
+    assert (
+        actual == expected
+    ), f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
+
+    # Check lines 14 (other difficult parsing case)
+    syls = lines[14].syls
+    actual = [(syl.tags, syl.inline_fx, syl.text) for syl in syls]
+    expected = [
+        ("\\-1\\k56", "1", ""),
+        ("\\k50\\-2", "2", "nope"),
+        ("\\-test\\-test2\\-3\\k10\\-4", "test", "asu"),
+        ("\\-in\\-before\\k13\\-after", "in", "re"),
+    ]
+    assert (
+        actual == expected
+    ), f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
+
+    # Check lines 15 (other difficult parsing case)
+    syls = lines[15].syls
+    actual = [(syl.tags, syl.inline_fx, syl.text) for syl in syls]
+    expected = [
+        ("\\-1\\-more\\-more\\k56", "1", ""),
+        ("\\k50\\-more\\-2", "more", "nope"),
+        ("\\-more\\-test\\-more\\-test2\\-more\\-3\\k10\\-more\\-4", "more", "asu"),
+        ("\\-more\\-in\\-more\\-before\\k13\\-more\\-after", "more", "re"),
+    ]
+    assert (
+        actual == expected
+    ), f"Syllable parsing mismatch:\nExpected: {expected}\nActual: {actual}"
+
 
 def test_ass_values():
     check.is_true(os.path.samefile(io.path_input, path_ass))
-    check.equal(
-        os.path.realpath(io.path_output),
-        os.path.realpath(
-            os.path.join(os.path.dirname(os.path.abspath(sys.argv[0])), "Output.ass")
-        ),
-    )
+    expected_output = os.path.realpath(resolve_path(sys.argv[0], "output.ass"))
+    check.equal(os.path.realpath(io.path_output), expected_output)
     # io.meta is tested in test_meta_values()
     # io.styles is tested in test_line_values()
     # io.lines is tested in test_line_values()
-    check.equal(
-        io.input_timestamps,
-        FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction("23.976000")),
-    )

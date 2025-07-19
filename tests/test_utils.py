@@ -1,7 +1,9 @@
 import os
 from fractions import Fraction
-from pyonfx import *
+
 from video_timestamps import FPSTimestamps, RoundingMethod
+
+from pyonfx import *
 
 # Get ass path
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -21,7 +23,7 @@ def test_interpolation():
 
 
 def test_frame_utility():
-    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction(20))
+    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction(20))  # type: ignore[attr-defined]
     FU = FrameUtility(0, 110, timestamps)
     assert list(FU) == [(0, 25, 1, 3), (25, 75, 2, 3), (75, 125, 3, 3)]
 
@@ -31,7 +33,7 @@ def test_frame_utility():
     FU = FrameUtility(0, 250, timestamps, 3)
     assert list(FU) == [(0, 125, 1, 5), (125, 225, 4, 5)]
 
-    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), anime_fps)
+    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), anime_fps)  # type: ignore[attr-defined]
     FU = FrameUtility(424242, 424451, timestamps)
     assert list(FU) == [
         (424236, 424278, 1, 5),
@@ -42,7 +44,7 @@ def test_frame_utility():
     ]
 
     # FU.add
-    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction(20))
+    timestamps = FPSTimestamps(RoundingMethod.ROUND, Fraction(1000), Fraction(20))  # type: ignore[attr-defined]
     FU = FrameUtility(25, 225, timestamps)
     fsc_values = []
     for s, e, i, n in FU:

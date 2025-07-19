@@ -1,5 +1,5 @@
 # PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
-# Copyright (C) 2019 Antonio Strippoli (CoffeeStraw/YellowFlash)
+# Copyright (C) 2019-2025 Antonio Strippoli (CoffeeStraw/YellowFlash)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
@@ -14,15 +14,15 @@
 # You should have received a copy of the GNU Lesser General Public License
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
-from __future__ import annotations
 import re
-from typing import overload, TYPE_CHECKING
+from typing import Callable, Iterable, Literal, TypeVar
+
+import rpeasings
+from tqdm import tqdm
 from video_timestamps import ABCTimestamps, TimeType
 
-from .convert import Convert, ColorModel
-
-if TYPE_CHECKING:
-    from .ass_core import Line, Word, Syllable, Char
+from .ass_core import Char, Line, Syllable, Word
+from .convert import ColorModel, Convert
 
 
 class Utils:
@@ -30,98 +30,234 @@ class Utils:
     This class is a collection of static methods that will help the user in some tasks.
     """
 
-    @overload
-    @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: list[Line],
-    ) -> list[Line]: ...
-
-    @overload
-    @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: list[Word],
-    ) -> list[Word]: ...
-
-    @overload
-    @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: list[Syllable],
-    ) -> list[Syllable]: ...
-
-    @overload
-    @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: list[Char],
-    ) -> list[Char]: ...
+    _LineWordSyllableChar = TypeVar("_LineWordSyllableChar", Line, Word, Syllable, Char)
 
     @staticmethod
-    def all_non_empty(
-        lines_chars_syls_or_words: (
-            list[Line] | list[Word] | list[Syllable] | list[Char]
-        ),
-    ) -> list[Line] | list[Word] | list[Syllable] | list[Char]:
-        """
-        Helps to not check everytime for text containing only spaces or object's duration equals to zero.
+    def progress_bar(
+        iterable: Iterable[_LineWordSyllableChar], **kwargs
+    ) -> Iterable[_LineWordSyllableChar]:
+        """Wraps an iterable of Lines, Words, Syllables, or Chars with a tqdm progress bar.
 
-        Parameters:
-            lines_chars_syls_or_words (list of :class:`Line<pyonfx.ass_utility.Line>`, :class:`Char<pyonfx.ass_utility.Char>`, :class:`Syllable<pyonfx.ass_utility.Syllable>` or :class:`Word<pyonfx.ass_utility.Word>`)
+        Args:
+            iterable: The iterable to wrap (list of Lines, Words, Syllables, Chars).
+            **kwargs: Additional arguments for tqdm.
 
         Returns:
-            A list containing lines_chars_syls_or_words without objects with duration equals to zero or blank text (no text or only spaces).
+            An iterator with a progress bar.
         """
-        out = []
-        for obj in lines_chars_syls_or_words:
-            if obj.text.strip() and obj.duration > 0:
-                out.append(obj)
-        return out
+        # Convert to list to support multiple passes and len()
+        items = list(iterable)
+        if not items:
+            raise ValueError(
+                "Iterable is empty; cannot determine type for progress bar."
+            )
+
+        first = items[0]
+        obj_name = type(first).__name__.lower()
+        if obj_name not in ("line", "word", "syllable", "char"):
+            raise TypeError(
+                f"with_progress only supports Line, Word, Syllable, or Char (got {type(first)})."
+            )
+        emoji = {
+            "line": "🐰",
+            "word": "🔤",
+            "syllable": "🎤",
+            "char": "🔠",
+        }
+
+        return tqdm(
+            items,
+            desc=kwargs.pop("desc", f"Processed {obj_name}s"),
+            unit=kwargs.pop("unit", obj_name),
+            leave=kwargs.pop("leave", False),
+            ascii=kwargs.pop("ascii", " ▖▘▝▗▚▞█"),
+            bar_format=kwargs.pop(
+                "bar_format",
+                emoji[obj_name]
+                + " {desc}: |{bar}| {percentage:3.0f}% [{n_fmt}/{total_fmt}] "
+                "⏱️  {elapsed}<{remaining}, {rate_fmt}{postfix}",
+            ),
+            **kwargs,
+        )
 
     @staticmethod
-    def clean_tags(text: str) -> str:
-        # TODO: Cleans up ASS subtitle lines of badly-formed override. Returns a cleaned up text.
-        return ""
-
-    @staticmethod
-    def accelerate(pct: float, accelerator: float) -> float:
-        # Modifies pct according to the acceleration provided.
-        # TODO: Implement acceleration based on bezier's curve
-        return pct**accelerator
-
-    @overload
-    @staticmethod
-    def interpolate(
-        pct: float,
-        val1: float,
-        val2: float,
-        acc: float = 1.0,
-    ) -> float: ...
-
-    @overload
-    @staticmethod
-    def interpolate(
-        pct: float,
-        val1: str,
-        val2: str,
-        acc: float = 1.0,
-    ) -> str: ...
-
-    @staticmethod
-    def interpolate(
-        pct: float,
-        val1: float | str,
-        val2: float | str,
-        acc: float = 1.0,
-    ) -> str | float:
-        """
-        | Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value as decimal number.
-        | You can also provide a http://cubic-bezier.com to accelerate based on bezier curves. (TO DO)
-        |
-        | You could use that for the calculation of color/alpha gradients.
+    def all_non_empty(
+        lines_words_syls_or_chars: Iterable[_LineWordSyllableChar],
+        *,
+        filter_whitespace_text: bool = True,
+        filter_empty_duration: bool = False,
+        renumber_indexes: bool = True,
+        progress_bar: bool = True,
+    ) -> Iterable[_LineWordSyllableChar]:
+        """Return a filtered copy of the given objects list excluding the *empty* ones.
 
         Parameters:
-            pct (float): Percent value of the interpolation.
+            lines_words_syls_or_chars (list of :class:`Line<pyonfx.ass_utility.Line>`, :class:`Word<pyonfx.ass_utility.Word>`, :class:`Syllable<pyonfx.ass_utility.Syllable>` or :class:`Char<pyonfx.ass_utility.Char>`)
+            filter_whitespace_text (bool, optional): If True, objects are filtered based on their text attribute.
+            filter_empty_duration (bool, optional): If True, objects are filtered based on their duration attribute.
+            renumber_indexes (bool, optional): If True, the ``i``, ``word_i`` and ``syl_i`` attributes of the surviving objects are re-assigned to reflect their new position in the returned list.
+            progress_bar (bool, optional): If True, the result is wrapped with :func:`progress_bar`.
+
+        Returns:
+            The filtered objects list.
+        """
+        out: list[Utils._LineWordSyllableChar] = []
+        for obj in lines_words_syls_or_chars:
+            empty_for_text = filter_whitespace_text and not obj.text.strip()
+            empty_for_duration = filter_empty_duration and obj.duration <= 0
+            if empty_for_text or empty_for_duration:
+                continue
+            out.append(obj)
+
+        if renumber_indexes:
+
+            def _renumber_attr(attr_name: str) -> None:
+                if out and not hasattr(out[0], attr_name):
+                    return
+
+                first_seen: dict[int, int] = {}
+                next_idx = 0
+
+                for obj in out:
+                    old_val = getattr(obj, attr_name)
+                    if old_val not in first_seen:
+                        first_seen[old_val] = next_idx
+                        next_idx += 1
+                    setattr(obj, attr_name, first_seen[old_val])
+
+            for secondary in ("i", "word_i", "syl_i"):
+                _renumber_attr(secondary)
+
+        if progress_bar:
+            return Utils.progress_bar(out)
+
+        return iter(out)
+
+    @staticmethod
+    def accelerate(
+        pct: float,
+        acc: (
+            float
+            | Literal[
+                "in_back",
+                "out_back",
+                "in_out_back",
+                "in_bounce",
+                "out_bounce",
+                "in_out_bounce",
+                "in_circ",
+                "out_circ",
+                "in_out_circ",
+                "in_cubic",
+                "out_cubic",
+                "in_out_cubic",
+                "in_elastic",
+                "out_elastic",
+                "in_out_elastic",
+                "in_expo",
+                "out_expo",
+                "in_out_expo",
+                "in_quad",
+                "out_quad",
+                "in_out_quad",
+                "in_quart",
+                "out_quart",
+                "in_out_quart",
+                "in_quint",
+                "out_quint",
+                "in_out_quint",
+                "in_sine",
+                "out_sine",
+                "in_out_sine",
+            ]
+            | Callable[[float], float]
+        ) = 1.0,
+    ) -> float:
+        """Applies an acceleration function to transform a percentage value.
+
+        Parameters:
+            pct (float): Progress percentage value, typically between 0.0 and 1.0.
+            acc (float | str | Accelerator, optional): Acceleration function to apply:
+                - float: Power value (1.0 = linear, >1.0 = ease-in, <1.0 = ease-out)
+                - str: Preset easing function name. Consult this website to help you choose: https://easings.net/
+                - Accelerator: Custom accelerator function
+
+        Returns:
+            float: The transformed percentage value.
+        """
+        if pct == 0.0 or pct == 1.0:
+            return pct
+
+        if isinstance(acc, (int, float)):
+            fn: Callable[[float], float] = lambda x: x**acc
+        elif isinstance(acc, str):
+            try:
+                fn = getattr(rpeasings, acc)
+            except KeyError:
+                raise ValueError(f"Unknown easing function: {acc!r}")
+        elif callable(acc):
+            fn = acc  # Assume it follows the Accelerator protocol
+        else:
+            raise TypeError("Accelerator must be float, str, or callable")
+
+        return fn(pct)
+
+    _FloatStr = TypeVar("_FloatStr", float, str)
+
+    @staticmethod
+    def interpolate(
+        pct: float,
+        val1: _FloatStr,
+        val2: _FloatStr,
+        acc: (
+            float
+            | Literal[
+                "in_back",
+                "out_back",
+                "in_out_back",
+                "in_bounce",
+                "out_bounce",
+                "in_out_bounce",
+                "in_circ",
+                "out_circ",
+                "in_out_circ",
+                "in_cubic",
+                "out_cubic",
+                "in_out_cubic",
+                "in_elastic",
+                "out_elastic",
+                "in_out_elastic",
+                "in_expo",
+                "out_expo",
+                "in_out_expo",
+                "in_quad",
+                "out_quad",
+                "in_out_quad",
+                "in_quart",
+                "out_quart",
+                "in_out_quart",
+                "in_quint",
+                "out_quint",
+                "in_out_quint",
+                "in_sine",
+                "out_sine",
+                "in_out_sine",
+            ]
+            | Callable[[float], float]
+        ) = 1.0,
+    ) -> _FloatStr:
+        """
+        Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value.
+        Supports various acceleration/easing functions for smooth animations.
+
+        Parameters:
+            pct (float): Percent value of the interpolation (0.0 to 1.0).
             val1 (int, float or str): First value to interpolate (either string or number).
             val2 (int, float or str): Second value to interpolate (either string or number).
-            acc (float, optional): Optional acceleration that influences final percent value.
+            acc (float | str | Accelerator, optional): Acceleration function to apply:
+                - float: Power value (1.0 = linear, >1.0 = ease-in, <1.0 = ease-out), same as in ASS `\\t` tag.
+                - str: Preset name ("ease", "ease-in", "ease-out", "ease-in-out").
+                - Accelerator: Custom accelerator object. You can check out :class:`CubicBezier` or build your own.
 
         Returns:
             Interpolated value of given 2 values (so either a string or a number).
@@ -131,17 +267,21 @@ class Utils:
 
                 print( Utils.interpolate(0.5, 10, 20) )
                 print( Utils.interpolate(0.9, "&HFFFFFF&", "&H000000&") )
+                print( Utils.interpolate(0.5, 10, 20, "ease-in") )
+                print( Utils.interpolate(0.5, 10, 20, 2.0) )
 
-            >>> 15
+            >>> 15.0
             >>> &HE5E5E5&
+            >>> 13.05
+            >>> 12.5
         """
         if pct > 1.0 or pct < 0:
             raise ValueError(
                 f"Percent value must be a float between 0.0 and 1.0, but yours was {pct}"
             )
 
-        # Calculating acceleration (if requested)
-        pct = Utils.accelerate(pct, acc) if acc != 1.0 else pct
+        # Apply acceleration function
+        pct = Utils.accelerate(pct, acc)
 
         def interpolate_numbers(val1: float, val2: float) -> float:
             nonlocal pct
@@ -251,7 +391,7 @@ class FrameUtility:
         self,
         start_ms: int,
         end_ms: int,
-        timestamps: ABCTimestamps,
+        timestamps: ABCTimestamps | None,
         n_fr: int = 1,
     ):
         # Check for invalid values
@@ -261,6 +401,10 @@ class FrameUtility:
             raise ValueError("Parameter 'start_ms' is expected to be <= 'end_ms'.")
         if n_fr <= 0:
             raise ValueError("Parameter 'n_fr' must be > 0.")
+        if timestamps is None:
+            raise ValueError(
+                "Parameter 'timestamps' cannot be None (hint: does your ASS file have a video specified?)."
+            )
 
         self.timestamps = timestamps
         self.start_ms = start_ms
@@ -309,7 +453,42 @@ class FrameUtility:
         start_time: float,
         end_time: float,
         end_value: float,
-        accelerator: float = 1.0,
+        accelerator: (
+            float
+            | Literal[
+                "in_back",
+                "out_back",
+                "in_out_back",
+                "in_bounce",
+                "out_bounce",
+                "in_out_bounce",
+                "in_circ",
+                "out_circ",
+                "in_out_circ",
+                "in_cubic",
+                "out_cubic",
+                "in_out_cubic",
+                "in_elastic",
+                "out_elastic",
+                "in_out_elastic",
+                "in_expo",
+                "out_expo",
+                "in_out_expo",
+                "in_quad",
+                "out_quad",
+                "in_out_quad",
+                "in_quart",
+                "out_quart",
+                "in_out_quart",
+                "in_quint",
+                "out_quint",
+                "in_out_quint",
+                "in_sine",
+                "out_sine",
+                "in_out_sine",
+            ]
+            | Callable[[float], float]
+        ) = 1.0,
     ) -> float:
         """Frame-by-frame equivalent of the ASS ``\\t`` tag.
 
@@ -325,7 +504,7 @@ class FrameUtility:
             start_time (float): Initial time.
             end_time (float): Final time.
             end_value (float): Numeric value reached at end_time.
-            accelerator (float): Accelerator value.
+            accelerator (float | str | Accelerator, optional): Acceleration/easing to apply (check Utils.accelerate for more details).
 
         Returns:
             The transformed numeric value at the current frame of this FrameUtility object.

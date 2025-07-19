@@ -16,9 +16,10 @@ You can also make some simpler usage, like just applying color changes to the wh
 It could look like much code for such a simple effect, but it's needed and an easy method with much potential for extensions.
 """
 
-from pyonfx import *
-import random
 import math
+import random
+
+from pyonfx import *
 
 io = Ass("in2.ass")
 meta, styles, lines = io.get_data()
@@ -110,7 +111,7 @@ def romaji(line, l):
             FU = FrameUtility(
                 int(line.start_time - line.leadin / 2),
                 line.start_time,
-                io.input_timestamps,
+                meta.timestamps,
             )
             for s, e, i, n in FU:
                 l.start_time = s
@@ -139,7 +140,7 @@ def romaji(line, l):
         FU = FrameUtility(
             line.start_time + syl.start_time,
             line.start_time + syl.end_time,
-            io.input_timestamps,
+            meta.timestamps,
         )
         for s, e, i, n in FU:
             l.start_time = s

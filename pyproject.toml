@@ -1,6 +1,6 @@
 [project]
 name = "pyonfx"
-version = "0.10.1"
+version = "0.11.0"
 description = "An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha)."
 authors = [
     { name = "Antonio Strippoli", email = "clarantonio98@gmail.com" },
@@ -14,7 +14,11 @@ dependencies = [
     "pyquaternion",
     "shapely",
     "scipy",
+    "rpeasings",
     "VideoTimestamps>=0.2",
+    "Pillow",
+    "tqdm",
+    "tabulate",
     "pywin32; platform_system=='Windows'",
     "pycairo; platform_system=='Linux' or platform_system=='Darwin'",
     "PyGObject; platform_system=='Linux' or platform_system=='Darwin'",
@@ -38,6 +42,7 @@ Tracker = "https://github.com/CoffeeStraw/PyonFX/issues/"
 
 [project.optional-dependencies]
 dev = [
+  "isort",
   "black",
   "pytest",
   "pytest-check",
@@ -53,3 +58,6 @@ build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
 include = ["pyonfx*"]
+
+[tool.isort]
+profile = "black"

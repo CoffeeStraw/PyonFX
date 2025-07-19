@@ -32,18 +32,19 @@ Follow PEP-8, keep the method side-effect-free apart from tweaking
 `self.*` fields, and have fun animating!
 """
 
-from copy import deepcopy
 import math
 import random
+from copy import deepcopy
 from typing import Literal
 
-from pyonfx import *
 from dango_config import (
-    VARIANT_LOOKUP,
-    VARIANT_BASE_CONFIGS,
     DANGO_ALTERNATIVES,
     RENDER_ORDER,
+    VARIANT_BASE_CONFIGS,
+    VARIANT_LOOKUP,
 )
+
+from pyonfx import *
 
 # Load ASS file
 io = Ass("in.ass")
@@ -188,6 +189,7 @@ class Dango:
             l.text = f"{{\\an7{style_tags}\\p1}}{shape}"
             io.write_line(l)
 
+    @io.track
     def morph_from_shapes(
         self,
         source_shape_parts: dict[str, Shape],
@@ -197,7 +199,7 @@ class Dango:
     ) -> "Dango":
         """Morph from source shapes to this dango over duration."""
         frame_util = FrameUtility(
-            self.current_time, self.current_time + duration, io.input_timestamps
+            self.current_time, self.current_time + duration, meta.timestamps
         )
         for start, end, frame_idx, total_frames in frame_util:
             progress = frame_idx / total_frames
@@ -251,7 +253,7 @@ class Dango:
         # Handle animated cases frame by frame
         settle_start = max(0, duration - settle_ms)
         frame_util = FrameUtility(
-            self.current_time, self.current_time + duration, io.input_timestamps
+            self.current_time, self.current_time + duration, meta.timestamps
         )
 
         # Handle static case with single render
@@ -304,13 +306,13 @@ class Dango:
         new_x: float,
         new_y: float,
         duration: int,
-        easing: Literal["linear", "ease_out", "ease_in"] = "linear",
+        easing: Literal["in_back", "out_cubic"] | float = 1.0,
         layer_offset: int = 0,
         fade_duration: int | None = None,
     ) -> "Dango":
         """Animate movement to new position with optional fade-out."""
         frame_util = FrameUtility(
-            self.current_time, self.current_time + duration, io.input_timestamps
+            self.current_time, self.current_time + duration, meta.timestamps
         )
 
         start_x, start_y = self.x, self.y
@@ -319,15 +321,9 @@ class Dango:
         for start, end, frame_idx, total_frames in frame_util:
             progress = frame_idx / total_frames
 
-            # Apply easing
-            if easing == "ease_out":
-                progress = 1 - (1 - progress) ** 2
-            elif easing == "ease_in":
-                progress = progress**2
-
             # Update position
-            self.x = Utils.interpolate(progress, start_x, new_x)
-            self.y = Utils.interpolate(progress, start_y, new_y)
+            self.x = Utils.interpolate(progress, start_x, new_x, easing)
+            self.y = Utils.interpolate(progress, start_y, new_y, easing)
 
             # Apply fade-out if requested
             if fade_duration is not None:
@@ -346,6 +342,7 @@ class Dango:
         self.current_time += duration
         return self
 
+    @io.track
     def exit_jump_down_fall(
         self,
         charge_duration: int = 100,
@@ -366,7 +363,7 @@ class Dango:
 
         total_duration = charge_duration + jump_duration + fall_duration
         frame_util = FrameUtility(
-            self.current_time, self.current_time + total_duration, io.input_timestamps
+            self.current_time, self.current_time + total_duration, meta.timestamps
         )
 
         for f_start, f_end, _, _ in frame_util:
@@ -428,6 +425,7 @@ class Dango:
         self.current_time += total_duration
         return self
 
+    @io.track
     def exit_furious_dash(
         self,
         shake_duration: int = 2000,
@@ -442,11 +440,12 @@ class Dango:
         # Phase 2: Dash movement with fade-out using enhanced move_to
         target_x = self.x + dash_distance
         self.move_to(
-            target_x, self.y, dash_duration, "ease_out", fade_duration=fade_duration
+            target_x, self.y, dash_duration, "in_back", fade_duration=fade_duration
         )
 
         return self
 
+    @io.track
     def exit_slow_steps(
         self,
         duration: int = 3000,
@@ -479,12 +478,13 @@ class Dango:
                 target_x,
                 self.y,
                 current_step_duration,
-                "ease_out",  # Ease-out within each step
+                "out_cubic",
                 fade_duration=fade_for_step,
             )
 
         return self
 
+    @io.track
     def exit_heart_spiral(
         self,
         hold_duration: int = 1300,
@@ -499,12 +499,12 @@ class Dango:
 
         # Phase 1: Gradual drift left
         drift_target_x = self.x + drift_x_total
-        self.move_to(drift_target_x, self.y, hold_duration, "ease_out")
+        self.move_to(drift_target_x, self.y, hold_duration, "out_cubic")
 
         # Phase 2: Spiral motion phase (custom animation for complex movement)
         start_x, start_y = self.x, self.y
         frame_util = FrameUtility(
-            self.current_time, self.current_time + move_duration, io.input_timestamps
+            self.current_time, self.current_time + move_duration, meta.timestamps
         )
 
         for f_start, f_end, frame_idx, _ in frame_util:
@@ -539,6 +539,7 @@ class Dango:
         self.current_time += move_duration
         return self
 
+    @io.track
     def piggyback_onto(
         self,
         carrier: "Dango",
@@ -585,7 +586,7 @@ class Dango:
         carrier_y = carrier.y
         self_x = carrier_x
         self_y = carrier_y - 18
-        self.move_to(self_x, self_y, climb_duration, "ease_out", layer_offset=1)
+        self.move_to(self_x, self_y, climb_duration, "out_cubic", layer_offset=1)
         carrier.idle("static", climb_duration)
 
         # Travel phase
@@ -594,7 +595,7 @@ class Dango:
 
         start_time = self.current_time
         frame_util = FrameUtility(
-            start_time, start_time + travel_duration, io.input_timestamps
+            start_time, start_time + travel_duration, meta.timestamps
         )
         slip_trigger = travel_duration - fall_duration
 
@@ -658,6 +659,7 @@ class Dango:
         self.current_time = carrier.current_time = start_time + travel_duration
         return self
 
+    @io.track
     def tug_away(
         self,
         target: "Dango",
@@ -677,14 +679,14 @@ class Dango:
         # Phase 1: Angry approaches cute
         approach_target_x = target.x + gap
         self.move_to(
-            approach_target_x, self.y, pre_duration, "ease_out", layer_offset=1
+            approach_target_x, self.y, pre_duration, "out_cubic", layer_offset=1
         )
         target.idle("static", pre_duration, layer_offset=0)
 
         # Phase 2: Both move together in drag motion with fade-out
         start_x_angry, start_x_cute = self.x, target.x
         frame_util = FrameUtility(
-            self.current_time, self.current_time + drag_duration, io.input_timestamps
+            self.current_time, self.current_time + drag_duration, meta.timestamps
         )
 
         for f_start, f_end, _, _ in frame_util:
@@ -744,6 +746,7 @@ class Dango:
         io.write_line(h)
 
 
+@io.track
 def leadin_effect(
     line: Line,
     char: Char,
@@ -776,6 +779,7 @@ def leadin_effect(
     io.write_line(l)
 
 
+@io.track
 def main_effect(
     line: Line, char: Char, dango_style: dict[str, dict[str, str | float]]
 ) -> None:
@@ -811,19 +815,17 @@ def main_effect(
 
 def process_romaji_line(line: Line, l: Line) -> None:
     # Character collection and context setup
-    chars = [char for char in line.chars if char.text.strip()]
+    chars = Utils.all_non_empty(line.chars)
     contexts: list[
         tuple[tuple[dict[str, Shape], dict[str, dict[str, str | float]]], Dango]
     ] = []
-    variant_used_syl_i = set()
 
     # Process each character
     for char in chars:
         fx_name = (getattr(char, "inline_fx", "") or "").strip().lower()
 
         # Determine variant and config
-        if fx_name in VARIANT_LOOKUP and char.syl_i not in variant_used_syl_i:
-            variant_used_syl_i.add(char.syl_i)
+        if fx_name in VARIANT_LOOKUP and char.syl_char_i == 0:
             name = fx_name
             shape_parts, style_config = VARIANT_LOOKUP[fx_name]
         else:
@@ -895,7 +897,7 @@ def process_romaji_line(line: Line, l: Line) -> None:
         # Piggyback pairing
         elif is_piggy_line and i + 1 < len(contexts) and i + 1 not in paired:
             dango2 = contexts[i + 1][1]
-            dango.morph_from_shapes(*curr_context, MORPH_DURATION)
+            dango.morph_from_shapes(*curr_context, MORPH_DURATION, 1)
             dango2.morph_from_shapes(*contexts[i + 1][0], MORPH_DURATION)
             dango.piggyback_onto(dango2)
             paired.update([i, i + 1])
@@ -934,6 +936,6 @@ for line in lines:
     else:
         process_subtitle_line(line, line.copy())
 
-# Save and open in MPV
+# Save and open in Aegisub
 io.save()
 io.open_aegisub()

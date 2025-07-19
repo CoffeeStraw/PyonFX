@@ -52,6 +52,8 @@ jobs:
 
       - name: Check formatting with black
         run: black --check .
+      - name: Check imports ordering with isort
+        run: isort --check-only .
 
   # Execute pytest to check PyonFX's functionalities
   test:
