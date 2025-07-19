@@ -63,7 +63,7 @@ def romaji(line: Line, l: Line) -> None:
         morph_end = leadin_start + LEADIN_TOTAL  # This equals syl absolute start
 
         # 1) Falling + bounce stage (random shape)
-        FU_bounce = FrameUtility(leadin_start, bounce_end, io.input_timestamps)
+        FU_bounce = FrameUtility(leadin_start, bounce_end, meta.timestamps)
         for s, e, i, n in FU_bounce:
             l.layer = 0
             l.start_time = s
@@ -89,9 +89,7 @@ def romaji(line: Line, l: Line) -> None:
 
         # 2) Morph stage – shape morphs to text
         if morph_end > bounce_end:
-            FU_morph = FrameUtility(
-                int(bounce_end), int(morph_end), io.input_timestamps
-            )
+            FU_morph = FrameUtility(int(bounce_end), int(morph_end), meta.timestamps)
             for s, e, i, n in FU_morph:
                 l.layer = 0
                 l.start_time = s
@@ -154,7 +152,7 @@ def romaji(line: Line, l: Line) -> None:
 
         # Phase 1: Text morphs back to shape while changing color
         FU_morph_back = FrameUtility(
-            int(leadout_start), int(morph_back_end), io.input_timestamps
+            int(leadout_start), int(morph_back_end), meta.timestamps
         )
         for s, e, i, n in FU_morph_back:
             l.layer = 2
@@ -178,7 +176,7 @@ def romaji(line: Line, l: Line) -> None:
         # Phase 2: Shape moves down, rotates left and fades out
         if leadout_end > morph_back_end:
             FU_leadout = FrameUtility(
-                int(morph_back_end), int(leadout_end), io.input_timestamps
+                int(morph_back_end), int(leadout_end), meta.timestamps
             )
             for s, e, i, n in FU_leadout:
                 l.layer = 2
@@ -236,7 +234,7 @@ def sub(line: Line, l: Line, prev_line=None, next_line=None) -> None:
         next_text_shape.move(next_line.left, next_line.top)
         # print(line.left, next_line.left)
 
-        FU_leadout = FrameUtility(l.start_time, l.end_time, io.input_timestamps)
+        FU_leadout = FrameUtility(l.start_time, l.end_time, meta.timestamps)
 
         for s, e, i, n in FU_leadout:
             l.start_time = s

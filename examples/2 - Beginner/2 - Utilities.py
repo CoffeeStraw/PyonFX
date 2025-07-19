@@ -47,7 +47,7 @@ def romaji(line, l):
         FU = FrameUtility(
             line.start_time + syl.start_time,
             line.start_time + syl.end_time,
-            io.input_timestamps,
+            meta.timestamps,
         )
         radius = 2
 
