@@ -66,7 +66,7 @@ template_line = lines[1].copy()
 CIRCLE = Shape.ellipse(CIRCLE_RADIUS, CIRCLE_RADIUS)
 
 # Single FrameUtility for all circles
-FU = FrameUtility(0, DURATION_MS + DURATION_STILL_MS * 2, io.input_timestamps)
+FU = FrameUtility(0, DURATION_MS + DURATION_STILL_MS * 2, meta.timestamps)
 VERTICAL_SPACING = HEIGHT / (len(ACC_PRESETS) + 1)
 
 for start, end, i, n in FU:

@@ -199,7 +199,7 @@ class Dango:
     ) -> "Dango":
         """Morph from source shapes to this dango over duration."""
         frame_util = FrameUtility(
-            self.current_time, self.current_time + duration, io.input_timestamps
+            self.current_time, self.current_time + duration, meta.timestamps
         )
         for start, end, frame_idx, total_frames in frame_util:
             progress = frame_idx / total_frames
@@ -253,7 +253,7 @@ class Dango:
         # Handle animated cases frame by frame
         settle_start = max(0, duration - settle_ms)
         frame_util = FrameUtility(
-            self.current_time, self.current_time + duration, io.input_timestamps
+            self.current_time, self.current_time + duration, meta.timestamps
         )
 
         # Handle static case with single render
@@ -312,7 +312,7 @@ class Dango:
     ) -> "Dango":
         """Animate movement to new position with optional fade-out."""
         frame_util = FrameUtility(
-            self.current_time, self.current_time + duration, io.input_timestamps
+            self.current_time, self.current_time + duration, meta.timestamps
         )
 
         start_x, start_y = self.x, self.y
@@ -363,7 +363,7 @@ class Dango:
 
         total_duration = charge_duration + jump_duration + fall_duration
         frame_util = FrameUtility(
-            self.current_time, self.current_time + total_duration, io.input_timestamps
+            self.current_time, self.current_time + total_duration, meta.timestamps
         )
 
         for f_start, f_end, _, _ in frame_util:
@@ -504,7 +504,7 @@ class Dango:
         # Phase 2: Spiral motion phase (custom animation for complex movement)
         start_x, start_y = self.x, self.y
         frame_util = FrameUtility(
-            self.current_time, self.current_time + move_duration, io.input_timestamps
+            self.current_time, self.current_time + move_duration, meta.timestamps
         )
 
         for f_start, f_end, frame_idx, _ in frame_util:
@@ -595,7 +595,7 @@ class Dango:
 
         start_time = self.current_time
         frame_util = FrameUtility(
-            start_time, start_time + travel_duration, io.input_timestamps
+            start_time, start_time + travel_duration, meta.timestamps
         )
         slip_trigger = travel_duration - fall_duration
 
@@ -686,7 +686,7 @@ class Dango:
         # Phase 2: Both move together in drag motion with fade-out
         start_x_angry, start_x_cute = self.x, target.x
         frame_util = FrameUtility(
-            self.current_time, self.current_time + drag_duration, io.input_timestamps
+            self.current_time, self.current_time + drag_duration, meta.timestamps
         )
 
         for f_start, f_end, _, _ in frame_util:

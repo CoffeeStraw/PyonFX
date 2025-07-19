@@ -111,7 +111,7 @@ def romaji(line, l):
             FU = FrameUtility(
                 int(line.start_time - line.leadin / 2),
                 line.start_time,
-                io.input_timestamps,
+                meta.timestamps,
             )
             for s, e, i, n in FU:
                 l.start_time = s
@@ -140,7 +140,7 @@ def romaji(line, l):
         FU = FrameUtility(
             line.start_time + syl.start_time,
             line.start_time + syl.end_time,
-            io.input_timestamps,
+            meta.timestamps,
         )
         for s, e, i, n in FU:
             l.start_time = s
