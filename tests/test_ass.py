@@ -6,7 +6,7 @@ import pytest_check as check
 from video_timestamps import FPSTimestamps, RoundingMethod
 
 from pyonfx import *
-from pyonfx.ass_core import resolve_path
+from pyonfx.ass_core import _resolve_path
 
 # Get ass path used for tests
 dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -284,7 +284,7 @@ def test_syllable_values():
 
 def test_ass_values():
     check.is_true(os.path.samefile(io.path_input, path_ass))
-    expected_output = os.path.realpath(resolve_path(sys.argv[0], "output.ass"))
+    expected_output = os.path.realpath(_resolve_path(sys.argv[0], "output.ass"))
     check.equal(os.path.realpath(io.path_output), expected_output)
     # io.meta is tested in test_meta_values()
     # io.styles is tested in test_line_values()

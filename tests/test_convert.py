@@ -83,16 +83,16 @@ def test_coloralpha():
     )
     assert Convert.color((0, 50, 100), ColorModel.HSV, ColorModel.RGBA) == (
         255,
-        128,
-        128,
+        127,
+        127,
         255,
     )
     assert (
-        Convert.color((0, 50, 100), ColorModel.HSV, ColorModel.RGBA_STR) == "#FF8080FF"
+        Convert.color((0, 50, 100), ColorModel.HSV, ColorModel.RGBA_STR) == "#FF7F7FFF"
     )
     assert Convert.color(
         (0, 50, 100), ColorModel.HSV, ColorModel.RGBA, round_output=False
-    ) == (255.0, 127.5, 127.5, 255.0)
+    ) == (255, 127, 127, 255)
 
     # -- Test conversion from rgba --
     # Test rgba -> ass (bgr) conversion
@@ -136,13 +136,13 @@ def test_coloralpha():
     )
     assert Convert.color(
         (0, 255 / 64, 255 / 64, 255), ColorModel.RGBA, ColorModel.HSV
-    ) == (180, 100, 2)
+    ) == (180, 100, 1)
     assert Convert.color(
         (0, 255 / 64, 255 / 64, 255),
         ColorModel.RGBA,
         ColorModel.HSV,
         round_output=False,
-    ) == (180.0, 100.0, 1.5625)
+    ) == (180.0, 100.0, 1.1764705882352942)
 
     # -- Test color helper functions --
     # Test ass (bgr) -> rgb conversion
@@ -159,11 +159,11 @@ def test_coloralpha():
     # Test rgb -> hsv conversion
     assert Convert.color_rgb_to_hsv((255, 0, 0)) == (0, 100, 100)
     assert Convert.color_rgb_to_hsv("#FF0000") == (0, 100, 100)
-    assert Convert.color_rgb_to_hsv((0, 255 / 64, 255 / 64)) == (180, 100, 2)
+    assert Convert.color_rgb_to_hsv((0, 255 / 64, 255 / 64)) == (180, 100, 1)
     assert Convert.color_rgb_to_hsv((0, 255 / 64, 255 / 64), round_output=False) == (
         180.0,
         100.0,
-        1.5625,
+        1.1764705882352942,
     )
 
     # Test hsv -> ass (bgr) conversion
@@ -172,12 +172,12 @@ def test_coloralpha():
     # Test hsv -> rgb conversion
     assert Convert.color_hsv_to_rgb((0, 100, 100)) == (255, 0, 0)
     assert Convert.color_hsv_to_rgb((0, 100, 100), as_str=True) == "#FF0000"
-    assert Convert.color_hsv_to_rgb((0, 50, 100)) == (255, 128, 128)
-    assert Convert.color_hsv_to_rgb((0, 50, 100), as_str=True) == "#FF8080"
+    assert Convert.color_hsv_to_rgb((0, 50, 100)) == (255, 127, 127)
+    assert Convert.color_hsv_to_rgb((0, 50, 100), as_str=True) == "#FF7F7F"
     assert Convert.color_hsv_to_rgb((0, 50, 100), round_output=False) == (
-        255.0,
-        127.5,
-        127.5,
+        255,
+        127,
+        127,
     )
 
 

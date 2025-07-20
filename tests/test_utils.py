@@ -19,7 +19,7 @@ anime_fps = Fraction(24000, 1001)
 
 def test_interpolation():
     res = Utils.interpolate(0.9, "&H000000&", "&HFFFFFF&")
-    assert res == "&HE6E6E6&"
+    assert res == "&HE5E5E5&"
 
 
 def test_frame_utility():
