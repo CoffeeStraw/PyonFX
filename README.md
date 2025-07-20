@@ -9,7 +9,7 @@
 
 # Documentation
 
-You can find the full documentation of PyonFX, as well as a quick-start guide and examples, on [Read The Docs](http://pyonfx.github.io/).
+You can find the full documentation of PyonFX, as well as a quick-start guide and examples, at [this link](https://coffeestraw.github.io/PyonFX/).
 
 ## Contributing
 
