@@ -334,6 +334,91 @@ class Utils:
                 "Invalid input(s) type, either pass two strings or two numbers."
             )
 
+    @staticmethod
+    def retime(
+        mode: Literal[
+            "syl",
+            "presyl",
+            "postsyl",
+            "line",
+            "preline",
+            "postline",
+            "start2syl",
+            "syl2end",
+            "set",
+            "abs",
+            "sylpct",
+        ],
+        line: Line,
+        word_syl_or_char: Word | Syllable | Char | None = None,
+        *,
+        offset_start=0,
+        offset_end=0,
+    ):
+        """Retime a line based on the given mode."""
+        if mode == "syl":
+            if word_syl_or_char is None:
+                raise ValueError("word_syl_or_char must be provided for mode 'syl'")
+            new_start = line.start_time + word_syl_or_char.start_time
+            new_end = line.start_time + word_syl_or_char.end_time
+        elif mode == "presyl":
+            if word_syl_or_char is None:
+                raise ValueError("word_syl_or_char must be provided for mode 'presyl'")
+            new_start = line.start_time + word_syl_or_char.start_time
+            new_end = line.start_time + word_syl_or_char.start_time
+        elif mode == "postsyl":
+            if word_syl_or_char is None:
+                raise ValueError("word_syl_or_char must be provided for mode 'postsyl'")
+            new_start = line.start_time + word_syl_or_char.end_time
+            new_end = line.start_time + word_syl_or_char.end_time
+        elif mode == "line":
+            new_start = line.start_time
+            new_end = line.end_time
+        elif mode == "preline":
+            new_start = line.start_time
+            new_end = line.start_time
+        elif mode == "postline":
+            new_start = line.end_time
+            new_end = line.end_time
+        elif mode == "start2syl":
+            if word_syl_or_char is None:
+                raise ValueError(
+                    "word_syl_or_char must be provided for mode 'start2syl'"
+                )
+            new_start = line.start_time
+            new_end = line.start_time + word_syl_or_char.start_time
+        elif mode == "syl2end":
+            if word_syl_or_char is None:
+                raise ValueError("word_syl_or_char must be provided for mode 'syl2end'")
+            new_start = line.start_time + word_syl_or_char.end_time
+            new_end = line.end_time
+        elif mode in ("set", "abs"):
+            new_start = 0
+            new_end = 0
+        elif mode == "sylpct":
+            if word_syl_or_char is None:
+                raise ValueError("word_syl_or_char must be provided for mode 'sylpct'")
+            new_start = (
+                line.start_time
+                + word_syl_or_char.start_time
+                + int(offset_start * word_syl_or_char.duration / 100)
+            )
+            new_end = (
+                line.start_time
+                + word_syl_or_char.start_time
+                + int(offset_end * word_syl_or_char.duration / 100)
+            )
+        else:
+            raise ValueError(f"Unknown retime mode: {mode}")
+
+        if mode != "sylpct":
+            new_start += offset_start
+            new_end += offset_end
+
+        line.start_time = new_start
+        line.end_time = new_end
+        line.duration = new_end - new_start
+
 
 class FrameUtility:
     """This class allows to accurately work in a frame per frame environment.
