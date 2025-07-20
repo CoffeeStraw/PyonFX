@@ -125,7 +125,9 @@ class Meta:
         if self.wrap_style is not None:
             script_info_lines.append(f"WrapStyle: {self.wrap_style}")
         if self.scaled_border_and_shadow is not None:
-            script_info_lines.append(f"ScaledBorderAndShadow: {'Yes' if self.scaled_border_and_shadow else 'No'}")
+            script_info_lines.append(
+                f"ScaledBorderAndShadow: {'Yes' if self.scaled_border_and_shadow else 'No'}"
+            )
         if self.play_res_x is not None:
             script_info_lines.append(f"PlayResX: {self.play_res_x}")
         if self.play_res_y is not None:
@@ -1342,8 +1344,8 @@ class Ass:
 
     def replace_meta(self, meta: Meta) -> None:
         """Replaces only the meta fields in the output sections.
-        
-        Updates lines corresponding to the meta object's fields in the 
+
+        Updates lines corresponding to the meta object's fields in the
         [Script Info] and [Aegisub Project Garbage] sections, leaving other lines untouched.
         """
         self.meta = meta
@@ -1358,16 +1360,30 @@ class Ass:
 
             # Locate the section header in the _output list
             try:
-                header_idx = next(i for i, line in enumerate(self._output)
-                                  if line.strip().startswith(section))
+                header_idx = next(
+                    i
+                    for i, line in enumerate(self._output)
+                    if line.strip().startswith(section)
+                )
             except StopIteration:
                 if section == "[Aegisub Project Garbage]":
                     # Insert the Aegisub Project Garbage section after [Script Info] if available
                     try:
-                        script_idx = next(i for i, line in enumerate(self._output)
-                                          if line.strip().startswith("[Script Info]"))
-                        end_script_idx = next((j for j, line in enumerate(self._output[script_idx+1:], start=script_idx+1)
-                                                if line.strip().startswith("[")), len(self._output))
+                        script_idx = next(
+                            i
+                            for i, line in enumerate(self._output)
+                            if line.strip().startswith("[Script Info]")
+                        )
+                        end_script_idx = next(
+                            (
+                                j
+                                for j, line in enumerate(
+                                    self._output[script_idx + 1 :], start=script_idx + 1
+                                )
+                                if line.strip().startswith("[")
+                            ),
+                            len(self._output),
+                        )
                         insert_idx = end_script_idx
                     except StopIteration:
                         insert_idx = len(self._output)
@@ -1376,30 +1392,45 @@ class Ass:
                     header_idx = insert_idx
                 else:
                     raise ValueError(f"{section} is not a valid section.")
-            
+
             # Determine the end of the section (first line starting with '[' after header)
-            end_idx = next((j for j, line in enumerate(self._output[header_idx+1:], start=header_idx+1)
-                            if line.strip().startswith("[")), len(self._output)) - 1
-            
+            end_idx = (
+                next(
+                    (
+                        j
+                        for j, line in enumerate(
+                            self._output[header_idx + 1 :], start=header_idx + 1
+                        )
+                        if line.strip().startswith("[")
+                    ),
+                    len(self._output),
+                )
+                - 1
+            )
+
             # Update only the meta-related lines in this section
-            updated_block = [new_meta.pop(get_key(line), line) if get_key(line) else line
-                             for line in self._output[header_idx+1:end_idx]]
-            
+            updated_block = [
+                new_meta.pop(get_key(line), line) if get_key(line) else line
+                for line in self._output[header_idx + 1 : end_idx]
+            ]
+
             # Append any new meta lines not already present
             updated_block.extend(new_meta.values())
-            self._output[:] = self._output[:header_idx+1] + updated_block + self._output[end_idx:]
+            self._output[:] = (
+                self._output[: header_idx + 1] + updated_block + self._output[end_idx:]
+            )
 
         update_section("[Script Info]", new_script_lines)
         update_section("[Aegisub Project Garbage]", new_garbage_lines)
 
     def replace_style(self, style_name: str, style: Style) -> None:
         """Replaces a given ASS style in the output.
-        
+
         The style is serialized and inserted into the [V4+ Styles] section.
         """
         if style_name not in self.styles:
             raise ValueError(f"Style {style_name} does not exist.")
-        
+
         # Update the style in the dictionary
         self.styles[style_name] = style
 
@@ -1410,7 +1441,7 @@ class Ass:
         for idx, line in enumerate(self._output):
             stripped_line = line.lstrip()
             if stripped_line.startswith("Style:"):
-                parts = stripped_line[len("Style:"):].split(",", 1)
+                parts = stripped_line[len("Style:") :].split(",", 1)
                 if parts and parts[0].strip() == style_name:
                     self._output[idx] = new_style_line
                     break

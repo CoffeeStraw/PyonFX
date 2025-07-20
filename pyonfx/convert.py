@@ -241,7 +241,10 @@ class Convert:
                         input_range_e + "( [0, 360), [0, 100], [0, 100] )."
                     )
                 h, s, v = h / 360, s / 100, v / 100
-                (r, g, b), a = map(lambda x: int(255 * x), colorsys.hsv_to_rgb(h, s, v)), 255
+                (r, g, b), a = (
+                    map(lambda x: int(255 * x), colorsys.hsv_to_rgb(h, s, v)),
+                    255,
+                )
             elif input_format == ColorModel.OKLAB:
                 if not (isinstance(c, tuple) and len(c) == 3):
                     raise TypeError("OKLAB color format requires tuple of 3 values")
@@ -791,7 +794,7 @@ class Convert:
         """Converts an OKLab color to sRGB color.
 
         For more information, see: https://bottosson.github.io/posts/oklab/
-        
+
         Params:
             oklab (tuple[float, float, float]): An OKLab tuple (L, a, b).
 
@@ -799,27 +802,33 @@ class Convert:
             A tuple of integers representing the RGB color (0-255).
         """
         L, a_val, b_val = oklab
-        
+
         # OKLab to LMS
         l_ = L + 0.3963377774 * a_val + 0.2158037573 * b_val
         m_ = L - 0.1055613458 * a_val - 0.0638541728 * b_val
         s_ = L - 0.0894841775 * a_val - 1.2914855480 * b_val
-        
+
         # LMS to linear RGB
-        L_lin = l_ ** 3
-        M_lin = m_ ** 3
-        S_lin = s_ ** 3
+        L_lin = l_**3
+        M_lin = m_**3
+        S_lin = s_**3
 
         def linear_to_srgb(u: float) -> float:
             if u <= 0.0031308:
                 return 12.92 * u
             else:
-                return 1.055 * (u ** (1/2.4)) - 0.055
+                return 1.055 * (u ** (1 / 2.4)) - 0.055
 
         # Linear RGB to sRGB
-        r = linear_to_srgb(4.0767416621 * L_lin - 3.3077115913 * M_lin + 0.2309699292 * S_lin)
-        g = linear_to_srgb(-1.2684380046 * L_lin + 2.6097574011 * M_lin - 0.3413193965 * S_lin)
-        b = linear_to_srgb(-0.0041960863 * L_lin - 0.7034186147 * M_lin + 1.7076147010 * S_lin)
+        r = linear_to_srgb(
+            4.0767416621 * L_lin - 3.3077115913 * M_lin + 0.2309699292 * S_lin
+        )
+        g = linear_to_srgb(
+            -1.2684380046 * L_lin + 2.6097574011 * M_lin - 0.3413193965 * S_lin
+        )
+        b = linear_to_srgb(
+            -0.0041960863 * L_lin - 0.7034186147 * M_lin + 1.7076147010 * S_lin
+        )
 
         # Clamp and convert to 8-bit
         r = max(0.0, min(1.0, r))
@@ -858,9 +867,9 @@ class Convert:
         S_val = 0.0883024619 * r_lin + 0.2817188376 * g_lin + 0.6299787005 * b_lin
 
         # Non-linear adaptation (cube root)
-        L_cbrt = L_val ** (1/3)
-        M_cbrt = M_val ** (1/3)
-        S_cbrt = S_val ** (1/3)
+        L_cbrt = L_val ** (1 / 3)
+        M_cbrt = M_val ** (1 / 3)
+        S_cbrt = S_val ** (1 / 3)
 
         # LMS to OKLab
         L_ok = 0.2104542553 * L_cbrt + 0.7936177850 * M_cbrt - 0.0040720468 * S_cbrt
