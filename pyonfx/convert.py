@@ -44,6 +44,7 @@ class ColorModel(Enum):
     RGBA = "(r, g, b, a)"
     RGBA_STR = "#RRGGBBAA"
     HSV = "(h, s, v)"
+    OKLAB = "(L, a, b)"
 
 
 class Convert:
@@ -153,8 +154,10 @@ class Convert:
     def color(
         c: (
             str
-            | tuple[int | float, int | float, int | float]
-            | tuple[int | float, int | float, int | float, int | float]
+            | tuple[int, int, int]
+            | tuple[int, int, int, int]
+            | tuple[float, float, float]
+            | tuple[float, float, float, float]
         ),
         input_format: ColorModel,
         output_format: ColorModel,
@@ -164,7 +167,6 @@ class Convert:
         | tuple[int, int, int]
         | tuple[int, int, int, int]
         | tuple[float, float, float]
-        | tuple[float, float, float, float]
     ):
         """Converts a provided color from a color model to another.
 
@@ -208,7 +210,7 @@ class Convert:
                     raise TypeError("RGB color format requires tuple of 3 values")
                 if not all(0 <= n <= 255 for n in c):
                     raise ValueError(input_range_e + "[0, 255].")
-                (r, g, b), a = c, 255
+                (r, g, b), a = map(int, c), 255
             elif input_format == ColorModel.RGB_STR:
                 if not isinstance(c, str):
                     raise TypeError("RGB_STR color format requires string input")
@@ -221,7 +223,7 @@ class Convert:
                     raise TypeError("RGBA color format requires tuple of 4 values")
                 if not all(0 <= n <= 255 for n in c):
                     raise ValueError(input_range_e + "[0, 255].")
-                r, g, b, a = c
+                r, g, b, a = map(int, c)
             elif input_format == ColorModel.RGBA_STR:
                 if not isinstance(c, str):
                     raise TypeError("RGBA_STR color format requires string input")
@@ -238,7 +240,12 @@ class Convert:
                         input_range_e + "( [0, 360), [0, 100], [0, 100] )."
                     )
                 h, s, v = h / 360, s / 100, v / 100
-                (r, g, b), a = map(lambda x: 255 * x, colorsys.hsv_to_rgb(h, s, v)), 255
+                (r, g, b), a = map(lambda x: int(255 * x), colorsys.hsv_to_rgb(h, s, v)), 255
+            elif input_format == ColorModel.OKLAB:
+                if not (isinstance(c, tuple) and len(c) == 3):
+                    raise TypeError("OKLAB color format requires tuple of 3 values")
+                r, g, b = Convert.oklab_to_rgb(c)
+                a = 255
         except (AttributeError, ValueError, TypeError) as e:
             # AttributeError -> re.fullmatch failed
             # ValueError     -> too many values to unpack
@@ -254,13 +261,11 @@ class Convert:
             elif output_format == ColorModel.ASS_STYLE:
                 return f"&H{round(a):02X}{round(b):02X}{round(g):02X}{round(r):02X}"
             elif output_format == ColorModel.RGB:
-                method = round if round_output else float
-                return cast(tuple[int, int, int], tuple(map(method, (r, g, b))))
+                return (r, g, b)
             elif output_format == ColorModel.RGB_STR:
                 return f"#{round(r):02X}{round(g):02X}{round(b):02X}"
             elif output_format == ColorModel.RGBA:
-                method = round if round_output else float
-                return cast(tuple[int, int, int, int], tuple(map(method, (r, g, b, a))))
+                return (r, g, b, a)
             elif output_format == ColorModel.RGBA_STR:
                 return f"#{round(r):02X}{round(g):02X}{round(b):02X}{round(a):02X}"
             elif output_format == ColorModel.HSV:
@@ -270,6 +275,15 @@ class Convert:
                     tuple[float, float, float],
                     (method(h * 360) % 360, method(s * 100), method(v * 100)),
                 )
+            elif output_format == ColorModel.OKLAB:
+                method = round if round_output else float
+                L, a, b = Convert.rgb_to_oklab((r, g, b))
+                return cast(
+                    tuple[float, float, float],
+                    (method(L), method(a), method(b)),
+                )
+            else:
+                raise ValueError(f"Unsupported output_format: {output_format}")
         except NameError as e:
             raise ValueError(f"Unsupported input_format ('{input_format}').") from e
 
@@ -770,3 +784,86 @@ class Convert:
             pixels.append(Pixel(x=x, y=y, color=pixel_color, alpha=pixel_alpha))
 
         return PixelCollection(pixels)
+
+    @staticmethod
+    def oklab_to_rgb(oklab: tuple[float, float, float]) -> tuple[int, int, int]:
+        """Converts an OKLab color to sRGB color.
+
+        For more information, see: https://bottosson.github.io/posts/oklab/
+        
+        Params:
+            oklab (tuple[float, float, float]): An OKLab tuple (L, a, b).
+
+        Returns:
+            A tuple of integers representing the RGB color (0-255).
+        """
+        L, a_val, b_val = oklab
+        
+        # OKLab to LMS
+        l_ = L + 0.3963377774 * a_val + 0.2158037573 * b_val
+        m_ = L - 0.1055613458 * a_val - 0.0638541728 * b_val
+        s_ = L - 0.0894841775 * a_val - 1.2914855480 * b_val
+        
+        # LMS to linear RGB
+        L_lin = l_ ** 3
+        M_lin = m_ ** 3
+        S_lin = s_ ** 3
+
+        def linear_to_srgb(u: float) -> float:
+            if u <= 0.0031308:
+                return 12.92 * u
+            else:
+                return 1.055 * (u ** (1/2.4)) - 0.055
+
+        # Linear RGB to sRGB
+        r = linear_to_srgb(4.0767416621 * L_lin - 3.3077115913 * M_lin + 0.2309699292 * S_lin)
+        g = linear_to_srgb(-1.2684380046 * L_lin + 2.6097574011 * M_lin - 0.3413193965 * S_lin)
+        b = linear_to_srgb(-0.0041960863 * L_lin - 0.7034186147 * M_lin + 1.7076147010 * S_lin)
+
+        # Clamp and convert to 8-bit
+        r = max(0.0, min(1.0, r))
+        g = max(0.0, min(1.0, g))
+        b = max(0.0, min(1.0, b))
+
+        return (round(r * 255), round(g * 255), round(b * 255))
+
+    @staticmethod
+    def rgb_to_oklab(rgb: tuple[int, int, int]) -> tuple[float, float, float]:
+        """Converts an sRGB color to OKLab color.
+
+        For more information, see: https://bottosson.github.io/posts/oklab/
+
+        Params:
+            rgb (tuple[int, int, int]): An RGB tuple (0-255).
+
+        Returns:
+            A tuple of floats representing the OKLab color (0-1).
+        """
+        r, g, b = [x / 255 for x in rgb]
+
+        def srgb_to_linear(u: float) -> float:
+            if u <= 0.04045:
+                return u / 12.92
+            else:
+                return ((u + 0.055) / 1.055) ** 2.4
+
+        r_lin = srgb_to_linear(r)
+        g_lin = srgb_to_linear(g)
+        b_lin = srgb_to_linear(b)
+
+        # Linear sRGB to LMS
+        L_val = 0.4122214708 * r_lin + 0.5363325363 * g_lin + 0.0514459929 * b_lin
+        M_val = 0.2119034982 * r_lin + 0.6806995451 * g_lin + 0.1073969566 * b_lin
+        S_val = 0.0883024619 * r_lin + 0.2817188376 * g_lin + 0.6299787005 * b_lin
+
+        # Non-linear adaptation (cube root)
+        L_cbrt = L_val ** (1/3)
+        M_cbrt = M_val ** (1/3)
+        S_cbrt = S_val ** (1/3)
+
+        # LMS to OKLab
+        L_ok = 0.2104542553 * L_cbrt + 0.7936177850 * M_cbrt - 0.0040720468 * S_cbrt
+        a_ok = 1.9779984951 * L_cbrt - 2.4285922050 * M_cbrt + 0.4505937099 * S_cbrt
+        b_ok = 0.0259040371 * L_cbrt + 0.7827717662 * M_cbrt - 0.8086757660 * S_cbrt
+
+        return (L_ok, a_ok, b_ok)
