@@ -1,5 +1,6 @@
 # PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
 # Copyright (C) 2019-2025 Antonio Strippoli (CoffeeStraw/YellowFlash)
+#                         and contributors (https://github.com/CoffeeStraw/PyonFX/graphs/contributors)
 #
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU Lesser General Public License as published by
