@@ -36,7 +36,7 @@ classifiers=[
 keywords = ["typesetting", "ass", "subtitle", "aegisub", "karaoke", "kfx", "advanced-substation-alpha", "karaoke-effect"]
 
 [project.urls]
-Documentation = "https://pyonfx.rtfd.io/"
+Documentation = "https://pyonfx.github.io/"
 Source = "https://github.com/CoffeeStraw/PyonFX/"
 Tracker = "https://github.com/CoffeeStraw/PyonFX/issues/"
 
@@ -46,10 +46,9 @@ dev = [
   "black",
   "pytest",
   "pytest-check",
-  "sphinx>=5.0.0",
-  "sphinx_panels",
-  "sphinx_rtd_theme",
-  "sphinxcontrib-napoleon",
+  "mkdocs",
+  "mkdocs-material",
+  "mkdocstrings[python]",
 ]
 
 [build-system]

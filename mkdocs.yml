@@ -1,0 +1,60 @@
+site_name: PyonFX
+
+site_description: >
+  PyonFX documentation.
+
+site_author: CoffeeStraw
+copyright: Copyright &copy; 2019-2025 Antonio Strippoli (CoffeeStraw) and <a href="https://github.com/CoffeeStraw/PyonFX/graphs/contributors"><u>contributors</u></a>
+
+repo_url: https://github.com/CoffeeStraw/PyonFX
+repo_name: CoffeeStraw/PyonFX
+
+theme:
+  name: material
+  language: en
+  favicon: static/favicon.ico
+  logo: static/logo.png
+  features:
+    - navigation.footer
+    - content.footnote.tooltips
+  palette:
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: white
+      accent: orange
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: black
+      accent: orange
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+
+plugins:
+  - search
+  - mkdocstrings:
+      default_handler: python
+  - tags
+
+markdown_extensions:
+  - footnotes
+
+nav:
+  - Home: index.md
+  - Quick Start: quick start.md
+  - API:
+      - ass_core: api/ass_core.md
+      - convert: api/convert.md
+      - font: api/font.md
+      - pixel: api/pixel.md
+      - shape: api/shape.md
+      - utils: api/utils.md
