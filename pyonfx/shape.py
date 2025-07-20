@@ -540,7 +540,7 @@ class Shape:
             min_point_spacing: Per-axis spacing threshold passed to :py:meth:`from_multipolygon`.
 
         Returns:
-            A **new** shape representing the result of the boolean operation.
+            A new Shape instance representing the result of the boolean operation.
         """
         if not isinstance(other, Shape):
             raise TypeError("other must be a Shape instance")
@@ -571,7 +571,7 @@ class Shape:
             # No overlapping geometry – return an empty shape.
             return Shape()
 
-        # Convert back to Shape and return.
+        # Convert back to Shape.
         return Shape.from_multipolygon(result_geom, min_point_spacing)
 
     def map(
@@ -586,10 +586,10 @@ class Shape:
         **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
 
         Parameters:
-            fun (function): A function with two (or optionally three) parameters. It will define how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point. The third optional it represents the type of each point (move, line, bezier...).
+            fun (function): A function with two (or optionally three) parameters. It defines how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point; the optional third parameter represents the type of point (move, line, bezier, etc.).
 
         Returns:
-            A pointer to the current object.
+            A new Shape instance with transformed points.
 
         Examples:
             ..  code-block:: python3
@@ -629,9 +629,7 @@ class Shape:
                 ShapeElement(element.command, transformed_coords)
             )
 
-        # Update the shape with transformed elements
-        self.elements = transformed_elements
-        return self
+        return Shape(elements=transformed_elements)
 
     def move(self, x: float, y: float) -> "Shape":
         """Moves shape coordinates in given direction.
@@ -643,7 +641,7 @@ class Shape:
             y (int or float): Displacement along the y-axis.
 
         Returns:
-            A pointer to the current object.
+            A new Shape instance with the transformed points.
 
         Examples:
             ..  code-block:: python3
@@ -669,7 +667,7 @@ class Shape:
             anchor (int, optional): Pivot inside the shape - uses the same keypad convention.  Defaults to *an*.
 
         Returns:
-            A pointer to the current object.
+            A new Shape instance with the transformed points.
 
         Examples:
             ..  code-block:: python3
@@ -742,7 +740,7 @@ class Shape:
             origin (tuple[float, float], optional): The pivot point around which the scaling is applied.
 
         Returns:
-            A pointer to the current object.
+            A new Shape instance with the transformed points.
 
         Examples:
             ..  code-block:: python3
@@ -781,7 +779,7 @@ class Shape:
             origin: Pivot around which the rotation is applied.
 
         Returns:
-            A pointer to the current object.
+            A new Shape instance with the transformed points.
         """
         if frx == 0 and fry == 0 and frz == 0:
             return self
@@ -840,7 +838,7 @@ class Shape:
             origin: Pivot around which the shear is applied.
 
         Returns:
-            A pointer to the current object.
+            A new Shape instance with the transformed points.
         """
         if fax == 0.0 and fay == 0.0:
             return self
@@ -870,10 +868,7 @@ class Shape:
             tolerance (float): Angle in degree to define a curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
 
         Returns:
-            A pointer to the current object.
-
-        Returns:
-            The shape as a string, with bezier curves converted to lines.
+            A new Shape instance with the flattened points.
         """
         if tolerance < 0:
             raise ValueError("Tolerance must be a positive number")
@@ -987,9 +982,8 @@ class Shape:
                 if element.coordinates:
                     current_point = element.coordinates[-1]
 
-        # Update shape with flattened elements
-        self.elements = flattened_elements
-        return self
+        # Return shape with flattened elements
+        return Shape(elements=flattened_elements)
 
     def split(self, max_len: float = 16, tolerance: float = 1.0) -> "Shape":
         """Splits shape bezier curves into lines and splits lines into shorter segments with maximum given length.
@@ -1001,7 +995,7 @@ class Shape:
             tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy).
 
         Returns:
-            A pointer to the current object.
+            A new Shape instance with the split points.
 
         Examples:
             ..  code-block:: python3
@@ -1102,8 +1096,7 @@ class Shape:
         split_elements.extend(_close_contour_if_needed(current_point, first_move_point))
 
         # Update shape with split elements
-        self.elements = split_elements
-        return self
+        return Shape(elements=split_elements)
 
     def buffer(
         self,
@@ -1124,6 +1117,9 @@ class Shape:
             dist_y (float | None, optional): Vertical buffer distance.  If *None* the same value as *dist_xy* is used.  The sign **must** match that of *dist_xy*.
             kind ({"fill", "border"}, optional): "fill" ⇒ return the filled buffered geometry, "border" ⇒ return only the ring between the original shape and the buffered geometry (external or internal border).
             join ({"round", "bevel", "mitre"}, optional): Corner-join style.
+
+        Returns:
+            A new Shape instance with the buffered points.
         """
         if join not in ("round", "bevel", "mitre"):
             raise ValueError("join must be one of 'round', 'bevel', or 'mitre'")
@@ -1541,7 +1537,7 @@ class Shape:
             ensure_shell_pairs (bool, optional): If ``True`` *shell* rings that would otherwise remain unmatched will be force-paired with the shell that yields the minimum cost. This guarantees that every visible contour morphs into something, at the price of allowing the same shell to be reused multiple times.
 
         Returns:
-            A **new** `Shape` instance representing the morph at *t*.
+            A new Shape instance representing the morph at `t`.
 
         Note:
             Shapes are first decomposed into compounds (outer shells with holes).
