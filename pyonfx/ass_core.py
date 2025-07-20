@@ -89,14 +89,14 @@ class Meta:
         elif match := re.match(r"PlayResY:\s*(\d+)$", line):
             self.play_res_y = int(match.group(1))
         elif match := re.match(r"Audio File:\s*(.*)$", line):
-            self.audio = resolve_path(ass_path, match.group(1).strip())
+            self.audio = _resolve_path(ass_path, match.group(1).strip())
             line = f"Audio File: {self.audio}"
         elif match := re.match(r"Video File:\s*(.*)$", line):
             # Parse video file path
             match_group = str(match.group(1)).strip()
             is_dummy = match_group.startswith("?dummy")
             self.video = (
-                match_group if is_dummy else resolve_path(ass_path, match_group)
+                match_group if is_dummy else _resolve_path(ass_path, match_group)
             )
 
             line = f"Video File: {self.video}"
@@ -115,6 +115,35 @@ class Meta:
                     )
 
         return line + "\n"
+
+    def serialize(self) -> tuple[list[str], list[str]]:
+        """Serializes the meta object into 2 lists of ASS lines:
+        - The first list contains the lines that should be inserted into the [Script Info] section.
+        - The second list contains the lines that should be inserted into the [Aegisub Project Garbage] section.
+        """
+        script_info_lines = []
+        if self.wrap_style is not None:
+            script_info_lines.append(f"WrapStyle: {self.wrap_style}")
+        if self.scaled_border_and_shadow is not None:
+            script_info_lines.append(f"ScaledBorderAndShadow: {'Yes' if self.scaled_border_and_shadow else 'No'}")
+        if self.play_res_x is not None:
+            script_info_lines.append(f"PlayResX: {self.play_res_x}")
+        if self.play_res_y is not None:
+            script_info_lines.append(f"PlayResY: {self.play_res_y}")
+
+        # Append a newline to each Script Info line
+        script_info_lines = [f"{line}\n" for line in script_info_lines]
+
+        garbage_lines = []
+        if self.audio is not None:
+            garbage_lines.append(f"Audio File: {self.audio}")
+        if self.video is not None:
+            garbage_lines.append(f"Video File: {self.video}")
+
+        # Append a newline to each Aegisub Project Garbage line
+        garbage_lines = [f"{line}\n" for line in garbage_lines]
+
+        return script_info_lines, garbage_lines
 
 
 @dataclass(slots=True)
@@ -319,7 +348,7 @@ class Char:
     """Bottom position of the character (pixels)."""
 
     def __repr__(self):
-        return pretty_print(self)
+        return _pretty_print(self)
 
 
 @dataclass(slots=True)
@@ -370,7 +399,7 @@ class Syllable:
     """Bottom position of the syllable (pixels)."""
 
     def __repr__(self):
-        return pretty_print(self)
+        return _pretty_print(self)
 
 
 @dataclass(slots=True)
@@ -415,7 +444,7 @@ class Word:
     """Bottom position of the word (pixels)."""
 
     def __repr__(self):
-        return pretty_print(self)
+        return _pretty_print(self)
 
 
 @dataclass(slots=True)
@@ -492,7 +521,7 @@ class Line:
     """List of Char objects in this line."""
 
     def __repr__(self):
-        return pretty_print(self)
+        return _pretty_print(self)
 
     def copy(self) -> "Line":
         """
@@ -675,12 +704,12 @@ class Ass:
         self.lines: list[Line] = []
 
         # Getting absolute sub file path
-        self.path_input = resolve_path(sys.argv[0], path_input)
+        self.path_input = _resolve_path(sys.argv[0], path_input)
         if not os.path.isfile(self.path_input):
             raise FileNotFoundError(
                 "Invalid path for the Subtitle file: %s" % self.path_input
             )
-        self.path_output = resolve_path(sys.argv[0], path_output)
+        self.path_output = _resolve_path(sys.argv[0], path_output)
 
         # Parse the ASS file
         current_section = ""
@@ -1311,13 +1340,80 @@ class Ass:
         # Add leadin/leadout
         _assign_lead_times(lines_by_styles)
 
-    def get_data(self) -> tuple[Meta, dict[str, Style], list[Line]]:
-        """Utility function to retrieve easily meta, styles and lines.
-
-        Returns:
-            :attr:`meta`, :attr:`styles` and :attr:`lines`
+    def replace_meta(self, meta: Meta) -> None:
+        """Replaces only the meta fields in the output sections.
+        
+        Updates lines corresponding to the meta object's fields in the 
+        [Script Info] and [Aegisub Project Garbage] sections, leaving other lines untouched.
         """
-        return self.meta, self.styles, self.lines
+        self.meta = meta
+        new_script_lines, new_garbage_lines = meta.serialize()
+
+        def get_key(line: str) -> str:
+            return line.split(":", 1)[0].strip() if ":" in line else ""
+
+        def update_section(section: str, new_lines: list[str]) -> None:
+            # Build a dictionary of new meta lines keyed by their meta key
+            new_meta = {get_key(line): line for line in new_lines if get_key(line)}
+
+            # Locate the section header in the _output list
+            try:
+                header_idx = next(i for i, line in enumerate(self._output)
+                                  if line.strip().startswith(section))
+            except StopIteration:
+                if section == "[Aegisub Project Garbage]":
+                    # Insert the Aegisub Project Garbage section after [Script Info] if available
+                    try:
+                        script_idx = next(i for i, line in enumerate(self._output)
+                                          if line.strip().startswith("[Script Info]"))
+                        end_script_idx = next((j for j, line in enumerate(self._output[script_idx+1:], start=script_idx+1)
+                                                if line.strip().startswith("[")), len(self._output))
+                        insert_idx = end_script_idx
+                    except StopIteration:
+                        insert_idx = len(self._output)
+                    self._output.insert(insert_idx, f"{section}\n")
+                    self._output.insert(insert_idx + 1, "\n")
+                    header_idx = insert_idx
+                else:
+                    raise ValueError(f"{section} is not a valid section.")
+            
+            # Determine the end of the section (first line starting with '[' after header)
+            end_idx = next((j for j, line in enumerate(self._output[header_idx+1:], start=header_idx+1)
+                            if line.strip().startswith("[")), len(self._output)) - 1
+            
+            # Update only the meta-related lines in this section
+            updated_block = [new_meta.pop(get_key(line), line) if get_key(line) else line
+                             for line in self._output[header_idx+1:end_idx]]
+            
+            # Append any new meta lines not already present
+            updated_block.extend(new_meta.values())
+            self._output[:] = self._output[:header_idx+1] + updated_block + self._output[end_idx:]
+
+        update_section("[Script Info]", new_script_lines)
+        update_section("[Aegisub Project Garbage]", new_garbage_lines)
+
+    def replace_style(self, style_name: str, style: Style) -> None:
+        """Replaces a given ASS style in the output.
+        
+        The style is serialized and inserted into the [V4+ Styles] section.
+        """
+        if style_name not in self.styles:
+            raise ValueError(f"Style {style_name} does not exist.")
+        
+        # Update the style in the dictionary
+        self.styles[style_name] = style
+
+        # Serialize the new style
+        new_style_line = style.serialize(style_name)
+
+        # Update the corresponding style line in the _output list
+        for idx, line in enumerate(self._output):
+            stripped_line = line.lstrip()
+            if stripped_line.startswith("Style:"):
+                parts = stripped_line[len("Style:"):].split(",", 1)
+                if parts and parts[0].strip() == style_name:
+                    self._output[idx] = new_style_line
+                    break
 
     def add_style(self, style_name: str, style: Style) -> None:
         """Adds a given ASS style into the output if it doesn't already exist.
@@ -1343,6 +1439,14 @@ class Ass:
         style_line = style.serialize(style_name)
         self._output.insert(insertion_index, style_line)
         self.styles[style_name] = style
+
+    def get_data(self) -> tuple[Meta, dict[str, Style], list[Line]]:
+        """Utility function to retrieve easily meta, styles and lines.
+
+        Returns:
+            :attr:`meta`, :attr:`styles` and :attr:`lines`
+        """
+        return self.meta, self.styles, self.lines
 
     def write_line(self, line: Line) -> None:
         """Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
@@ -1583,7 +1687,7 @@ class Ass:
         return wrapper
 
 
-def resolve_path(base_path: str, input_path: str) -> str:
+def _resolve_path(base_path: str, input_path: str) -> str:
     """Resolve an input path relative to a base path or return absolute path if input is absolute."""
     _input_path = Path(input_path)
     if _input_path.is_absolute():
@@ -1596,7 +1700,7 @@ def resolve_path(base_path: str, input_path: str) -> str:
     return str(resolved_path.resolve(strict=False))
 
 
-def pretty_print(obj):
+def _pretty_print(obj):
     """Create a pretty string representation for dataclass objects.
 
     Special handling for Style objects and list-based fields.
@@ -1624,7 +1728,7 @@ def pretty_print(obj):
                 if hasattr(first_item, "i") and hasattr(first_item, "text"):
                     first_item_repr = f"{first_item.__class__.__name__}(i={first_item.i!r}, text={first_item.text!r}, ...)"
                 else:
-                    first_item_repr = pretty_print(first_item)
+                    first_item_repr = _pretty_print(first_item)
 
                 # Add count of omitted elements
                 if len(value) > 1:
