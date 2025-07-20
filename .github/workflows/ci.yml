@@ -166,10 +166,11 @@ jobs:
       - run: |
           sudo apt-get update
           sudo apt-get install libgirepository-2.0-dev gobject-introspection libcairo2-dev python3-dev build-essential gir1.2-gtk-3.0 python3-gi python3-gi-cairo
-      - run: echo "cache_id=$(date --utc '+%V')" >> $GITHUB_ENV 
+      - id: set_cache_id
+        run: echo "::set-output name=cache_id::$(date --utc '+%V')"
       - uses: actions/cache@v4
         with:
-          key: mkdocs-material-${{ env.cache_id }}
+          key: mkdocs-material-${{ steps.set_cache_id.outputs.cache_id }}
           path: ~/.cache 
           restore-keys: |
             mkdocs-material-
