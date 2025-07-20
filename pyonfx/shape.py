@@ -1186,8 +1186,7 @@ class Shape:
             raise ValueError(f"Invalid stroke geometry type: {type(result_geom)}")
 
         # Convert back to Shape
-        new_shape = Shape.from_multipolygon(mp)
-        return new_shape
+        return Shape.from_multipolygon(mp)
 
     @functools.lru_cache(maxsize=1024)
     @staticmethod
