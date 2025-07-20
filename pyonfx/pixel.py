@@ -99,7 +99,7 @@ class PixelCollection:
     def map(self, transform: Callable[[Pixel], Pixel]) -> "PixelCollection":
         return PixelCollection(transform(p) for p in self._pixels)
 
-    def translate(self, dx: int, dy: int) -> "PixelCollection":
+    def move(self, dx: int, dy: int) -> "PixelCollection":
         return self.map(lambda p: p.with_position(p.x + dx, p.y + dy))
 
     # Texture operations
