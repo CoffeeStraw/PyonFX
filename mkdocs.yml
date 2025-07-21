@@ -15,6 +15,7 @@ theme:
   favicon: static/favicon.ico
   logo: static/logo.png
   features:
+    - navigation.sections
     - navigation.footer
     - content.footnote.tooltips
   palette:
@@ -42,19 +43,33 @@ theme:
 plugins:
   - search
   - mkdocstrings:
-      default_handler: python
+      handlers:
+        python:
+          options:
+            group_by_category: true
+            members_order: source
   - tags
 
 markdown_extensions:
   - footnotes
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
 
 nav:
   - Home: index.md
-  - Quick Start: quick start.md
-  - API:
-      - ass_core: api/ass_core.md
-      - convert: api/convert.md
-      - font: api/font.md
-      - pixel: api/pixel.md
-      - shape: api/shape.md
-      - utils: api/utils.md
+  - Tutorials:
+      - "Install & Set-up": tutorials/installing.md
+      - "Structured objects": tutorials/structured_objects.md
+  - Guides:
+      - "TBD": guides/tbd.md
+  - Reference:
+      - "Module index": reference/index.md
+      - "ass_core": reference/ass_core.md
+      - "convert": reference/convert.md
+      - "font": reference/font.md
+      - "pixel": reference/pixel.md
+      - "shape": reference/shape.md
+      - "utils": reference/utils.md
+  - Explanation:
+      - "TBD": explanation/tbd.md
