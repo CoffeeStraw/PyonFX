@@ -49,9 +49,7 @@ class Utils:
         # Convert to list to support multiple passes and len()
         items = list(iterable)
         if not items:
-            raise ValueError(
-                "Iterable is empty; cannot determine type for progress bar."
-            )
+            return iter([])
 
         first = items[0]
         obj_name = type(first).__name__.lower()
