@@ -1839,8 +1839,8 @@ class Shape:
             result[(src_id, tgt_id)] = Shape.from_multipolygon(mp, min_point_spacing)
         return result
 
-    @staticmethod
-    def polygon(edges: int, side_length: float) -> "Shape":
+    @classmethod
+    def polygon(cls, edges: int, side_length: float) -> "Shape":
         """Returns a shape representing a regular *n*-sided polygon.
 
         Parameters:
@@ -1858,7 +1858,7 @@ class Shape:
         # Calculate circumradius from side length
         radius = side_length / (2 * math.sin(math.pi / edges))
 
-        f = Shape.format_value
+        f = cls.format_value
         pts = []
         # Rotate to get a more natural orientation (flat bottom when possible)
         angle_offset = math.pi / 2 + math.pi / edges
@@ -1871,10 +1871,10 @@ class Shape:
 
         cmd_parts = [f"m {pts[0][0]} {pts[0][1]} l"]
         cmd_parts.extend(f"{x} {y}" for x, y in pts[1:])
-        return Shape(" ".join(cmd_parts)).align()
+        return cls(" ".join(cmd_parts)).align()
 
-    @staticmethod
-    def ellipse(w: float, h: float) -> "Shape":
+    @classmethod
+    def ellipse(cls, w: float, h: float) -> "Shape":
         """Returns a shape object of an ellipse with given width and height, centered around (0,0).
 
         **Tips:** *You could use that to create rounded stribes or arcs in combination with blurring for light effects.*
@@ -1891,9 +1891,9 @@ class Shape:
         except TypeError:
             raise TypeError("Number(s) expected")
 
-        f = Shape.format_value
+        f = cls.format_value
 
-        return Shape(
+        return cls(
             "m 0 %s "
             "b 0 %s 0 0 %s 0 "
             "%s 0 %s 0 %s %s "
@@ -1920,8 +1920,8 @@ class Shape:
             )
         )
 
-    @staticmethod
-    def ring(out_r: float, in_r: float) -> "Shape":
+    @classmethod
+    def ring(cls, out_r: float, in_r: float) -> "Shape":
         """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
 
         **Tips:** *A ring with increasing inner radius, starting from 0, can look like an outfading point.*
@@ -1946,8 +1946,8 @@ class Shape:
                 "Valid number expected. Inner radius must be less than outer radius"
             )
 
-        f = Shape.format_value
-        return Shape(
+        f = cls.format_value
+        return cls(
             "m 0 %s "
             "b 0 %s 0 0 %s 0 "
             "%s 0 %s 0 %s %s "
@@ -2005,8 +2005,8 @@ class Shape:
             )
         )
 
-    @staticmethod
-    def heart(size: float, offset: float = 0) -> "Shape":
+    @classmethod
+    def heart(cls, size: float, offset: float = 0) -> "Shape":
         """Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
 
         **Tips:** *An offset=size*(2/3) results in a splitted heart.*
@@ -2019,13 +2019,13 @@ class Shape:
             A shape object representing an heart.
         """
         try:
-            mult = size / 30
+            mult = 100 * size / 30
         except TypeError:
             raise TypeError("Size parameter must be a number")
         # Build shape from template
-        shape = Shape(
+        shape = cls(
             "m 15 30 b 27 22 30 18 30 14 30 8 22 0 15 10 8 0 0 8 0 14 0 18 3 22 15 30"
-        ).map(lambda x, y: (x * mult, y * mult))
+        ).scale(mult)
 
         # Shift mid point of heart vertically
         count = 0
@@ -2044,15 +2044,15 @@ class Shape:
         # Return result
         return shape.map(shift_mid_point)
 
-    @staticmethod
-    def _glance_or_star(
+    @classmethod
+    def _glance_or_star(cls,
         edges: int, inner_size: float, outer_size: float, g_or_s: str
     ) -> "Shape":
         """
         General function to create a shape object representing star or glance.
         """
         # Alias for utility functions
-        f = Shape.format_value
+        f = cls.format_value
 
         def rotate_on_axis_z(point, theta):
             # Internal function to rotate a point around z axis by a given angle.
@@ -2087,13 +2087,13 @@ class Shape:
                     )
                 )
 
-        shape = Shape(" ".join(shape))
+        shape = cls(" ".join(shape))
 
         # Return result centered
         return shape.align()
 
-    @staticmethod
-    def star(edges: int, inner_size: float, outer_size: float) -> "Shape":
+    @classmethod
+    def star(cls, edges: int, inner_size: float, outer_size: float) -> "Shape":
         """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
@@ -2106,10 +2106,10 @@ class Shape:
         Returns:
             A shape object as a string representing a star.
         """
-        return Shape._glance_or_star(edges, inner_size, outer_size, "l")
+        return cls._glance_or_star(edges, inner_size, outer_size, "l")
 
-    @staticmethod
-    def glance(edges: int, inner_size: float, outer_size: float) -> "Shape":
+    @classmethod
+    def glance(cls, edges: int, inner_size: float, outer_size: float) -> "Shape":
         """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
 
         **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
@@ -2122,7 +2122,7 @@ class Shape:
         Returns:
             A shape object as a string representing a glance.
         """
-        return Shape._glance_or_star(edges, inner_size, outer_size, "b")
+        return cls._glance_or_star(edges, inner_size, outer_size, "b")
 
     PIXEL: str = "m 0 1 l 0 0 1 0 1 1"
     """A string representing a pixel."""
