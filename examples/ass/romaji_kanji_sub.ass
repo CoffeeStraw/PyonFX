@@ -1,0 +1,28 @@
+﻿[Script Info]
+ScriptType: v4.00+
+WrapStyle: 0
+PlayResX: 1280
+PlayResY: 720
+ScaledBorderAndShadow: yes
+
+[Aegisub Project Garbage]
+Video File: ?dummy:23.976000:2878:1280:720:59:59:59:
+
+[V4+ Styles]
+Format: Name, Fontname, Fontsize, PrimaryColour, SecondaryColour, OutlineColour, BackColour, Bold, Italic, Underline, StrikeOut, ScaleX, ScaleY, Spacing, Angle, BorderStyle, Outline, Shadow, Alignment, MarginL, MarginR, MarginV, Encoding
+Style: Default,Arial,48,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,0,0,0,0,100,100,0,0,1,2,0,8,25,25,25,1
+Style: Romaji,Migu 1P,48,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,8,25,25,25,1
+Style: Kanji,Migu 1P,38,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,1.8,0,4,25,25,25,1
+Style: Translation,Migu 1P,46,&H00FFFFFF,&H000000FF,&H00000000,&H00000000,-1,0,0,0,100,100,0,0,1,2,0,2,25,25,25,1
+
+[Events]
+Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
+Comment: 0,0:00:00.00,0:00:00.00,Default,,0,0,0,,Remember to download the free font at: https://www.freejapanesefont.com/migu-font-%E3%83%9F%E3%82%B0%E3%83%95%E3%82%A9%E3%83%B3%E3%83%88/
+Dialogue: 0,0:00:01.00,0:00:10.99,Romaji,,0,0,0,,{\k56}su{\k13}re{\k22}chi{\k36}ga{\k48}u{\k25} {\k34}ko{\k33}to{\k50}ba {\k15}no {\k17}u{\k34}ra {\k46}ni{\k33} {\k28}to{\k36}za{\k65}sa{\k33}{\k30}re{\k51}ta{\k16} {\k33}ko{\k33}ko{\k78}ro {\k15}no {\k24}ka{\k95}gi
+Dialogue: 0,0:00:11.44,0:00:21.26,Romaji,,0,0,0,,{\k51}ki{\k13}mi {\k18}to {\k32}i{\k49}u{\k28} {\k37}fu{\k32}ra{\k46}gu {\k19}ka{\k13}i{\k35}jo {\k51}ga{\k30} {\k33}e{\k34}ga{\k32}o{\k30} {\k35}su{\k38}ku{\k59}e{\k64}ru {\k67}no{\k29} {\k19}na{\k88}ra
+Dialogue: 0,0:00:01.00,0:00:05.32,Kanji,,0,0,0,,{\k56}す{\k13}れ{\k58}違{\k48}う{\k25}{\k67}言{\k50}葉{\k15}の{\k51}裏{\k49}に
+Dialogue: 0,0:00:05.62,0:00:10.99,Kanji,,0,0,0,,{\k28}閉{\k36}ざ{\k65}さ{\k33}{\k30}れ{\k51}た{\k16}{\k144}心{\k15}の{\k24}カ{\k95}ギ
+Dialogue: 0,0:00:11.44,0:00:15.67,Kanji,,0,0,0,,{\k51}キ{\k13}ミ{\k18}と{\k32}い{\k49}う{\k28}{\k37}フ{\k32}ラ{\k46}グ{\k32}解{\k35}除{\k50}が
+Dialogue: 0,0:00:15.98,0:00:21.26,Kanji,,0,0,0,,{\k33}笑{\k66}顔{\k30}{\k73}救{\k59}え{\k64}る{\k67}の{\k29}{\k19}な{\k88}ら
+Dialogue: 0,0:00:01.00,0:00:10.99,Translation,,0,0,0,,Guarda oltre le parole e cerca la chiave per il mio cuore,
+Dialogue: 0,0:00:11.44,0:00:21.26,Translation,,0,0,0,,se credi che il mio affetto possa renderti felice.
