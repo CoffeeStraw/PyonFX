@@ -302,7 +302,7 @@ class Utils:
                 val2_rgb = Convert.color_ass_to_rgb(val2)
                 if isinstance(val1_rgb, tuple) and isinstance(val2_rgb, tuple):
                     rgb = tuple(
-                        interpolate_numbers(v1, v2)
+                        int(interpolate_numbers(v1, v2))
                         for v1, v2 in zip(val1_rgb, val2_rgb)
                     )
                     if len(rgb) == 3:
@@ -415,7 +415,6 @@ class Utils:
 
         line.start_time = new_start
         line.end_time = new_end
-        line.duration = new_end - new_start
 
 
 class FrameUtility:
