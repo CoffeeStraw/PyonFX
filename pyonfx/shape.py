@@ -2045,8 +2045,8 @@ class Shape:
         return shape.map(shift_mid_point)
 
     @classmethod
-    def _glance_or_star(cls,
-        edges: int, inner_size: float, outer_size: float, g_or_s: str
+    def _glance_or_star(
+        cls, edges: int, inner_size: float, outer_size: float, g_or_s: str
     ) -> "Shape":
         """
         General function to create a shape object representing star or glance.
