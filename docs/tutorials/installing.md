@@ -1,6 +1,4 @@
----
-title: Install & Set-up
----
+# Install & Set-up
 
 ## Prerequisites
 
