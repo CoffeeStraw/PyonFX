@@ -16,7 +16,7 @@ Exercise:
 from pyonfx import Ass
 
 # Load the karaoke file
-io = Ass("../ass/romaji_kanji_sub.ass")
+io = Ass("../../ass/romaji_kanji_sub.ass")
 meta, styles, lines = io.get_data()
 
 # Process each line

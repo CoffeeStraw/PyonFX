@@ -13,7 +13,7 @@ Exercise:
 from pyonfx import Ass
 
 # Load the input ASS file and get the data
-io = Ass("../ass/hello_world.ass")
+io = Ass("../../ass/hello_world.ass")
 meta, styles, lines = io.get_data()
 
 # Print the META object
