@@ -51,47 +51,6 @@ To get started with PyonFX, we recommend that you have some knowledge on:
     PANGOCAIRO_BACKEND=fc python3 namefile.py
     ```
 
-??? note "Fedora"
-    Install prerequisites:
-
-    ```bash
-    sudo dnf install python3 python3-pip gcc gobject-introspection-devel cairo-devel pkg-config python3-devel python3-gobject gtk3
-    ```
-
-    Then, install PyonFX:
-
-    ```bash
-    python3 -m pip install --upgrade pyonfx
-    ```
-
-    !!! warning
-        Commands are not fully tested.
-
-??? note "Arch Linux"
-    - Via AUR: [python-pyonfx](https://aur.archlinux.org/packages/python-pyonfx)
-    - Or manually:
-
-    ```bash
-    sudo pacman -S --needed python python-pip python-cairo python-gobject pango
-    python -m pip install --upgrade pyonfx
-    ```
-
-??? note "OpenSUSE"
-    Install prerequisites:
-
-    ```bash
-    sudo zypper install python3 python3-pip cairo-devel pkg-config python3-devel gcc gobject-introspection-devel python3-gobject python3-gobject-Gdk typelib-1_0-Gtk-3_0 libgtk-3-0
-    ```
-
-    Then, install PyonFX:
-
-    ```bash
-    python3 -m pip install --upgrade pyonfx
-    ```
-
-    !!! warning
-        Commands are not fully tested.
-
 
 ### Additional Setup
 
