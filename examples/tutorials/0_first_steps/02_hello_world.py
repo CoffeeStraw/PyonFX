@@ -20,7 +20,7 @@ meta, styles, lines = io.get_data()
 output_line = lines[0].copy()
 
 # Modify the text of the output line
-output_line.text = "I am a new line lasting 1 second!"  # Change the text
+output_line.text = "I am a new line!"  # Change the text
 
 # Write the line to the output file
 io.write_line(output_line)
