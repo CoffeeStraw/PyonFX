@@ -83,6 +83,7 @@ class Utils:
     def all_non_empty(
         lines_words_syls_or_chars: Iterable[_LineWordSyllableChar],
         *,
+        filter_comment: bool = True,
         filter_whitespace_text: bool = True,
         filter_empty_duration: bool = False,
         renumber_indexes: bool = True,
@@ -92,6 +93,7 @@ class Utils:
 
         Parameters:
             lines_words_syls_or_chars (list of :class:`Line<pyonfx.ass_utility.Line>`, :class:`Word<pyonfx.ass_utility.Word>`, :class:`Syllable<pyonfx.ass_utility.Syllable>` or :class:`Char<pyonfx.ass_utility.Char>`)
+            filter_comment (bool, optional): Only for lines: if True, objects are filtered based on their comment attribute.
             filter_whitespace_text (bool, optional): If True, objects are filtered based on their text attribute.
             filter_empty_duration (bool, optional): If True, objects are filtered based on their duration attribute.
             renumber_indexes (bool, optional): If True, the ``i``, ``word_i`` and ``syl_i`` attributes of the surviving objects are re-assigned to reflect their new position in the returned list.
@@ -105,6 +107,8 @@ class Utils:
             empty_for_text = filter_whitespace_text and not obj.text.strip()
             empty_for_duration = filter_empty_duration and obj.duration <= 0
             if empty_for_text or empty_for_duration:
+                continue
+            if filter_comment and isinstance(obj, Line) and obj.comment:
                 continue
             out.append(obj)
 
