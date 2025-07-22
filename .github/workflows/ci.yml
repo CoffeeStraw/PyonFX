@@ -151,6 +151,7 @@ jobs:
 
   # Build the documentation and publish it on GitHub Pages
   build-n-deploy-docs:
+    name: "Build and deploy documentation"
     permissions:
       contents: write
     runs-on: ubuntu-latest
