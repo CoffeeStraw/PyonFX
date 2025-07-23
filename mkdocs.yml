@@ -76,7 +76,6 @@ nav:
       - "Module index": reference/index.md
       - "ass_core": reference/ass_core.md
       - "convert": reference/convert.md
-      - "font": reference/font.md
       - "pixel": reference/pixel.md
       - "shape": reference/shape.md
       - "utils": reference/utils.md
