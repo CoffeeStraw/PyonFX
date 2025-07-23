@@ -53,7 +53,7 @@ print(meta)
     Meta(wrap_style=0, scaled_border_and_shadow=True, play_res_x=1280, play_res_y=720, audio=None, video='?dummy:23.976000:480:1280:720:59:59:59:', timestamps=<video_timestamps.fps_timestamps.FPSTimestamps object at 0x000001FB6F9864B0>)
     ```
 
-Notably, the metadata includes audio and video file references (`audio` and `video`), display resolution (`play_res_x` and `play_res_y`), and a timestamp object associated to the video file (`timestamps`). For a complete list of attributes and their meanings, refer to the [Meta](../../api/ass_core.md#meta) documentation.
+Notably, the metadata includes audio and video file references (`audio` and `video`), display resolution (`play_res_x` and `play_res_y`), and a timestamp object associated to the video file (`timestamps`). For a complete list of attributes and their meanings, refer to the [Meta](../../reference/ass_core.md#pyonfx.ass_core.Meta) documentation.
 
 *Exploring Styles:*
 
@@ -77,7 +77,7 @@ If you thought about this:
 
 ![Aegisub Style Editor Window](imgs/aegisub_style.png){width="500"}
 
-You are correct! This structure closely resembles what you'd find in Aegisub’s style editor. For more details on each attribute, see the [Style](../../api/ass_core.md#style) documentation.
+You are correct! This structure closely resembles what you'd find in Aegisub’s style editor. For more details on each attribute, see the [Style](../../reference/ass_core.md#pyonfx.ass_core.Style) documentation.
 
 *Inspecting Dialogue Lines:*
 

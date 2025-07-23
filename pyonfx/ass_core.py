@@ -45,37 +45,31 @@ from .font import Font
 
 @dataclass(slots=True)
 class Meta:
-    """Meta object contains informations about the Ass.
-
-    More info about each of them can be found on http://docs.aegisub.org/manual/Styles
-    """
+    """Encapsulates the script properties of an ASS file, including video resolution, wrap style, and media file paths."""
 
     wrap_style: int | None = None
-    """Determines how line breaking is applied to the subtitle line."""
+    """Specifies the wrap style for subtitles. The typical value 0 indicates smart wrapping."""
 
     scaled_border_and_shadow: bool | None = None
-    """Determines if script resolution (True) or video resolution (False) should be used to scale border and shadow."""
+    """Determines whether border and shadow sizes are scaled according to the script resolution (True) or the video resolution (False)."""
 
     play_res_x: int | None = None
-    """Video width resolution."""
+    """Specifies the script's video width resolution in pixels. This influences horizontal coordinate calculations."""
 
     play_res_y: int | None = None
-    """Video height resolution."""
+    """Specifies the script's video height resolution in pixels. This influences vertical coordinate calculations."""
 
     audio: str | None = None
-    """Loaded audio file path (absolute)."""
+    """Absolute file path to the associated audio file."""
 
     video: str | None = None
-    """Loaded video file path (absolute)."""
+    """Absolute file path to the associated video file."""
 
     timestamps: ABCTimestamps | None = None
-    """Timestamps associated to the video file."""
+    """Video timestamp object providing timing information for subtitles."""
 
     def parse_line(self, line: str, ass_path: str) -> str:
-        """Parses a single ASS line and update the relevant fields.
-
-        Returns the updated line.
-        """
+        """Parses a single ASS line and update the relevant fields."""
         line = line.strip()
 
         if not line:
@@ -117,10 +111,7 @@ class Meta:
         return line + "\n"
 
     def serialize(self) -> tuple[list[str], list[str]]:
-        """Serializes the meta object into 2 lists of ASS lines:
-        - The first list contains the lines that should be inserted into the [Script Info] section.
-        - The second list contains the lines that should be inserted into the [Aegisub Project Garbage] section.
-        """
+        """Serializes the meta object into ASS script info and garbage sections."""
         script_info_lines = []
         if self.wrap_style is not None:
             script_info_lines.append(f"WrapStyle: {self.wrap_style}")
@@ -150,66 +141,92 @@ class Meta:
 
 @dataclass(slots=True)
 class Style:
-    """Style object contains a set of typographic formatting rules that is applied to dialogue lines."""
+    """Represents a typographic style for ASS subtitles."""
 
     name: str
-    """Style name."""
+    """Unique identifier for the style."""
+    
     fontname: str
-    """Font name."""
+    """Typeface used for the subtitles."""
+    
     fontsize: float
     """Font size in points."""
+    
     color1: str
-    """Primary color (fill)."""
+    """Primary fill color, typically in hexadecimal format."""
+    
     alpha1: str
-    """Transparency of color1."""
+    """Transparency (alpha channel) for the primary fill color."""
+    
     color2: str
-    """Secondary color (for karaoke effect)."""
+    """Secondary color used for karaoke effects."""
+    
     alpha2: str
-    """Transparency of color2."""
+    """Transparency for the secondary color."""
+    
     color3: str
     """Outline (border) color."""
+    
     alpha3: str
-    """Transparency of color3."""
+    """Transparency for the outline color."""
+    
     color4: str
     """Shadow color."""
+    
     alpha4: str
-    """Transparency of color4."""
+    """Transparency for the shadow color."""
+    
     bold: bool
-    """Whether the font is bold."""
+    """Indicates if the font is bold."""
+    
     italic: bool
-    """Whether the font is italic."""
+    """Indicates if the font is italic."""
+    
     underline: bool
-    """Whether the font is underlined."""
+    """Indicates if the text is underlined."""
+    
     strikeout: bool
-    """Whether the font is struck out."""
+    """Indicates if the text has a strike-through effect."""
+    
     scale_x: float
-    """Horizontal text scaling (percentage)."""
+    """Horizontal scaling factor as a percentage (100 means no scaling)."""
+    
     scale_y: float
-    """Vertical text scaling (percentage)."""
+    """Vertical scaling factor as a percentage (100 means no scaling)."""
+    
     spacing: float
-    """Horizontal spacing between letters."""
+    """Additional horizontal spacing between letters in pixels."""
+    
     angle: float
-    """Text rotation angle (degrees)."""
+    """Rotation angle of the text in degrees."""
+    
     border_style: bool
-    """True for opaque box, False for standard outline."""
+    """Specifies the border style: True for an opaque box, False for a standard outline."""
+    
     outline: float
-    """Border thickness."""
+    """Outline thickness in pixels."""
+    
     shadow: float
-    """Shadow offset distance."""
+    """Shadow offset distance in pixels."""
+    
     alignment: int
-    """Text alignment (ASS alignment code)."""
+    """ASS alignment code (typically an integer from 1 to 9)."""
+    
     margin_l: int
-    """Left margin (pixels)."""
+    """Left margin in pixels."""
+    
     margin_r: int
-    """Right margin (pixels)."""
+    """Right margin in pixels."""
+    
     margin_v: int
-    """Vertical margin (pixels)."""
+    """Vertical margin in pixels; determines vertical positioning relative to the video frame."""
+    
     encoding: int
-    """Font encoding/codepage."""
+    """Font encoding/codepage. The value 1 is standard, allowing the selection of any installed font."""
 
     @classmethod
     def from_ass_line(cls, line: str) -> "Style":
-        """Parses a single ASS line and returns the corresponding Style object."""
+        """Parse a single ASS line and return the corresponding Style object."""
         style_match = re.match(r"Style:\s*(.+)$", line)
         if not style_match:
             raise ValueError(f"Invalid style line: {line}")
@@ -251,7 +268,7 @@ class Style:
         )
 
     def serialize(self, style_name: str) -> str:
-        """Serializes a Style object into an ASS style line."""
+        """Serialize a Style object into an ASS style line."""
         bold = "-1" if self.bold else "0"
         italic = "-1" if self.italic else "0"
         underline = "-1" if self.underline else "0"
@@ -306,50 +323,68 @@ class Style:
 
 @dataclass(slots=True)
 class Char:
-    """Char object contains information about a single character in a line."""
+    """Represents a single character within a subtitle line."""
 
     i: int
-    """Character index in the line."""
+    """Zero-based index of the character within the line."""
+    
     word_i: int
-    """Index of the word this character belongs to."""
+    """Index of the word to which this character belongs."""
+    
     syl_i: int
-    """Index of the syllable this character belongs to."""
+    """Index of the syllable to which this character belongs."""
+    
     syl_char_i: int
-    """Index of the character within its syllable."""
+    """Index of the character within its parent syllable."""
+    
     start_time: int
-    """Start time (ms) of the character."""
+    """Start time in milliseconds when the character appears."""
+    
     end_time: int
-    """End time (ms) of the character."""
+    """End time in milliseconds when the character disappears."""
+    
     styleref: Style
-    """Reference to the Style object for this character's line."""
+    """Reference to the Style object used for formatting this character."""
+    
     text: str
-    """The character itself as a string."""
+    """The actual character as a string."""
+    
     inline_fx: str
-    """Inline effect for the character (from \\\\-EFFECT tag)."""
+    """Inline effects specified for this character (derived from \\-EFFECT tag)."""
+    
     width: float
-    """Width of the character (pixels)."""
+    """Width of the character in pixels."""
+    
     height: float
-    """Height of the character (pixels)."""
+    """Height of the character in pixels."""
+    
     x: float
-    """Horizontal position of the character (pixels)."""
+    """Horizontal position (x-coordinate in pixels)."""
+    
     y: float
-    """Vertical position of the character (pixels)."""
+    """Vertical position (y-coordinate in pixels)."""
+    
     left: float
-    """Left position of the character (pixels)."""
+    """Left boundary (in pixels)."""
+    
     center: float
-    """Center position of the character (pixels)."""
+    """Horizontal center position (in pixels)."""
+    
     right: float
-    """Right position of the character (pixels)."""
+    """Right boundary (in pixels)."""
+    
     top: float
-    """Top position of the character (pixels)."""
+    """Top boundary (in pixels)."""
+    
     middle: float
-    """Middle position of the character (pixels)."""
+    """Vertical center position (in pixels)."""
+    
     bottom: float
-    """Bottom position of the character (pixels)."""
+    """Bottom boundary (in pixels)."""
 
     @property
     def duration(self) -> int:
-        """Duration (ms) of the character, derived from end_time - start_time."""
+        """Duration in milliseconds, computed as end_time - start_time."""
         return self.end_time - self.start_time
 
     def __repr__(self):
@@ -358,52 +393,71 @@ class Char:
 
 @dataclass(slots=True)
 class Syllable:
-    """Syllable object contains information about a single syllable in a line."""
+    """Represents a syllable within a subtitle line."""
 
     i: int
-    """Syllable index in the line."""
+    """Zero-based index of the syllable within the line."""
+    
     word_i: int
-    """Index of the word this syllable belongs to."""
+    """Index of the word that contains this syllable."""
+    
     start_time: int
-    """Start time (ms) of the syllable."""
+    """Start time in milliseconds when the syllable begins."""
+    
     end_time: int
-    """End time (ms) of the syllable."""
+    """End time in milliseconds when the syllable ends."""
+    
     styleref: Style
-    """Reference to the Style object for this syllable's line."""
+    """Reference to the Style object used for formatting this syllable."""
+    
     text: str
-    """Text of the syllable."""
+    """Text content of the syllable."""
+    
     tags: str
-    """ASS override tags preceding the syllable text (excluding \\\\k tags)."""
+    """ASS override tags preceding the syllable text (excluding \\k tags)."""
+    
     inline_fx: str
-    """Inline effect for the syllable (from \\\\-EFFECT tag)."""
+    """Inline effects for the syllable (derived from \\-EFFECT tag)."""
+    
     prespace: int
-    """Number of spaces before the syllable."""
+    """Number of leading spaces before the syllable."""
+    
     postspace: int
-    """Number of spaces after the syllable."""
+    """Number of trailing spaces after the syllable."""
+    
     width: float
-    """Width of the syllable (pixels)."""
+    """Width of the syllable in pixels."""
+    
     height: float
-    """Height of the syllable (pixels)."""
+    """Height of the syllable in pixels."""
+    
     x: float
-    """Horizontal position of the syllable (pixels)."""
+    """Horizontal position (x-coordinate in pixels)."""
+    
     y: float
-    """Vertical position of the syllable (pixels)."""
+    """Vertical position (y-coordinate in pixels)."""
+    
     left: float
-    """Left position of the syllable (pixels)."""
+    """Left boundary (in pixels)."""
+    
     center: float
-    """Center position of the syllable (pixels)."""
+    """Horizontal center position (in pixels)."""
+    
     right: float
-    """Right position of the syllable (pixels)."""
+    """Right boundary (in pixels)."""
+    
     top: float
-    """Top position of the syllable (pixels)."""
+    """Top boundary (in pixels)."""
+    
     middle: float
-    """Middle position of the syllable (pixels)."""
+    """Vertical center position (in pixels)."""
+    
     bottom: float
-    """Bottom position of the syllable (pixels)."""
+    """Bottom boundary (in pixels)."""
 
     @property
     def duration(self) -> int:
-        """Duration (ms) of the syllable, derived from end_time - start_time."""
+        """Duration in milliseconds, computed as end_time - start_time."""
         return self.end_time - self.start_time
 
     def __repr__(self):
@@ -412,46 +466,62 @@ class Syllable:
 
 @dataclass(slots=True)
 class Word:
-    """Word object contains information about a single word in a line."""
+    """Represents a word within a subtitle line."""
 
     i: int
-    """Word index in the line."""
+    """Zero-based index of the word within the line."""
+    
     start_time: int
-    """Start time (ms) of the word (same as line start)."""
+    """Start time in milliseconds for the word (typically matching the line's start time)."""
+    
     end_time: int
-    """End time (ms) of the word (same as line end)."""
+    """End time in milliseconds for the word (typically matching the line's end time)."""
+    
     styleref: Style
-    """Reference to the Style object for this word's line."""
+    """Reference to the Style object for this word."""
+    
     text: str
-    """Text of the word."""
+    """Text content of the word."""
+    
     prespace: int
-    """Number of spaces before the word."""
+    """Number of leading spaces before the word."""
+    
     postspace: int
-    """Number of spaces after the word."""
+    """Number of trailing spaces after the word."""
+    
     width: float
-    """Width of the word (pixels)."""
+    """Width of the word in pixels."""
+    
     height: float
-    """Height of the word (pixels)."""
+    """Height of the word in pixels."""
+    
     x: float
-    """Horizontal position of the word (pixels)."""
+    """Horizontal position (x-coordinate in pixels)."""
+    
     y: float
-    """Vertical position of the word (pixels)."""
+    """Vertical position (y-coordinate in pixels)."""
+    
     left: float
-    """Left position of the word (pixels)."""
+    """Left boundary (in pixels)."""
+    
     center: float
-    """Center position of the word (pixels)."""
+    """Horizontal center position (in pixels)."""
+    
     right: float
-    """Right position of the word (pixels)."""
-    top: float
-    """Top position of the word (pixels)."""
+    """Right boundary (in pixels)."""
+    
     middle: float
-    """Middle position of the word (pixels)."""
+    """Vertical center position (in pixels)."""
+
+    top: float
+    """Top boundary (in pixels)."""
+    
     bottom: float
-    """Bottom position of the word (pixels)."""
+    """Bottom boundary (in pixels)."""
 
     @property
     def duration(self) -> int:
-        """Duration (ms) of the word, derived from end_time - start_time."""
+        """Duration in milliseconds, computed as end_time - start_time."""
         return self.end_time - self.start_time
 
     def __repr__(self):
@@ -460,78 +530,110 @@ class Word:
 
 @dataclass(slots=True)
 class Line:
-    """Line object contains information about a single subtitle line in the ASS file."""
+    """Represents a subtitle line in an ASS file."""
 
     comment: bool
-    """True if this line is a comment, False if it is a dialogue."""
+    """Indicates if the line is a comment (True) or dialogue (False)."""
+    
     layer: int
-    """Layer number for the line (higher layers are drawn above lower ones)."""
+    """Layer number for the line (higher layers are rendered above lower ones)."""
+    
     start_time: int
-    """Start time (ms) of the line."""
+    """Start time in milliseconds when the line appears."""
+    
     end_time: int
-    """End time (ms) of the line."""
+    """End time in milliseconds when the line disappears."""
+    
     style: str
-    """Style name used for this line. Could be None in case of non-existing style name."""
+    """Name of the style applied to the line."""
+    
     styleref: Style
-    """Reference to the Style object for this line."""
+    """Reference to the Style object used for formatting this line."""
+    
     actor: str
-    """Actor field."""
+    """Actor or source associated with the line."""
+    
     margin_l: int
-    """Left margin for this line (pixels)."""
+    """Left margin in pixels."""
+    
     margin_r: int
-    """Right margin for this line (pixels)."""
+    """Right margin in pixels."""
+    
     margin_v: int
-    """Vertical margin for this line (pixels)."""
+    """Vertical margin in pixels."""
+    
     effect: str
-    """Effect field."""
+    """Effect field for the line."""
+    
     raw_text: str
-    """Raw text of the line (including tags)."""
+    """Original text of the line, including override tags."""
+    
     text: str
-    """Stripped text of the line (no tags)."""
+    """Stripped text of the line (override tags removed)."""
+    
     i: int
-    """Line index in the file."""
+    """Zero-based index of the line in the ASS file."""
+    
     leadin: int
-    """Time (ms) between this line and the previous one."""
+    """Time gap in milliseconds before this line, relative to the previous line."""
+    
     leadout: int
-    """Time (ms) between this line and the next one."""
+    """Time gap in milliseconds after this line, relative to the next line."""
+    
     width: float
-    """Width of the line (pixels)."""
+    """Width of the line in pixels."""
+    
     height: float
-    """Height of the line (pixels)."""
+    """Height of the line in pixels."""
+    
     ascent: float
-    """Font ascent for the line."""
+    """Font ascent value for the line."""
+    
     descent: float
-    """Font descent for the line."""
+    """Font descent value for the line."""
+    
     internal_leading: float
-    """Font internal leading for the line."""
+    """Internal leading (line spacing within the font) in pixels."""
+    
     external_leading: float
-    """Font external leading for the line."""
+    """External leading (additional spacing between lines) in pixels."""
+    
     x: float
-    """Horizontal position of the line (pixels)."""
+    """Horizontal position (x-coordinate in pixels) of the line."""
+    
     y: float
-    """Vertical position of the line (pixels)."""
+    """Vertical position (y-coordinate in pixels) of the line."""
+    
     left: float
-    """Left position of the line (pixels)."""
+    """Left boundary of the line (in pixels)."""
+    
     center: float
-    """Center position of the line (pixels)."""
+    """Horizontal center position of the line (in pixels)."""
+    
     right: float
-    """Right position of the line (pixels)."""
+    """Right boundary of the line (in pixels)."""
+    
     top: float
-    """Top position of the line (pixels)."""
+    """Top boundary of the line (in pixels)."""
+    
     middle: float
-    """Middle position of the line (pixels)."""
+    """Vertical center position of the line (in pixels)."""
+    
     bottom: float
-    """Bottom position of the line (pixels)."""
+    """Bottom boundary of the line (in pixels)."""
+    
     words: list[Word]
-    """List of Word objects in this line."""
+    """List of Word objects contained in the line."""
+    
     syls: list[Syllable]
-    """List of Syllable objects in this line (if available)."""
+    """List of Syllable objects in the line (if available)."""
+    
     chars: list[Char]
-    """List of Char objects in this line."""
+    """List of Char objects in the line."""
 
     @property
     def duration(self) -> int:
-        """Duration (ms) of the line, derived from end_time - start_time."""
+        """Duration in milliseconds, computed as end_time - start_time."""
         return self.end_time - self.start_time
 
     def __repr__(self):
@@ -548,7 +650,7 @@ class Line:
     def from_ass_line(
         cls, line: str, line_index: int, styles: dict[str, Style]
     ) -> "Line":
-        """Parses a single ASS line and returns the corresponding Line object."""
+        """Parse a single ASS line and return the corresponding Line object."""
         event_match = re.match(r"(Dialogue|Comment):\s*(.+)$", line)
         if not event_match:
             raise ValueError(
@@ -615,6 +717,7 @@ class Line:
         )
 
     def serialize(self) -> str:
+        """Serialize a Line object into an ASS line."""
         return (
             f"{'Comment' if self.comment else 'Dialogue'}: {self.layer},"
             f"{Convert.time(max(0, int(self.start_time)))},"
@@ -630,37 +733,26 @@ class Line:
 
 
 class Ass:
-    """Contains all the informations about a file in the ASS format and the methods to work with it for both input and output.
+    """ASS File Handler.
 
-    | Usually you will create an Ass object and use it for input and output (see example_ section).
-    | PyonFX set automatically an absolute path for all the info in the output, so that wherever you will
-      put your generated file, it should always load correctly video and audio.
-
-    Args:
-        path_input (str): Path for the input file (either relative to your .py file or absolute).
-        path_output (str): Path for the output file (either relative to your .py file or absolute) (DEFAULT: "Output.ass").
-        keep_original (bool): If True, you will find all the lines of the input file commented before the new lines generated.
-        extended (bool): Calculate more informations from lines (usually you will not have to touch this).
-        vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically. Additionally, ``line`` fields will be re-calculated based on the re-positioned ``line.chars``.
-        progress (bool): If True, a progress bar will be displayed when iterating over the lines.
+    This class provides an interface for reading, processing, and writing Advanced SubStation Alpha (ASS) subtitle files.
+    It extracts metadata, styles, and dialogue events, computes extended layout metrics, and outputs ASS files for use with Aegisub or MPV.
+    It also supports preserving the original subtitle content as comments and auto-resolves file paths.
 
     Attributes:
-        path_input (str): Path for input file (absolute).
-        path_output (str): Path for output file (absolute).
-        meta (:class:`Meta`): Contains informations about the ASS given.
-        styles (list of :class:`Style`): Contains all the styles in the ASS given.
-        lines (list of :class:`Line`): Contains all the lines (events) in the ASS given.
-        PIXEL_STYLE (:class:`Style`): Constant lightweight style for pixels.
+        path_input: absolute path to the input subtitle file.
+        path_output: absolute path to the output subtitle file.
+        meta: metadata extracted from the ASS file.
+        styles: mapping of style names to their style objects present in the ASS file.
+        lines: list of subtitle event lines parsed from the file.
+        PIXEL_STYLE: default lightweight style for pixel-based effects.
 
-    .. _example:
-    Example:
-        ..  code-block:: python3
-
-            io = Ass("in.ass")
-            meta, styles, lines = io.get_data()
+    Examples:
+        >>> io = Ass("in.ass")
+        >>> meta, styles, lines = io.get_data()
     """
 
-    PIXEL_STYLE = Style(
+    PIXEL_STYLE: Style = Style(
         name="p",
         fontname="Arial",
         fontsize=20,
@@ -699,6 +791,15 @@ class Ass:
         extended: bool = True,
         vertical_kanji: bool = False,
     ):
+        """Initialize the ASS object.
+
+        Args:
+            path_input: The path for the input ASS file, which can be relative or absolute.
+            path_output: The path for the output ASS file (default: "output.ass").
+            keep_original: If True, the original lines are kept as comments in the output.
+            extended: If True, extended information (including positioning, metrics, words, syllables, and characters) will be computed.
+            vertical_kanji: If True, lines with alignment 4, 5 or 6 will be repositioned vertically.
+        """
         # Progress/statistics
         self._saved = False
         self._plines = 0  # Total produced lines
@@ -717,12 +818,12 @@ class Ass:
         self.lines: list[Line] = []
 
         # Getting absolute sub file path
-        self.path_input = _resolve_path(sys.argv[0], path_input)
+        self.path_input: str = _resolve_path(sys.argv[0], path_input)
         if not os.path.isfile(self.path_input):
             raise FileNotFoundError(
                 "Invalid path for the Subtitle file: %s" % self.path_input
             )
-        self.path_output = _resolve_path(sys.argv[0], path_output)
+        self.path_output: str = _resolve_path(sys.argv[0], path_output)
 
         # Parse the ASS file
         current_section = ""
@@ -802,7 +903,6 @@ class Ass:
             return output_lines, new_lines_indices, new_lines_k_offsets
 
         def _compute_line_fields(line: Line, font: Font, split_index: int):
-            """Compute duration, text, font metrics, dimensions and positions for a line."""
             line.text = re.sub(r"\{.*?\}", "", line.raw_text)
 
             line.width, line.height = font.get_text_extents(line.text.strip())
@@ -862,7 +962,6 @@ class Ass:
                 line.y += offset
 
         def _build_words(line: Line, font: Font):
-            """Build words for a line."""
             for wi, (prespace, word_text, postspace) in enumerate(
                 re.findall(r"(\s*)([^\s]+)(\s*)", line.text)
             ):
@@ -956,12 +1055,6 @@ class Ass:
                     cur_y += word.height
 
         def _parse_syllables(line_raw_text: str) -> list[tuple[str, int, str]]:
-            """Parse ASS karaoke line into syllable divisions.
-
-            ASS karaoke works by having timing tags (like \\k50) that indicate syllable boundaries,
-            with other styling tags that can appear before or after them. We group
-            tags and text into logical divisions based on karaoke timing boundaries.
-            """
             KARAOKE_PATTERN = re.compile(r"\\[kK][fot]?(\d+)?")
             TAG_BLOCK_PATTERN = re.compile(r"\{([^}]*)\}|([^{]+)")
             TAG_EXTRACT_PATTERN = re.compile(r"\\[^\\]*")
@@ -1282,11 +1375,6 @@ class Ass:
                     cur_y += char.height
 
         def _assign_lead_times(lines_by_styles):
-            """
-            For each style, sort lines by start_time, group consecutive lines
-            with the same index (i), then compute and assign leadin and leadout
-            durations for each line in those groups.
-            """
             for _, lines in lines_by_styles.items():
                 # Sort lines by start_time
                 sorted_lines = sorted(lines, key=lambda l: l.start_time)
@@ -1351,10 +1439,15 @@ class Ass:
         _assign_lead_times(lines_by_styles)
 
     def replace_meta(self, meta: Meta) -> None:
-        """Replaces only the meta fields in the output sections.
-
-        Updates lines corresponding to the meta object's fields in the
-        [Script Info] and [Aegisub Project Garbage] sections, leaving other lines untouched.
+        """Replace metadata in the ASS output file.
+        
+        Args:
+            meta: A Meta object containing the updated metadata.
+        
+        Examples:
+            >>> meta, _, _ = self.get_data()
+            >>> meta.wrap_style = 2
+            >>> self.replace_meta(meta)
         """
         self.meta = meta
         new_script_lines, new_garbage_lines = meta.serialize()
@@ -1432,9 +1525,19 @@ class Ass:
         update_section("[Aegisub Project Garbage]", new_garbage_lines)
 
     def replace_style(self, style_name: str, style: Style) -> None:
-        """Replaces a given ASS style in the output.
-
-        The style is serialized and inserted into the [V4+ Styles] section.
+        """Replace an existing style in the ASS output file.
+        
+        Args:
+            style_name: The name of the style to be replaced.
+            style: A Style object containing the updated style parameters.
+        
+        Examples:
+            >>> style = styles['Default']
+            >>> style.fontname = 'Helvetica'
+            >>> io.replace_style('Default', style)
+        
+        See Also:
+            [add_style][pyonfx.ass_core.Ass.add_style]
         """
         if style_name not in self.styles:
             raise ValueError(f"Style {style_name} does not exist.")
@@ -1455,9 +1558,25 @@ class Ass:
                     break
 
     def add_style(self, style_name: str, style: Style) -> None:
-        """Adds a given ASS style into the output if it doesn't already exist.
-
-        The style is serialized and inserted into the [V4+ Styles] section.
+        """Add a new style to the ASS output file.
+        
+        Args:
+            style_name: The name for the new style. This name must be unique within the ASS file.
+            style: A Style object containing the styling parameters for the new style.
+        
+        Examples:
+            >>> new_style = Style(name="NewStyle", fontname="Arial", fontsize=20, color1="FFFFFF", alpha1="00",
+            ...                    color2="FFFFFF", alpha2="00", color3="000000", alpha3="0000",
+            ...                    color4="000000", alpha4="0000", bold=False, italic=False, underline=False,
+            ...                    strikeout=False, scale_x=100, scale_y=100, spacing=0, angle=0, border_style=False,
+            ...                    outline=0, shadow=0, alignment=7, margin_l=0, margin_r=0, margin_v=0, encoding=1)
+            >>> io.add_style("NewStyle", new_style)
+        
+        Notes:
+            Ensure that the style name is unique in the current styles mapping.
+        
+        See Also:
+            [replace_style][pyonfx.ass_core.Ass.replace_style]
         """
         if style_name in self.styles:
             raise ValueError(f"Style {style_name} already exists.")
@@ -1480,32 +1599,52 @@ class Ass:
         self.styles[style_name] = style
 
     def get_data(self) -> tuple[Meta, dict[str, Style], list[Line]]:
-        """Utility function to retrieve easily meta, styles and lines.
-
+        """Retrieve metadata, styles, and subtitle lines from the ASS file.
+        
+        This utility method returns the essential components of a parsed ASS file:
+        • meta: A Meta object containing configuration and metadata.
+        • styles: A dictionary mapping style names to their corresponding Style objects.
+        • lines: A list of Line objects representing the subtitle dialogue events.
+        
         Returns:
-            :attr:`meta`, :attr:`styles` and :attr:`lines`
+            tuple: A tuple containing the meta object, the dictionary of styles, and the list of subtitle lines.
+        
+        Examples:
+            >>> meta, styles, lines = ass.get_data()
         """
         return self.meta, self.styles, self.lines
 
     def write_line(self, line: Line) -> None:
-        """Appends a line to the output list (which is private) that later on will be written to the output file when calling save().
-
-        Use it whenever you've prepared a line, it will not impact performance since you
-        will not actually write anything until :func:`save` will be called.
-
-        Parameters:
-            line (:class:`Line`): A line object. If not valid, TypeError is raised.
+        """Write a subtitle line to the output buffer.
+        
+        Args:
+            line: A Line object representing a subtitle event.
+        
+        Examples:
+            >>> line = some_line_object  # a valid Line object
+            >>> io.write_line(line)
+        
+        Notes:
+            This method only updates the internal buffer; you must call save() to persist the changes to disk.
+        
+        See Also:
+            [save][pyonfx.ass_core.Ass.save]
         """
         self._output.append(line.serialize())
         self._plines += 1
 
     def save(self, quiet: bool = False) -> None:
-        """Write everything inside the private output list to a file.
-
-        Parameters:
-            quiet (bool): If True, you will not get printed any message.
+        """Save the processed subtitles to the output ASS file and print performance metrics.
+        
+        Args:
+            quiet: If True, suppresses the output messages during the save process. Defaults to False.
+        
+        Notes:
+            Make sure to call this method after all subtitle processing is complete to persist your changes.
+        
+        See Also:
+            [open_aegisub][pyonfx.ass_core.Ass.open_aegisub], [open_mpv][pyonfx.ass_core.Ass.open_mpv]
         """
-
         # Add script generation info
         header_idx = next(
             i
@@ -1599,10 +1738,16 @@ class Ass:
             )
 
     def open_aegisub(self) -> bool:
-        """Attempts to open the subtitle output file in Aegisub.
-
+        """Attempt to open the output ASS file in Aegisub.
+        
         Returns:
-            True if the file is successfully opened, False otherwise.
+            bool: True if the output file is successfully opened in Aegisub, False otherwise.
+        
+        Notes:
+            Make sure to call the save() method before invoking open_aegisub, or the output file may not exist.
+        
+        See Also:
+            `open_mpv`
         """
 
         # Check if it was saved
@@ -1632,22 +1777,27 @@ class Ass:
         extra_mpv_options: list[str] = [],
         aegisub_fallback: bool = True,
     ) -> bool:
-        """Opens the output subtitle file using MPV media player along with the associated video.
-
-        This method attempts to:
-          - Use an already running MPV instance to hot-reload subtitles via an IPC socket if detected.
-          - Launch a new MPV process with IPC enabled if no such instance exists.
-          - Fall back to opening the output in Aegisub if MPV is not available and aegisub_fallback is True.
-
-        Parameters:
-            video_path (str | None): The absolute path to the video file to be played. If None, the video path from meta.video is used.
-            video_start (str | None): The starting time for video playback (e.g., "00:01:23"). If None, playback starts from the beginning.
-            full_screen (bool): If True, launches MPV in full-screen mode; otherwise, in windowed mode.
-            extra_mpv_options (list[str]): Additional command-line options to pass to MPV.
-            aegisub_fallback (bool): If True, falls back to opening the output with Aegisub when MPV is not found in the system PATH.
-
+        """Open the output subtitle file in MPV media player along with the associated video.
+        
+        This method attempts to play the output ASS file using MPV and automatically handles subtitle hot-reload via an IPC socket.
+        If an existing MPV instance is detected, it sends a command to reload the subtitles;
+        if not, it launches a new MPV process with IPC enabled.
+        
+        Args:
+            video_path: The absolute path to the video file to be played. If None, the video path from meta.video is used.
+            video_start: The starting time for video playback (e.g., "00:01:23"); if None, playback starts from the beginning.
+            full_screen: If True, launches MPV in full-screen mode; otherwise, in windowed mode.
+            extra_mpv_options: Additional command-line options to pass to MPV.
+            aegisub_fallback: If True, falls back to opening the output with Aegisub when MPV is not found.
+        
         Returns:
-            True if MPV is successfully launched or the subtitles are hot-reloaded in an existing MPV instance; False otherwise (e.g., if the output file has not been saved or MPV is unavailable).
+            bool: True if MPV successfully launches or hot-reloads the subtitles; False otherwise.
+        
+        Examples:
+            >>> io.open_mpv(video_path="/path/to/video.mp4", full_screen=True)
+        
+        See Also:
+            [open_aegisub][pyonfx.ass_core.Ass.open_aegisub]
         """
         if not self._saved:
             print(
