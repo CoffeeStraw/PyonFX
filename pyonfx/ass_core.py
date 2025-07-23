@@ -1510,9 +1510,10 @@ class Ass:
         """Retrieve metadata, styles, and subtitle lines from the ASS file.
 
         This utility method returns the essential components of a parsed ASS file:
-        • meta: A Meta object containing configuration and metadata.
-        • styles: A dictionary mapping style names to their corresponding Style objects.
-        • lines: A list of Line objects representing the subtitle dialogue events.
+
+        - meta: A Meta object containing configuration and metadata.
+        - styles: A dictionary mapping style names to their corresponding Style objects.
+        - lines: A list of Line objects representing the subtitle dialogue events.
 
         Returns:
             tuple: A tuple containing the meta object, the dictionary of styles, and the list of subtitle lines.
