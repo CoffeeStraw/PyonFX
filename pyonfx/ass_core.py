@@ -1353,9 +1353,9 @@ class Ass:
             meta: A Meta object containing the updated metadata.
 
         Examples:
-            >>> meta, _, _ = self.get_data()
+            >>> meta, _, _ = io.get_data()
             >>> meta.wrap_style = 2
-            >>> self.replace_meta(meta)
+            >>> io.replace_meta(meta)
         """
         self.meta = meta
         new_script_lines, new_garbage_lines = meta.serialize()
