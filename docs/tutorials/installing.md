@@ -60,7 +60,7 @@ Enhance your development workflow by setting up your environment as follows:
 
 ## What's next
 
-After completing these steps, continue with our [Your First Effect](your_first_effect.md) tutorial to begin creating your first effect.
+After completing these steps, you can start learning how to use the library! We prepared a series of tutorials for you, starting from [Exploring ASS values](first_steps/01_explore_ass_values.md).
 
 [^py]: For beginners, see [Think Python 2](http://greenteapress.com/thinkpython2/thinkpython2.pdf) (English) or [Think Python Italian](https://github.com/AllenDowney/ThinkPythonItalian/blob/master/thinkpython_italian.pdf) (Italian) for additional Python resources.
 

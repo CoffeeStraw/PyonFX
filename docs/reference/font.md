@@ -1,3 +1,3 @@
-# `pyonfx.font`
+# Font
 
 ::: pyonfx.font 

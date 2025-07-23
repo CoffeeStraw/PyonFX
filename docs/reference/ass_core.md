@@ -1,3 +1,3 @@
-# `pyonfx.ass_core`
+# ASS Core
 
-::: pyonfx.ass_core 
+::: pyonfx.ass_core

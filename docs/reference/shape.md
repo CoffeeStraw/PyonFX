@@ -1,3 +1,3 @@
-# `pyonfx.shape`
+# Shape
 
 ::: pyonfx.shape 

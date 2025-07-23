@@ -1,3 +1,3 @@
-# `pyonfx.pixel`
+# Pixel
 
 ::: pyonfx.pixel 
