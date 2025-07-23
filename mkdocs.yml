@@ -71,7 +71,7 @@ nav:
       - First Steps:
         - "Exploring ASS values": tutorials/first_steps/01_explore_ass_values.md
   - Guides:
-      - "TBD": guides/tbd.md
+      - "TBD": guides/404
   - Reference:
       - "Module index": reference/index.md
       - "ass_core": reference/ass_core.md
@@ -80,4 +80,4 @@ nav:
       - "shape": reference/shape.md
       - "utils": reference/utils.md
   - Explanation:
-      - "TBD": explanation/tbd.md
+      - "TBD": explanation/404
