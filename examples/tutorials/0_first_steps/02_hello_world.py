@@ -31,6 +31,8 @@ io.save()
 # Open the output in Aegisub
 io.open_aegisub()
 
+# REMEMBER: always duplicate lines for output — keep the original intact
+
 # COMMENTS TO BE REMOVED ONCE THE TUTORIAL IS PUBLISHED:
 # Be sure to mention in the tutorial that if you don't specify output_file it will default to "output.ass"
 # Be sure to mention that the output file is saved in the same directory as the script

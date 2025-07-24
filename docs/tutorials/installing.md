@@ -55,8 +55,8 @@ To get started with PyonFX, we recommend that you have some knowledge on:
 Enhance your development workflow by setting up your environment as follows:
 
 - We recommend [Visual Studio Code](https://code.visualstudio.com/) as your text editor. For helpful code suggestions and error checking, install the [Python extension](https://marketplace.visualstudio.com/items?itemName=ms-python.python) and, if desired, [Pylance](https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance) for enhanced type support;
-- If you want your Python script to run automatically every time you save, add also the [RunOnSave](https://marketplace.visualstudio.com/items?itemName=emeraldwalk.RunOnSave) extension;
-- Install the [MPV player](https://mpv.io/) for lightweight, hot-reload output preview without relying on Aegisub. On Windows, add the folder containing MPV’s executable (typically `C:\Program Files\mpv`) to your system PATH (if you don't know how, follow [this guide](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/)).
+- If you want your Python script to run automatically every time you save, also add the [RunOnSave](https://marketplace.visualstudio.com/items?itemName=emeraldwalk.RunOnSave) extension;
+- Install the [MPV player](https://mpv.io/) for lightweight, hot-reload output preview without relying on [Aegisub](https://aegisub.org/). On Windows, add the folder containing MPV’s executable (typically `C:\Program Files\mpv`) to your system PATH (if you don't know how, follow [this guide](https://www.architectryan.com/2018/03/17/add-to-the-path-on-windows-10/)).
 
 ## What's next
 

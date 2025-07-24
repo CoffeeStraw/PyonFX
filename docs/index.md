@@ -8,11 +8,13 @@
 
 ## What *is* PyonFX?
 
-PyonFX is a **Python library** designed to make the creation of **KFX (Karaoke Effects)** and **complex typesetting** easy when working with the **ASS (*Advanced Substation Alpha*)** subtitle format. It provides creators with precise, programmatic control over visual effects by allowing detailed manipulation of tags, text, and shapes — extending down to the *frame-by-frame* and *pixel-by-pixel* level.
+PyonFX is a **Python library** designed to make the creation of **KFX** and **complex typesetting** easy when working with the **ASS (*Advanced Substation Alpha*)** subtitle format. It provides creators with precise, programmatic control over visual effects by allowing detailed manipulation of tags, text, and shapes — extending down to the *frame-by-frame* and *pixel-by-pixel* level.
 
 ---
 
 ## Key features at a glance
+
+<!-- TODO (McWhite Notes): not sure if anyone new to KFX really cares about them though or understand why they are such a big deal. To make it more general I would probably talk about the features more descriptive, like painting an image in the head of the user what they can do with text manipulation, like "Manipulate and transform shapes with ease to create appealing visual effects". you should really show off and be like "Look what amazing things you can do here!" instead of being so technical. -->
 
 * **High-level dataclasses**: parse .ass file into structured objects (`Meta`, `Style`, `Line`, `Word`, `Syllable`, `Char`), incorporating font metrics and temporal/positional data;
 * **Shape manipulation**:
@@ -32,6 +34,8 @@ PyonFX is a **Python library** designed to make the creation of **KFX (Karaoke E
 ---
 
 ## Explore the documentation
+
+<!-- TODO (McWhite Notes): Explore the documentation looks a bit like a table of contents, which I would expect more at the top tbh. in terms of utility for the user... and I just realize you can't even click them? -->
 
 | Section | Purpose |
 |---------|---------|
