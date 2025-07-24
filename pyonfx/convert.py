@@ -177,7 +177,7 @@ class Convert:
             c: A color value in the input format. This can be a string or a tuple of numbers.
             input_format: A ColorModel enum indicating the format of the input color.
             output_format: A ColorModel enum indicating the desired format of the output color.
-            round_output: A boolean (default True) that determines if numerical results should be rounded.
+            round_output: A boolean that determines if numerical results should be rounded.
 
         Returns:
             The color converted to the specified output format, either as a string or as a tuple.
@@ -330,7 +330,7 @@ class Convert:
 
         Args:
             color_ass: A string representing the ASS color (format "&HBBGGRR&").
-            round_output: A boolean flag (default True) indicating whether to round the output values.
+            round_output: A boolean that determines if numerical results should be rounded.
 
         Returns:
             A tuple representing the HSV values. The values are integers if round_output is True, or floats otherwise.
@@ -405,7 +405,7 @@ class Convert:
 
         Args:
             color_rgb: An RGB color value as a hexadecimal string or a tuple of three numbers.
-            round_output: A boolean (default True) to determine if the output values should be rounded.
+            round_output: A boolean that determines if numerical results should be rounded.
 
         Returns:
             A tuple representing the HSV values. If round_output is True, the components are integers; otherwise, they are floats.
@@ -508,7 +508,7 @@ class Convert:
         Args:
             color_hsv: A tuple representing the HSV color with H in [0, 360), S and V in [0, 100].
             as_str: A boolean flag that, if True, returns the RGB value as a hexadecimal string "#RRGGBB"; otherwise as a tuple (R, G, B).
-            round_output: A boolean (default True) that specifies whether the resulting RGB values should be rounded.
+            round_output: A boolean that determines if numerical results should be rounded.
 
         Returns:
             Either a tuple (R, G, B) or a string "#RRGGBB" representing the RGB color.
@@ -678,7 +678,7 @@ class Convert:
 
         Args:
             obj: An instance of Line, Word, Syllable, or Char that carries text content and associated style information.
-            an: An integer (default 5) specifying the desired alignment for the shape. Must be between 1 and 9.
+            an: An integer specifying the desired alignment for the shape. Must be between 1 and 9.
             fscx: Optional; a float overriding the style's horizontal scale (scale_x) during conversion.
             fscy: Optional; a float overriding the style's vertical scale (scale_y) during conversion.
 
