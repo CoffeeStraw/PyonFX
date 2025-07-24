@@ -49,9 +49,10 @@ class ColorModel(Enum):
 
 
 class Convert:
-    """
-    This class is a collection of static methods that will help
-    the user to convert everything needed to the ASS format.
+    """A collection of static conversion utilities for ASS formatting.
+
+    It contains a variety of methods to convert between different representations used in the ASS format, such as timestamps, colors, text-to-shape transformations, and pixel generation from shapes and images.
+    Although all methods are static, this class is maintained as a single unit for backward compatibility with earlier versions of the library.
     """
 
     @overload
@@ -64,15 +65,22 @@ class Convert:
 
     @staticmethod
     def time(ass_ms: int | str) -> int | str:
-        """Converts between milliseconds and ASS timestamp.
+        """Convert between milliseconds and ASS timestamp.
 
-        You can probably ignore that function, you will not make use of it for KFX or typesetting generation.
+        It rounds the milliseconds to the nearest centisecond when formatting an ASS timestamp, following the convention used in Aegisub.
+        Typically, you won't use this function directly for KFX or typesetting generation.
 
-        Parameters:
-            ass_ms (int or str): If int, than milliseconds are expected, else ASS timestamp as str is expected.
+        Args:
+            ass_ms: An integer representing time in milliseconds (must be non-negative) or a string formatted as an ASS timestamp ("H:MM:SS.CS").
 
         Returns:
-            If milliseconds -> ASS timestamp, else if ASS timestamp -> milliseconds, else ValueError will be raised.
+            str or int: If an integer is provided, returns a string representing the converted ASS timestamp. If a string is provided, returns an integer representing the time in milliseconds.
+
+        Examples:
+            >>> Convert.time(5000)
+            '0:00:05.00'
+            >>> Convert.time('0:00:05.00')
+            5000
         """
         # Milliseconds?
         if isinstance(ass_ms, int) and ass_ms >= 0:
@@ -99,20 +107,17 @@ class Convert:
 
     @staticmethod
     def alpha_ass_to_dec(alpha_ass: str) -> int:
-        """Converts from ASS alpha string to corresponding decimal value.
+        """Convert an ASS alpha string to a decimal value.
 
-        Parameters:
-            alpha_ass (str): A string in the format '&HXX&'.
+        Args:
+            alpha_ass: A string with the ASS alpha value in the format '&HXX&'.
 
         Returns:
-            A decimal in [0, 255] representing ``alpha_ass`` converted.
+            int: The decimal value of the alpha component in the range [0, 255].
 
         Examples:
-            ..  code-block:: python3
-
-                print(Convert.alpha_ass_to_dec("&HFF&"))
-
-            >>> 255
+            >>> Convert.alpha_ass_to_dec("&HFF&")
+            255
         """
         match = re.fullmatch(r"&H([0-9A-F]{2})&", alpha_ass)
         if match is None:
@@ -123,22 +128,17 @@ class Convert:
 
     @staticmethod
     def alpha_dec_to_ass(alpha_dec: int | float) -> str:
-        """Converts from decimal value to corresponding ASS alpha string.
+        """Convert a decimal alpha value to an ASS alpha string.
 
-        Parameters:
-            alpha_dec (int or float): Decimal in [0, 255] representing an alpha value.
+        Args:
+            alpha_dec: An integer or float in the range [0, 255] representing an alpha value.
 
         Returns:
-            A string in the format '&HXX&' representing ``alpha_dec`` converted.
+            str: The corresponding ASS alpha string in the format '&HXX&'.
 
         Examples:
-            ..  code-block:: python3
-
-                print(Convert.alpha_dec_to_ass(255))
-                print(Convert.alpha_dec_to_ass(255.0))
-
-            >>> "&HFF&"
-            >>> "&HFF&"
+            >>> Convert.alpha_dec_to_ass(255)
+            '&HFF&'
         """
         try:
             if not 0 <= alpha_dec <= 255:
@@ -169,23 +169,25 @@ class Convert:
         | tuple[int, int, int, int]
         | tuple[float, float, float]
     ):
-        """Converts a provided color from a color model to another.
+        """Convert a color value between different color models.
 
-        Parameters:
-            c (str or tuple of int or tuple of float): A color in the format ``input_format``.
-            input_format (ColorModel): The color format of ``c``.
-            output_format (ColorModel): The color format for the output.
-            round_output (bool): A boolean to determine whether the output should be rounded or not.
+        It supports various formats such as ASS, RGB, RGBA, HSV, and OKLAB.
+
+        Args:
+            c: A color value in the input format. This can be a string or a tuple of numbers.
+            input_format: A ColorModel enum indicating the format of the input color.
+            output_format: A ColorModel enum indicating the desired format of the output color.
+            round_output: A boolean (default True) that determines if numerical results should be rounded.
 
         Returns:
-            A color in the format ``output_format``.
+            The color converted to the specified output format, either as a string or as a tuple.
 
         Examples:
-            ..  code-block:: python3
+            >>> Convert.color("&H0000FF&", ColorModel.ASS, ColorModel.RGB)
+            (255, 0, 0)
 
-                print(Convert.color("&H0000FF&", ColorModel.ASS, ColorModel.RGB))
-
-            >>> (255, 0, 0)
+        See Also:
+            [Convert.color_ass_to_rgb](pyonfx.convert.Convert.color_ass_to_rgb), [Convert.color_rgb_to_ass](pyonfx.convert.Convert.color_rgb_to_ass)
         """
         try:
             # Text for exception if input is out of ranges
@@ -295,24 +297,23 @@ class Convert:
     def color_ass_to_rgb(
         color_ass: str, as_str: bool = False
     ) -> str | tuple[int, int, int]:
-        """Converts from ASS color string to corresponding RGB color.
+        """Convert an ASS color string to its RGB representation.
 
-        Parameters:
-            color_ass (str): A string in the format '&HBBGGRR&'.
-            as_str (bool): A boolean to determine the output type format.
+        Args:
+            color_ass: A string in the ASS color format "&HBBGGRR&".
+            as_str: A boolean flag that, if True, returns the color as a hexadecimal string in the format "#RRGGBB"; otherwise returns a tuple (R, G, B).
 
         Returns:
-            The output represents ``color_ass`` converted. If ``as_str`` = False, the output is a tuple of integers in range *[0, 255]*.
-            Else, the output is a string in the format '#RRGGBB'.
+            The RGB representation of the color either as a tuple of integers or as a hexadecimal string.
 
         Examples:
-            ..  code-block:: python3
+            >>> Convert.color_ass_to_rgb("&HABCDEF&")
+            (239, 205, 171)
+            >>> Convert.color_ass_to_rgb("&HABCDEF&", as_str=True)
+            "#EFCDAB"
 
-                print(Convert.color_ass_to_rgb("&HABCDEF&"))
-                print(Convert.color_ass_to_rgb("&HABCDEF&", as_str=True))
-
-            >>> (239, 205, 171)
-            >>> "#EFCDAB"
+        See Also:
+            [Convert.color_rgb_to_ass](pyonfx.convert.Convert.color_rgb_to_ass)
         """
         result = Convert.color(
             color_ass, ColorModel.ASS, ColorModel.RGB_STR if as_str else ColorModel.RGB
@@ -325,59 +326,68 @@ class Convert:
     def color_ass_to_hsv(
         color_ass: str, round_output: bool = True
     ) -> tuple[int, int, int] | tuple[float, float, float]:
-        """Converts from ASS color string to corresponding HSV color.
+        """Convert an ASS color string to its HSV representation.
 
-        Parameters:
-            color_ass (str): A string in the format '&HBBGGRR&'.
-            round_output (bool): A boolean to determine whether the output should be rounded or not.
+        Args:
+            color_ass: A string representing the ASS color (format "&HBBGGRR&").
+            round_output: A boolean flag (default True) indicating whether to round the output values.
 
         Returns:
-            The output represents ``color_ass`` converted. If ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*.
-            Else, the output is a tuple of floats in range *( [0, 360), [0, 100], [0, 100] )*.
+            A tuple representing the HSV values. The values are integers if round_output is True, or floats otherwise.
 
         Examples:
-            ..  code-block:: python3
+            >>> Convert.color_ass_to_hsv("&HABCDEF&")
+            (30, 28, 94)
+            >>> Convert.color_ass_to_hsv("&HABCDEF&", round_output=False)
+            (30.000000000000014, 28.451882845188294, 93.72549019607843)
 
                 print(Convert.color_ass_to_hsv("&HABCDEF&"))
                 print(Convert.color_ass_to_hsv("&HABCDEF&", round_output=False))
 
-            >>> (30, 28, 94)
-            >>> (30.000000000000014, 28.451882845188294, 93.72549019607843)
+        See Also:
+            [Convert.color_rgb_to_hsv](pyonfx.convert.Convert.color_rgb_to_hsv)
         """
         result = Convert.color(color_ass, ColorModel.ASS, ColorModel.HSV, round_output)
         return cast(tuple[int, int, int] | tuple[float, float, float], result)
 
     @staticmethod
     def color_ass_to_oklab(color_ass: str) -> tuple[float, float, float]:
-        """Converts from ASS color string to corresponding OKLab color.
+        """Convert an ASS color string to its OKLab representation.
 
-        Parameters:
-            color_ass (str): A string in the format '&HBBGGRR&'.
+        Args:
+            color_ass: A string containing the ASS color in the format "&HBBGGRR&".
 
         Returns:
-            A tuple of floats representing the OKLab color (0-1).
+            A tuple of three floats corresponding to the OKLab color values.
+
+        Examples:
+            >>> Convert.color_ass_to_oklab("&HABCDEF&")
+            (0.8686973182678561, 0.023239204013187575, 0.054516093943155375)
+
+        See Also:
+            [Convert.color_oklab_to_rgb](pyonfx.convert.Convert.color_oklab_to_rgb)
         """
-        result = Convert.color(color_ass, ColorModel.ASS, ColorModel.OKLAB)
+        result = Convert.color(color_ass, ColorModel.ASS, ColorModel.OKLAB, round_output=False)
         return cast(tuple[float, float, float], result)
 
     @staticmethod
     def color_rgb_to_ass(
         color_rgb: str | tuple[int, int, int],
     ) -> str:
-        """Converts from RGB color to corresponding ASS color.
+        """Convert an RGB color value to its ASS representation.
 
-        Parameters:
-            color_rgb (str or tuple of int or tuple of float): Either a string in the format '#RRGGBB' or a tuple of three integers (or floats) in the range *[0, 255]*.
+        Args:
+            color_rgb: An RGB color value as a hexadecimal string or a tuple of three integers.
 
         Returns:
-            A string in the format '&HBBGGRR&' representing ``color_rgb`` converted.
+            str: The ASS color string in the format "&HBBGGRR&".
 
         Examples:
-            ..  code-block:: python3
+            >>> Convert.color_rgb_to_ass("#ABCDEF")
+            "&HEFCDAB&"
 
-                print(Convert.color_rgb_to_ass("#ABCDEF"))
-
-            >>> "&HEFCDAB&"
+        See Also:
+            [Convert.color_ass_to_rgb](pyonfx.convert.Convert.color_ass_to_rgb)
         """
         result = Convert.color(
             color_rgb,
@@ -391,24 +401,23 @@ class Convert:
         color_rgb: str | tuple[int | float, int | float, int | float],
         round_output: bool = True,
     ) -> tuple[int, int, int] | tuple[float, float, float]:
-        """Converts from RGB color to corresponding HSV color.
+        """Convert an RGB color value to its HSV representation.
 
-        Parameters:
-            color_rgb (str or tuple of int or tuple of float): Either a string in the format '#RRGGBB' or a tuple of three integers (or floats) in the range *[0, 255]*.
-            round_output (bool): A boolean to determine whether the output should be rounded or not.
+        Args:
+            color_rgb: An RGB color value as a hexadecimal string or a tuple of three numbers.
+            round_output: A boolean (default True) to determine if the output values should be rounded.
 
         Returns:
-            The output represents ``color_rgb`` converted. If ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*.
-            Else, the output is a tuple of floats in range *( [0, 360), [0, 100], [0, 100] )*.
+            A tuple representing the HSV values. If round_output is True, the components are integers; otherwise, they are floats.
 
         Examples:
-            ..  code-block:: python3
+            >>> Convert.color_rgb_to_hsv("#ABCDEF")
+            (210, 28, 94)
+            >>> Convert.color_rgb_to_hsv("#ABCDEF", round_output=False)
+            (210.0, 28.45, 93.73)
 
-                print(Convert.color_rgb_to_hsv("#ABCDEF"))
-                print(Convert.color_rgb_to_hsv("#ABCDEF"), round_output=False)
-
-            >>> (210, 28, 94)
-            >>> (210.0, 28.451882845188294, 93.72549019607843)
+        See Also:
+            [Convert.color_hsv_to_rgb](pyonfx.convert.Convert.color_hsv_to_rgb)
         """
         result = Convert.color(
             color_rgb,
@@ -422,15 +431,20 @@ class Convert:
     def color_rgb_to_oklab(
         color_rgb: tuple[int, int, int],
     ) -> tuple[float, float, float]:
-        """Converts an sRGB color to OKLab color.
+        """Convert an sRGB color value to its OKLab representation.
 
-        For more information, see: https://bottosson.github.io/posts/oklab/
-
-        Params:
-            rgb (tuple[int, int, int]): An RGB tuple (0-255).
+        Args:
+            color_rgb: A tuple (R, G, B) with each value in the range [0, 255].
 
         Returns:
-            A tuple of floats representing the OKLab color (0-1).
+            A tuple of three floats corresponding to the OKLab values (L, a, b) in the range [0, 1].
+
+        Examples:
+            >>> Convert.color_rgb_to_oklab((255, 0, 0))
+            (0.6279553606145516, 0.22486306106597398, 0.1258462985307351)
+
+        See Also:
+            [Convert.color_oklab_to_rgb](pyonfx.convert.Convert.color_oklab_to_rgb)
         """
         r, g, b = [x / 255 for x in color_rgb]
 
@@ -465,20 +479,20 @@ class Convert:
     def color_hsv_to_ass(
         color_hsv: tuple[int | float, int | float, int | float],
     ) -> str:
-        """Converts from HSV color string to corresponding ASS color.
+        """Convert an HSV color value to its ASS representation.
 
-        Parameters:
-            color_hsv (tuple of int/float): A tuple of three integers (or floats) in the range *( [0, 360), [0, 100], [0, 100] )*.
+        Args:
+            color_hsv: A tuple (H, S, V) representing the HSV color.
 
         Returns:
-            A string in the format '&HBBGGRR&' representing ``color_hsv`` converted.
+            str: The ASS color string corresponding to the given HSV value.
 
         Examples:
-            ..  code-block:: python3
+            >>> Convert.color_hsv_to_ass((100, 100, 100))
+            "&H00FF55&"
 
-                print(Convert.color_hsv_to_ass((100, 100, 100)))
-
-            >>> "&H00FF55&"
+        See Also:
+            [Convert.color_ass_to_hsv](pyonfx.convert.Convert.color_ass_to_hsv)
         """
         result = Convert.color(color_hsv, ColorModel.HSV, ColorModel.ASS)
         return cast(str, result)
@@ -489,28 +503,26 @@ class Convert:
         as_str: bool = False,
         round_output: bool = True,
     ) -> str | tuple[int, int, int] | tuple[float, float, float]:
-        """Converts from HSV color string to corresponding RGB color.
+        """Convert an HSV color value to its RGB representation.
 
-        Parameters:
-            color_hsv (tuple of int/float): A tuple of three integers (or floats) in the range *( [0, 360), [0, 100], [0, 100] )*.
-            as_str (bool): A boolean to determine the output type format.
-            round_output (bool): A boolean to determine whether the output should be rounded or not.
+        Args:
+            color_hsv: A tuple representing the HSV color with H in [0, 360), S and V in [0, 100].
+            as_str: A boolean flag that, if True, returns the RGB value as a hexadecimal string "#RRGGBB"; otherwise as a tuple (R, G, B).
+            round_output: A boolean (default True) that specifies whether the resulting RGB values should be rounded.
 
         Returns:
-            The output represents ``color_hsv`` converted. If ``as_str`` = False, the output is a tuple
-            ( also, if ``round_output`` = True, the output is a tuple of integers in range *( [0, 360), [0, 100], [0, 100] )*, else a tuple of float in range *( [0, 360), [0, 100], [0, 100] ) )*.
-            Else, the output is a string in the format '#RRGGBB'.
+            Either a tuple (R, G, B) or a string "#RRGGBB" representing the RGB color.
 
         Examples:
-            ..  code-block:: python3
+            >>> Convert.color_hsv_to_rgb((100, 100, 100))
+            (85, 255, 0)
+            >>> Convert.color_hsv_to_rgb((100, 100, 100), as_str=True)
+            "#55FF00"
+            >>> Convert.color_hsv_to_rgb((100, 100, 100), round_output=False)
+            (84.99999999999999, 255.0, 0.0)
 
-                print(Convert.color_hsv_to_rgb((100, 100, 100)))
-                print(Convert.color_hsv_to_rgb((100, 100, 100), as_str=True))
-                print(Convert.color_hsv_to_rgb((100, 100, 100), round_output=False))
-
-            >>> (85, 255, 0)
-            >>> "#55FF00"
-            >>> (84.99999999999999, 255.0, 0.0)
+        See Also:
+            [Convert.color_rgb_to_hsv](pyonfx.convert.Convert.color_rgb_to_hsv)
         """
         result = Convert.color(
             color_hsv,
@@ -526,15 +538,20 @@ class Convert:
     def color_oklab_to_rgb(
         color_oklab: tuple[float, float, float],
     ) -> tuple[int, int, int]:
-        """Converts an OKLab color to sRGB color.
+        """Convert an OKLab color value to its sRGB representation.
 
-        For more information, see: https://bottosson.github.io/posts/oklab/
-
-        Params:
-            oklab (tuple[float, float, float]): An OKLab tuple (L, a, b).
+        Args:
+            color_oklab: A tuple (L, a, b) representing the OKLab color, with values typically in the range [0, 1].
 
         Returns:
-            A tuple of integers representing the RGB color (0-255).
+            A tuple of three integers (R, G, B) in the range [0, 255] representing the sRGB color.
+
+        Examples:
+            >>> Convert.color_oklab_to_rgb((0.627, 0.224, 0.125))
+            (255, 0, 0)  # example output
+
+        See Also:
+            [Convert.color_rgb_to_oklab](pyonfx.convert.Convert.color_rgb_to_oklab)
         """
         L, a_val, b_val = color_oklab
 
@@ -574,13 +591,20 @@ class Convert:
 
     @staticmethod
     def color_oklab_to_ass(color_oklab: tuple[float, float, float]) -> str:
-        """Converts from OKLab color string to corresponding ASS color.
+        """Convert an OKLab color value to its ASS representation.
 
-        Parameters:
-            color_oklab (tuple[float, float, float]): An OKLab tuple (L, a, b).
+        Args:
+            color_oklab: A tuple of three floats representing the OKLab color.
 
         Returns:
-            A string in the format '&HBBGGRR&' representing ``color_oklab`` converted.
+            str: The ASS color string in the format "&HBBGGRR&" corresponding to the provided OKLab color.
+
+        Examples:
+            >>> Convert.color_oklab_to_ass((0.627, 0.224, 0.125))
+            "&H00FF55&"  # example output
+
+        See Also:
+            [Convert.color_ass_to_oklab](pyonfx.convert.Convert.color_ass_to_oklab)
         """
         result = Convert.color(color_oklab, ColorModel.OKLAB, ColorModel.ASS)
         return cast(str, result)
@@ -591,24 +615,28 @@ class Convert:
         fscx: float | None = None,
         fscy: float | None = None,
     ) -> "Shape":
-        """Converts text with given style information to an ASS shape.
+        """Convert text with style information to an ASS shape.
 
-        **Tips:** *You can easily create impressive deforming effects.*
+        Converting text to a shape converts the text into a detailed geometry representation,
+        exposing individual control points that can be manipulated for precise deformations.
 
-        Parameters:
-            obj (Line, Word, Syllable or Char): An object of class Line, Word, Syllable or Char.
-            fscx (float, optional): The scale_x value for the shape.
-            fscy (float, optional): The scale_y value for the shape.
+        Args:
+            obj: An instance of a Line, Word, Syllable, or Char that contains both text content and style information.
+            fscx: Optional; a float representing an override for the style's horizontal scale (scale_x) during conversion.
+            fscy: Optional; a float representing an override for the style's vertical scale (scale_y) during conversion.
 
         Returns:
-            A Shape object, representing the text with the style format values of the object.
+            Shape: An ASS shape object corresponding to the rendered text with applied style attributes.
 
         Examples:
-            ..  code-block:: python3
+            >>> l.text = "{\\an7\\pos(%.3f,%.3f)\\p1}%s" % (line.left, line.top, Convert.text_to_shape(line))
+            >>> io.write_line(l)
 
-                line = Line.copy(lines[1])
-                line.text = "{\\\\an7\\\\pos(%.3f,%.3f)\\\\p1}%s" % (line.left, line.top, Convert.text_to_shape(line))
-                io.write_line(line)
+        Notes:
+            A known limitation is that the output line must use '\\an7' and '\\pos(.left, .top)' for accurate displacement.
+
+        See Also:
+            [Convert.text_to_clip](pyonfx.convert.Convert.text_to_clip)
         """
         if obj.styleref is None:
             raise ValueError("Object must have a style reference and text content")
@@ -643,28 +671,26 @@ class Convert:
         fscx: float | None = None,
         fscy: float | None = None,
     ) -> "Shape":
-        """Converts text with given style information to an ASS shape, applying some translation/scaling to it since
-        it is not possible to position a shape with \\pos() once it is in a clip.
+        """Convert text with style information to an ASS shape for clipping.
 
-        This is an high level function since it does some additional operations, check text_to_shape for further infromations.
+        Because a shape used in a clip cannot be directly positioned using the \\pos() command,
+        the function applies additional translation and scaling to ensure proper alignment.
 
-        **Tips:** *You can easily create text masks even for growing/shrinking text without too much effort.*
-
-        Parameters:
-            obj (Line, Word, Syllable or Char): An object of class Line, Word, Syllable or Char.
-            an (integer, optional): The alignment wanted for the shape.
-            fscx (float, optional): The scale_x value for the shape.
-            fscy (float, optional): The scale_y value for the shape.
+        Args:
+            obj: An instance of Line, Word, Syllable, or Char that carries text content and associated style information.
+            an: An integer (default 5) specifying the desired alignment for the shape. Must be between 1 and 9.
+            fscx: Optional; a float overriding the style's horizontal scale (scale_x) during conversion.
+            fscy: Optional; a float overriding the style's vertical scale (scale_y) during conversion.
 
         Returns:
-            A Shape object, representing the text with the style format values of the object.
+            Shape: An ASS shape object generated from the text, adjusted for clipping use.
 
         Examples:
-            ..  code-block:: python3
+            >>> l.text = "{\\an5\\pos(%.3f,%.3f)\\clip(%s)}%s" % (line.center, line.middle, Convert.text_to_clip(line), Shape.circle(20).move(line.center, line.middle))
+            >>> io.write_line(l)
 
-                line = Line.copy(lines[1])
-                line.text = "{\\\\an5\\\\pos(%.3f,%.3f)\\\\clip(%s)}%s" % (line.center, line.middle, Convert.text_to_clip(line), line.text)
-                io.write_line(line)
+        See Also:
+            [Convert.text_to_shape](pyonfx.convert.Convert.text_to_shape)
         """
         if obj.styleref is None:
             raise ValueError("Object must have a style reference")
@@ -714,65 +740,70 @@ class Convert:
     def text_to_pixels(
         obj: "Line | Word | Syllable | Char",
         supersampling: int = 8,
+        output_rgba: bool = False,
     ) -> PixelCollection:
-        """| Converts text with given style information to a PixelCollection.
-        | A pixel data is a dictionary containing 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
+        """Convert styled text into a pixel representation.
 
-        It is highly suggested to create a dedicated style for pixels,
-        because you will write less tags for line in your pixels, which means less size for your .ass file.
+        This conversion is useful for creating effects like decaying text or light effects.
 
-        | The style suggested (named "p" in the example) is:
-        | - **an=7 (very important!);**
-        | - bord=0;
-        | - shad=0;
-        | - For Font informations leave whatever the default is;
-
-        **Tips:** *It allows easy creation of text decaying or light effects.*
-
-        Parameters:
-            obj (Line, Word, Syllable or Char): An object of class Line, Word, Syllable or Char.
-            supersampling (int): Value used for supersampling. Higher value means smoother and more precise anti-aliasing (and more computational time for generation).
+        Args:
+            obj: A text object (Line, Word, Syllable, or Char) containing both content and style data.
+            supersampling: An integer supersampling factor that controls the anti-aliasing quality. Higher values yield smoother edges but require more processing time.
+            output_rgba: A boolean flag indicating the format of the alpha value. If True, the alpha value for each pixel will be a numeric value between 0 and 255; otherwise, it will be returned as an ASS alpha string.
 
         Returns:
-            A list of dictionaries representing each individual pixel of the input text styled.
+            PixelCollection: A collection of pixels, where each pixel includes x and y coordinates and an alpha value representing transparency.
 
         Examples:
-            ..  code-block:: python3
+            >>> io.add_style("p", Ass.PIXEL_STYLE)
+            >>> l.style = "p"
+            >>> for pixel in Convert.text_to_pixels(l):
+            ...     x, y = l.left + pixel.x, l.top + pixel.y
+            ...     alpha = "\\alpha" + str(pixel.alpha) if str(pixel.alpha) != "&HFF&" else ""
+            ...     l.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, Shape.PIXEL)
+            ...     io.write_line(l)
 
-                l.style = "p"
-                p_sh = Shape.polygon(4, 1)
-                for pixel in Convert.text_to_pixels(l):
-                    x, y = math.floor(l.left) + pixel.x, math.floor(l.top) + pixel.y
-                    alpha = "\\alpha" + Convert.alpha_dec_to_ass(pixel.alpha) if pixel.alpha != 0 else ""
+        Notes:
+            To optimize the ASS file size, it is recommended to use a dedicated pixel style.
+            A pre-made pixel style ([Ass.PIXEL_STYLE](pyonfx.ass_core.Ass.PIXEL_STYLE)) is provided in the Ass class and can be added to your ASS output using the [add_style](pyonfx.ass_core.Ass.add_style) method.
 
-                    l.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, p_sh)
-                    io.write_line(l)
+        See Also:
+            [Convert.shape_to_pixels](pyonfx.convert.Convert.shape_to_pixels)
         """
         shape = Convert.text_to_shape(obj).move(obj.left % 1, obj.top % 1)
-        return Convert.shape_to_pixels(shape, supersampling)
+        return Convert.shape_to_pixels(shape, supersampling, output_rgba)
 
     @staticmethod
     def shape_to_pixels(
         shape: "Shape", supersampling: int = 8, output_rgba: bool = False
     ) -> PixelCollection:
-        """Converts a Shape object to a PixelCollection.
+        """Convert a Shape object into a pixel representation.
 
-        It is highly suggested to use a dedicated style for pixels,
-        because you will write less tags for line in your pixels, which means less size for your .ass file.
+        This conversion is useful for creating effects like decaying shapes or light effects.
 
-        PyonFX provides ``io.insert_pixel_style()`` to take care of this for you,
-        so be sure to call it before using this function.
-
-        **Tips:** *As for text, even shapes can decay!*
-
-        Parameters:
-            shape (Shape): An object of class Shape.
-            supersampling (int): Supersampling factor (≥ 1). Higher values mean smoother anti-aliasing but slower generation.
-            output_rgba (bool): If True, output RGBA values instead of ASS color and alpha.
+        Args:
+            shape: A Shape object representing the geometric outline to be sampled.
+            supersampling: An integer (≥ 1) that controls the anti-aliasing resolution. Higher values yield smoother results but increase processing time.
+            output_rgba: A boolean flag indicating the format of the alpha value. If True, the alpha value for each pixel will be a numeric value between 0 and 255; otherwise, it will be returned as an ASS alpha string.
 
         Returns:
-            A ``PixelCollection`` containing ``Pixel`` objects, representing each individual pixel of the input shape.
-            Each pixel contains 'x' (horizontal position), 'y' (vertical position) and 'alpha' (alpha/transparency).
+            PixelCollection: A collection of Pixel objects, where each pixel includes x and y coordinates and an alpha value representing transparency.
+
+        Examples:
+            >>> io.add_style("p", Ass.PIXEL_STYLE)
+            >>> l.style = "p"
+            >>> for pixel in Convert.shape_to_pixels(Shape.polygon(4, 20)):
+            ...     x, y = l.left + pixel.x, l.top + pixel.y
+            ...     alpha = "\\alpha" + str(pixel.alpha) if str(pixel.alpha) != "&HFF&" else ""
+            ...     l.text = "{\\p1\\pos(%d,%d)%s}%s" % (x, y, alpha, Shape.PIXEL)
+            ...     io.write_line(l)
+
+        Notes:
+            To optimize the ASS file size, it is recommended to use a dedicated pixel style.
+            A pre-made pixel style ([Ass.PIXEL_STYLE](pyonfx.ass_core.Ass.PIXEL_STYLE)) is provided in the Ass class and can be added to your ASS output using the [add_style](pyonfx.ass_core.Ass.add_style) method.
+
+        See Also:
+            [Convert.text_to_pixels](pyonfx.convert.Convert.text_to_pixels)
         """
         # Validate input
         if supersampling < 1 or not isinstance(supersampling, int):
@@ -849,18 +880,29 @@ class Convert:
         skip_transparent: bool = True,
         output_rgba: bool = False,
     ) -> PixelCollection:
-        """Converts an image to a PixelCollection.
+        """Convert an image file to a pixel representation.
 
-        Parameters:
-            image_path (str): A file path to an image (either absolute or relative to the script).
-            width (int, optional): Target width for rescaling. If None, original width is used.
-            height (int, optional): Target height for rescaling. If None, original height is used.
-                                 If only one dimension is specified, aspect ratio is maintained.
-            skip_transparent (bool): If True, skip fully transparent pixels (i.e. alpha == 255).
-            output_rgba (bool): If True, output RGBA values instead of ASS color and alpha.
+        Args:
+            image_path: A file path to an image (absolute or relative to the script).
+            width: Optional; an integer specifying the target width for rescaling. If None, the original width is used.
+            height: Optional; an integer specifying the target height for rescaling. If None, the original height is used. If only one dimension is provided, the aspect ratio is preserved.
+            skip_transparent: A boolean flag indicating whether fully transparent pixels (alpha == 0) should be skipped.
+            output_rgba: A boolean flag indicating the format of the alpha value. If True, each pixel's alpha value will be a number between 0 and 255 and the color as an RGB tuple; otherwise, the pixel's color is an ASS formatted string and the alpha is an ASS alpha string.
 
         Returns:
-            A ``PixelCollection`` containing ``Pixel`` objects, each containing x, y, color, alpha values.
+            PixelCollection: A collection of Pixel objects, where each pixel includes x and y coordinates and an alpha value representing transparency.
+
+        Examples:
+            >>> pixels = Convert.image_to_pixels("path_to_image/sample.png", width=50)
+            >>> for pixel in pixels:
+            ...     print(pixel.x, pixel.y, pixel.alpha)
+
+        Notes:
+            To optimize the ASS file size, it is recommended to use a dedicated pixel style.
+            A pre-made pixel style ([Ass.PIXEL_STYLE](pyonfx.ass_core.Ass.PIXEL_STYLE)) is provided in the Ass class and can be added to your ASS output using the [add_style](pyonfx.ass_core.Ass.add_style) method.
+
+        See Also:
+            [pyonfx.pixel.PixelCollection.apply_texture](pyonfx.pixel.PixelCollection.apply_texture)
         """
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
         if not os.path.isabs(image_path):
