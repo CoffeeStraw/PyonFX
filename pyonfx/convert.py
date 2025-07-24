@@ -367,7 +367,9 @@ class Convert:
         See Also:
             [Convert.color_oklab_to_rgb](pyonfx.convert.Convert.color_oklab_to_rgb)
         """
-        result = Convert.color(color_ass, ColorModel.ASS, ColorModel.OKLAB, round_output=False)
+        result = Convert.color(
+            color_ass, ColorModel.ASS, ColorModel.OKLAB, round_output=False
+        )
         return cast(tuple[float, float, float], result)
 
     @staticmethod

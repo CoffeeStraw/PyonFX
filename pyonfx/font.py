@@ -44,11 +44,18 @@ PANGO_SCALE = 1024  # The PANGO_SCALE macro represents the scale between dimensi
 
 
 class Font:
-    """
-    Font class definition
+    """Represents a font used for libass rendering.
+
+    This class abstracts platform-specific font rendering functionalities required for rendering subtitles in the ASS format.
+    It sets up native resources for text measurement and conversion to drawable shapes.
     """
 
     def __init__(self, style: "Style"):
+        """Initialize a Font object with style parameters.
+
+        Args:
+            style: An instance of Style containing font properties and configurations.
+        """
         self.family = style.fontname
         self.bold = style.bold
         self.italic = style.italic
@@ -130,11 +137,13 @@ class Font:
             raise NotImplementedError
 
     def __del__(self):
+        """Clean up and release font resources."""
         if sys.platform == "win32":
             win32gui.DeleteObject(self.pycfont.GetSafeHandle())
             win32gui.DeleteDC(self.dc)
 
     def get_metrics(self) -> tuple[float, float, float, float]:
+        """Retrieve the font's metrics for rendering text."""
         if sys.platform == "win32":
             const = self.downscale * self.yscale
             return (
@@ -157,6 +166,7 @@ class Font:
             raise NotImplementedError
 
     def get_text_extents(self, text: str) -> tuple[float, float]:
+        """Calculate the width and height of the given text when rendered."""
         if sys.platform == "win32":
             cx, cy = win32gui.GetTextExtentPoint32(self.dc, text)
 
@@ -196,7 +206,18 @@ class Font:
             raise NotImplementedError
 
     def text_to_shape(self, text: str) -> Shape:
-        """Convert text to a shape in libass format."""
+        """Convert text to a drawable shape in ASS format.
+
+        Args:
+            text: The string to convert into a shape.
+
+        Returns:
+            Shape: A Shape object containing the path commands that represent the text.
+
+        Notes:
+            Platform-specific implementations are used: GDI for Windows and Pango/Cairo for Unix-based systems.
+            Ensure that the Font object has been properly initialized with the correct style.
+        """
         if sys.platform not in ("win32", "linux", "darwin"):
             raise NotImplementedError(f"Platform {sys.platform} not supported")
 
