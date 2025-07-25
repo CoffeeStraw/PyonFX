@@ -29,7 +29,7 @@ star = Shape.star(5, 4, 10)
 CU = ColorUtility(lines)
 
 
-def romaji(line, l):
+def romaji(line: Line, l: Line):
     # Setting up a delay, we will use it as duration time of the leadin and leadout effects
     delay = 300
     # Setting up offset variables, we will use them for the \move in leadin and leadout effects
@@ -44,7 +44,6 @@ def romaji(line, l):
             line.start_time + 25 * syl.i - delay - 80
         )  # Remove 80 to start_time to let leadin finish a little bit earlier than the main effect of the first syllable
         l.end_time = line.start_time + syl.start_time
-        l.dur = l.end_time - l.start_time
 
         l.text = (
             "{\\an5\\move(%.3f,%.3f,%.3f,%.3f,0,%d)\\blur2\\t(0,%d,\\blur0)\\fad(%d,0)}%s"
@@ -68,7 +67,6 @@ def romaji(line, l):
 
         l.start_time = line.start_time + syl.start_time
         l.end_time = line.start_time + syl.end_time + 100
-        l.dur = l.end_time - l.start_time
 
         c1 = "&H81F4FF&"
         c3 = "&H199AAA&"
@@ -81,10 +79,10 @@ def romaji(line, l):
         # Apply rotation if inline_fx is m2
         if syl.inline_fx == "m2":
             on_inline_effect_2 = "\\t(0,%d,\\frz%.3f)\\t(%d,%d,\\frz0)" % (
-                l.dur / 4,
+                l.duration / 4,
                 random.uniform(-40, 40),
-                l.dur / 4,
-                l.dur,
+                l.duration / 4,
+                l.duration,
             )
 
         l.text = (
@@ -95,7 +93,7 @@ def romaji(line, l):
                 on_inline_effect_2,
                 c1,
                 c3,
-                l.dur - 80,
+                l.duration - 80,
                 line.styleref.color1,
                 line.styleref.color3,
                 syl.text,
@@ -172,7 +170,6 @@ def romaji(line, l):
 
         l.start_time = line.start_time + syl.end_time + 100
         l.end_time = line.end_time - 25 * (len(line.syls) - syl.i) + delay + 100
-        l.dur = l.end_time - l.start_time
 
         l.text = (
             "{\\an5\\move(%.3f,%.3f,%.3f,%.3f,%d,%d)\\t(%d,%d,\\blur2)\\fad(0,%d)}%s"
@@ -181,10 +178,10 @@ def romaji(line, l):
                 syl.middle,
                 syl.center + math.cos(syl.i / 2) * off_x,
                 syl.middle + math.sin(syl.i / 4) * off_y,
-                l.dur - delay,
-                l.dur,
-                l.dur - delay,
-                l.dur,
+                l.duration - delay,
+                l.duration,
+                l.duration - delay,
+                l.duration,
                 delay,
                 syl.text,
             )
@@ -193,7 +190,7 @@ def romaji(line, l):
         io.write_line(l)
 
 
-def kanji(line, l):
+def kanji(line: Line, l: Line):
     # Setting up a delay, we will use it as duration time of the leadin and leadout effects
     delay = 300
     # Setting up offset variables, we will use them for the \move in leadin and leadout effects
@@ -208,7 +205,6 @@ def kanji(line, l):
             line.start_time + 25 * syl.i - delay - 80
         )  # Remove 80 to start_time to let leadin finish a little bit earlier than the main effect of the first syllable
         l.end_time = line.start_time + syl.start_time
-        l.dur = l.end_time - l.start_time
 
         l.text = (
             "{\\an5\\move(%.3f,%.3f,%.3f,%.3f,0,%d)\\blur2\\t(0,%d,\\blur0)\\fad(%d,0)}%s"
@@ -232,7 +228,6 @@ def kanji(line, l):
 
         l.start_time = line.start_time + syl.start_time
         l.end_time = line.start_time + syl.end_time + 100
-        l.dur = l.end_time - l.start_time
 
         c1 = "&H81F4FF&"
         c3 = "&H199AAA&"
@@ -245,10 +240,10 @@ def kanji(line, l):
         # Apply rotation if effect field is m2
         if line.effect == "m2":
             on_inline_effect_2 = "\\t(0,%d,\\frz%.3f)\\t(%d,%d,\\frz0)" % (
-                l.dur / 4,
+                l.duration / 4,
                 random.uniform(-40, 40),
-                l.dur / 4,
-                l.dur,
+                l.duration / 4,
+                l.duration,
             )
 
         l.text = (
@@ -259,7 +254,7 @@ def kanji(line, l):
                 on_inline_effect_2,
                 c1,
                 c3,
-                l.dur - 80,
+                l.duration - 80,
                 line.styleref.color1,
                 line.styleref.color3,
                 syl.text,
@@ -274,7 +269,6 @@ def kanji(line, l):
 
         l.start_time = line.start_time + syl.end_time + 100
         l.end_time = line.end_time - 25 * (len(line.syls) - syl.i) + delay + 100
-        l.dur = l.end_time - l.start_time
 
         l.text = (
             "{\\an5\\move(%.3f,%.3f,%.3f,%.3f,%d,%d)\\t(%d,%d,\\blur2)\\fad(0,%d)}%s"
@@ -283,10 +277,10 @@ def kanji(line, l):
                 syl.middle,
                 syl.center + math.cos(syl.i / 2) * off_x,
                 syl.middle + math.sin(syl.i / 4) * off_y,
-                l.dur - delay,
-                l.dur,
-                l.dur - delay,
-                l.dur,
+                l.duration - delay,
+                l.duration,
+                l.duration - delay,
+                l.duration,
                 delay,
                 syl.text,
             )
@@ -295,13 +289,12 @@ def kanji(line, l):
         io.write_line(l)
 
 
-def sub(line, l):
+def sub(line: Line, l: Line):
     # Translation Effect
     l.layer = 0
 
-    l.start_time = line.start_time - line.leadin / 2
-    l.end_time = line.end_time + line.leadout / 2
-    l.dur = l.end_time - l.start_time
+    l.start_time = line.start_time - line.leadin // 2
+    l.end_time = line.end_time + line.leadout // 2
 
     # Getting interpolated color changes (notice that we do that only after having set up all the times, that's important)
     colors = CU.get_color_change(l)
