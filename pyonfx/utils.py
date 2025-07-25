@@ -37,14 +37,23 @@ class Utils:
     def progress_bar(
         iterable: Iterable[_LineWordSyllableChar], **kwargs
     ) -> Iterable[_LineWordSyllableChar]:
-        """Wraps an iterable of Lines, Words, Syllables, or Chars with a tqdm progress bar.
+        """Wrap an iterable of [Line](pyonfx.ass_core.Line), [Word](pyonfx.ass_core.Word), [Syllable](pyonfx.ass_core.Syllable), or [Char](pyonfx.ass_core.Char) with a tqdm progress bar.
 
         Args:
-            iterable: The iterable to wrap (list of Lines, Words, Syllables, Chars).
-            **kwargs: Additional arguments for tqdm.
+            iterable: An iterable containing elements of type [Line](pyonfx.ass_core.Line), [Word](pyonfx.ass_core.Word), [Syllable](pyonfx.ass_core.Syllable), or [Char](pyonfx.ass_core.Char).
+            **kwargs: Additional arguments passed to the tqdm progress bar.
 
         Returns:
-            An iterator with a progress bar.
+            Iterable[_LineWordSyllableChar]: An iterator wrapping the original iterable with a tqdm
+            progress bar displaying the iteration progress.
+
+        Examples:
+            >>> items = [line1, line2, line3]
+            >>> for item in Utils.progress_bar(items):
+            ...     process(item)
+
+        See Also:
+            [all_non_empty](pyonfx.utils.Utils.all_non_empty): Which also uses `progress_bar` for optionally wrapping its returned iterable.
         """
         # Convert to list to support multiple passes and len()
         items = list(iterable)
@@ -89,18 +98,25 @@ class Utils:
         renumber_indexes: bool = True,
         progress_bar: bool = True,
     ) -> Iterable[_LineWordSyllableChar]:
-        """Return a filtered copy of the given objects list excluding the *empty* ones.
+        """Filter and return non-empty elements from a given iterable.
 
-        Parameters:
-            lines_words_syls_or_chars (list of :class:`Line<pyonfx.ass_utility.Line>`, :class:`Word<pyonfx.ass_utility.Word>`, :class:`Syllable<pyonfx.ass_utility.Syllable>` or :class:`Char<pyonfx.ass_utility.Char>`)
-            filter_comment (bool, optional): Only for lines: if True, objects are filtered based on their comment attribute.
-            filter_whitespace_text (bool, optional): If True, objects are filtered based on their text attribute.
-            filter_empty_duration (bool, optional): If True, objects are filtered based on their duration attribute.
-            renumber_indexes (bool, optional): If True, the ``i``, ``word_i`` and ``syl_i`` attributes of the surviving objects are re-assigned to reflect their new position in the returned list.
-            progress_bar (bool, optional): If True, the result is wrapped with :func:`progress_bar`.
+        Args:
+            lines_words_syls_or_chars: An iterable containing elements of type [Line](pyonfx.ass_core.Line), [Word](pyonfx.ass_core.Word), [Syllable](pyonfx.ass_core.Syllable), or [Char](pyonfx.ass_core.Char).
+            filter_comment: If True, filters out objects with comments (only applicable for [Line](pyonfx.ass_core.Line) objects).
+            filter_whitespace_text: If True, filters out objects whose text attribute is empty or contains only whitespace.
+            filter_empty_duration: If True, filters out objects with a duration less than or equal to zero.
+            renumber_indexes: If True, reassigns indexes (`i`, `word_i`, `syl_i`) of the filtered objects.
+            progress_bar: If True, wraps the resulting iterable with a progress bar for visual feedback.
 
         Returns:
-            The filtered objects list.
+            Iterable[_LineWordSyllableChar]: An iterator that yields the filtered objects after applying all criteria.
+
+        Examples:
+            >>> for item in Utils.all_non_empty(lines):
+            ...     print(item.text)
+
+        See Also:
+            [progress_bar](pyonfx.utils.Utils.progress_bar): Used to wrap the iterable with a progress indicator.
         """
         out: list[Utils._LineWordSyllableChar] = []
         for obj in lines_words_syls_or_chars:
@@ -176,17 +192,29 @@ class Utils:
             | Callable[[float], float]
         ) = 1.0,
     ) -> float:
-        """Applies an acceleration function to transform a percentage value.
-
-        Parameters:
-            pct (float): Progress percentage value, typically between 0.0 and 1.0.
-            acc (float | str | Accelerator, optional): Acceleration function to apply:
-                - float: Power value (1.0 = linear, >1.0 = ease-in, <1.0 = ease-out)
-                - str: Preset easing function name. Consult this website to help you choose: https://easings.net/
-                - Accelerator: Custom accelerator function
+        """Transform a progress percentage using an acceleration function.
+        
+        Args:
+            pct: A float representing the progress percentage, typically between 0.0 and 1.0.
+            acc: A float, string, or callable defining the acceleration function. Defaults to 1.0 for linear progression.
+                 - If a float is provided, it acts as the exponent for the transformation.
+                 - If a string is provided, it must correspond to a preset easing function name as defined in `rpeasings`.
+                 - If a callable is provided, it should accept a float and return a transformed float.
 
         Returns:
-            float: The transformed percentage value.
+            float: The transformed percentage value after applying the acceleration function.
+        
+        Examples:
+            >>> Utils.accelerate(0.5, 2.0)
+            0.25
+            >>> Utils.accelerate(0.5, "in_expo")
+            0.3125
+        
+        Notes:
+            Refer to https://easings.net/ for guidance in choosing among the available easing functions.
+        
+        See Also:
+            [interpolate](pyonfx.utils.Utils.interpolate): Used for interpolating between values with easing.
         """
         if pct == 0.0 or pct == 1.0:
             return pct
@@ -249,34 +277,35 @@ class Utils:
             | Callable[[float], float]
         ) = 1.0,
     ) -> _FloatStr:
-        """
-        Interpolates 2 given values (ASS colors, ASS alpha channels or numbers) by percent value.
-        Supports various acceleration/easing functions for smooth animations.
-
-        Parameters:
-            pct (float): Percent value of the interpolation (0.0 to 1.0).
-            val1 (int, float or str): First value to interpolate (either string or number).
-            val2 (int, float or str): Second value to interpolate (either string or number).
-            acc (float | str | Accelerator, optional): Acceleration function to apply:
-                - float: Power value (1.0 = linear, >1.0 = ease-in, <1.0 = ease-out), same as in ASS `\\t` tag.
-                - str: Preset name ("ease", "ease-in", "ease-out", "ease-in-out").
-                - Accelerator: Custom accelerator object. You can check out :class:`CubicBezier` or build your own.
+        """Interpolate between two values with an optional acceleration (easing) function.
+        
+        Args:
+            pct: A float in the range [0.0, 1.0] representing the interpolation factor.
+            val1: The starting value (ASS color, ASS alpha channel or number) for interpolation.
+            val2: The ending value (ASS color, ASS alpha channel or number) for interpolation.
+            acc: A float, string, or callable defining the acceleration function. Defaults to 1.0 for linear progression.
+                 - If a float is provided, it acts as the exponent for the transformation.
+                 - If a string is provided, it must correspond to a preset easing function name as defined in `rpeasings`.
+                 - If a callable is provided, it should accept a float and return a transformed float.
 
         Returns:
-            Interpolated value of given 2 values (so either a string or a number).
-
+            The interpolated value, either a number or a string, matching the type of `val1` and `val2`.
+        
         Examples:
-            ..  code-block:: python3
-
-                print( Utils.interpolate(0.5, 10, 20) )
-                print( Utils.interpolate(0.9, "&HFFFFFF&", "&H000000&") )
-                print( Utils.interpolate(0.5, 10, 20, "ease-in") )
-                print( Utils.interpolate(0.5, 10, 20, 2.0) )
-
-            >>> 15.0
-            >>> &HE5E5E5&
-            >>> 13.05
-            >>> 12.5
+            >>> Utils.interpolate(0.5, 10, 20)
+            15.0
+            >>> Utils.interpolate(0.9, "&HFFFFFF&", "&H000000&")
+            &HE5E5E5&
+            >>> Utils.interpolate(0.5, 10, 20, "ease-in")
+            13.05
+            >>> Utils.interpolate(0.5, 10, 20, 2.0)
+            12.5
+        
+        Notes:
+            Refer to https://easings.net/ for guidance in choosing among the available easing functions.
+        
+        See Also:
+            [accelerate](pyonfx.utils.Utils.accelerate): Used to transform percentage values with easing.
         """
         if pct > 1.0 or pct < 0:
             raise ValueError(
@@ -357,7 +386,26 @@ class Utils:
         offset_start=0,
         offset_end=0,
     ):
-        """Retime a line based on the given mode."""
+        """Adjust the timing of a subtitle line based on a specified mode.
+        
+        Args:
+            mode: A string literal indicating the retime mode. Each mode applies a different timing adjustment strategy.
+            line: The subtitle line object whose `start_time` and `end_time` will be adjusted.
+            word_syl_or_char: An optional element ([Word](pyonfx.ass_core.Word), [Syllable](pyonfx.ass_core.Syllable), or [Char](pyonfx.ass_core.Char))
+                              providing timing reference for modes that require relative timing. Must be provided for modes other than
+                              "line", "preline", "postline", "set", and "abs".
+            offset_start: An optional integer offset (in milliseconds) to add to the computed start time.
+            offset_end: An optional integer offset (in milliseconds) to add to the computed end time.
+        
+        Examples:
+            >>> # Retiming a line based on the timing of a syllable
+            >>> Utils.retime("syl", line, syl, offset_start=10, offset_end=5)
+            >>> # Retiming a line to keep its original timing (no adjustment)
+            >>> Utils.retime("line", line)
+        
+        See Also:
+            [kara-templater retime implementation](https://github.com/slackingway/karaOK/blob/master/autoload/ln.kara-templater-mod.lua#L352)
+        """
         if mode == "syl":
             if word_syl_or_char is None:
                 raise ValueError("word_syl_or_char must be provided for mode 'syl'")
@@ -422,56 +470,29 @@ class Utils:
 
 
 class FrameUtility:
-    """This class allows to accurately work in a frame per frame environment.
-
-    You can use it to iterate over the frames going from ``start_ms``
-    to ``end_ms`` and perform operations easily over multiple frames.
-
-    Parameters:
-        start_ms (positive int): Initial time in ms.
-        end_ms (positive int): Final time in ms.
-        timestamps (ABCTimestamps): A timestamps object from [VideoTimestamps](https://github.com/moi15moi/VideoTimestamps/).
-        n_fr (positive int, optional): Number of frames covered by each iteration.
-
-    Returns:
-        Returns a Generator yielding start_ms, end_ms, current frame index and total number of frames at each step.
-
-    Example:
-        >>> # Let's assume to have an Ass object named "io" having a 20 fps video (i.e. frames are 50 ms long)
+    """Provide an accurate frame-by-frame iteration engine for subtitle processing.
+    
+    This class enables precise operations on video frames by dividing a time interval (from `start_ms` to `end_ms`)
+    into discrete frame segments based on a given timestamps object. It calculates the corresponding frame indices and yields
+    a tuple for each frame segment containing:
+      - The start time of the frame segment (in milliseconds).
+      - The end time of the frame segment (in milliseconds), clamped to the video duration.
+      - The current frame index (starting at 1).
+      - The total number of frame segments.
+    
+    Examples:
+        >>> # Assume `io.input_timestamps` is an instance of ABCTimestamps and the video has a 20 fps frame rate (50 ms per frame)
         >>> FU = FrameUtility(0, 110, io.input_timestamps)
         >>> for s, e, i, n in FU:
-        >>>     print(f"Frame {i}/{n}: {s} - {e}")
-        >>>
-        >>> Frame 1/3: 0 - 25
-        >>> Frame 2/3: 25 - 75
-        >>> Frame 3/3: 75 - 125
-
-    Note:
-        Understanding FrameUtility:
-
-        When playing a video with subtitles (e.g., an .mkv file):
-        - A subtitle line is displayed when the player's current time falls between the line's start and end times
-        - Videos can have either constant frame rates (CFR) or variable frame rates (VFR)
-
-        Example with a CFR video at 20 fps (50ms per frame):
-        - Player seeks frames at: 0ms, 50ms, 100ms, 150ms, ...
-
-        When generating subtitle lines per frame, FrameUtility uses a "mid-point" approach:
-        - Each frame's timing is centered around the player's seek time
-        - This ensures the subtitle will be visible for the entire frame duration
-
-        Frame timings example:
-        Frame #: Start - End (Player's seek time)
-        Frame 0:   0 -  25 (0, special case)
-        Frame 1:  25 -  75 (50)
-        Frame 2:  75 - 125 (100)
-        Frame 3: 125 - 175 (150)
-        ...
-
-        This approach:
-        - Ensures smooth frame transitions
-        - Avoids flickering by avoiding gaps between frames
-        - Works reliably for both CFR and VFR videos
+        ...     print(f"Frame {i}/{n}: {s} - {e}")
+        Frame 1/3: 0 - 25
+        Frame 2/3: 25 - 75
+        Frame 3/3: 75 - 125
+    
+    Notes:
+        A mid-point approach is used to center each frame's timing around the player's seek time, ensuring that subtitles
+        remain visible throughout the entire frame duration. This method is reliable for both constant frame rate (CFR) and
+        variable frame rate (VFR) videos.
     """
 
     def __init__(
@@ -481,6 +502,14 @@ class FrameUtility:
         timestamps: ABCTimestamps | None,
         n_fr: int = 1,
     ):
+        """Initialize the FrameUtility object.
+
+        Args:
+            start_ms: A positive integer representing the starting time (in milliseconds) of the interval.
+            end_ms: A positive integer representing the ending time (in milliseconds) of the interval.
+            timestamps: An instance of `ABCTimestamps` used to convert between time values and frame numbers.
+            n_fr: An optional positive integer specifying the number of frames to process per iteration (default is 1).
+        """
         # Check for invalid values
         if start_ms < 0 or end_ms < 0:
             raise ValueError("Parameters 'start_ms' and 'end_ms' must be >= 0.")
@@ -528,10 +557,7 @@ class FrameUtility:
         self.reset()
 
     def reset(self):
-        """
-        Resets the FrameUtility object to its starting values.
-        It is a mandatory operation if you want to reuse the same object.
-        """
+        """Reset the frame utility to its initial state."""
         self.i = 0
         self.curr_fr = self.start_fr
 
@@ -540,7 +566,7 @@ class FrameUtility:
         start_time: float,
         end_time: float,
         end_value: float,
-        accelerator: (
+        acc: (
             float
             | Literal[
                 "in_back",
@@ -577,41 +603,46 @@ class FrameUtility:
             | Callable[[float], float]
         ) = 1.0,
     ) -> float:
-        """Frame-by-frame equivalent of the ASS ``\\t`` tag.
-
-        This function provides a frame-accurate way to transform numeric values over time,
-        similar to how the ASS ``\\t`` tag transforms styles. While ``\\t`` handles complete
-        style transformations, this method focuses on transforming individual numeric values
-        that can then be used within style tags.
-
-        Note:
-            Must be used within a for loop iterating a FrameUtility object.
-
-        Parameters:
-            start_time (float): Initial time.
-            end_time (float): Final time.
-            end_value (float): Numeric value reached at end_time.
-            accelerator (float | str | Accelerator, optional): Acceleration/easing to apply (check Utils.accelerate for more details).
+        """Apply a frame-by-frame numeric transformation similar to the ASS '\\t' tag.
+        
+        This method computes an adjustment value for the current frame by interpolating between 0 and `end_value` over a
+        specified time interval defined by `start_time` and `end_time`. Mimicking the behavior of the ASS '\\t' tag,
+        it calculates the interpolation progress based on the midpoint of the current frame within the interval and applies
+        an optional acceleration (easing) function (`acc`) to modulate the transformation.
+        
+        Args:
+            start_time: The start time (in milliseconds) of the transformation interval.
+            end_time: The end time (in milliseconds) of the transformation interval.
+            end_value: The final adjustment value to be reached at the end of the interval.
+            acc: A float, string, or callable defining the acceleration function. Defaults to 1.0 for linear progression.
+                 - If a float is provided, it acts as the exponent for the transformation.
+                 - If a string is provided, it must correspond to a preset easing function name as defined in `rpeasings`.
+                 - If a callable is provided, it should accept a float and return a transformed float.
 
         Returns:
-            The transformed numeric value at the current frame of this FrameUtility object.
-
+            float: The computed adjustment value for the current frame.
+        
         Examples:
             >>> # Let's assume to have an Ass object named "io" having a 20 fps video (i.e. frames are 50 ms long)
             >>> FU = FrameUtility(25, 225, io.input_timestamps)
             >>> for s, e, i, n in FU:
-            >>>     # We would like to transform the fsc value
-            >>>     # from 100 up 150 for the first 100 ms,
-            >>>     # and then from 150 to 100 for the remaining 200 ms
-            >>>     fsc = 100
-            >>>     fsc += FU.add(0, 100, 50)
-            >>>     fsc += FU.add(100, 200, -50)
-            >>>     print(f"Frame {i}/{n}: {s} - {e}; fsc: {fsc}")
-            >>>
-            >>> Frame 1/4: 25 - 75; fsc: 112.5
-            >>> Frame 2/4: 75 - 125; fsc: 137.5
-            >>> Frame 3/4: 125 - 175; fsc: 137.5
-            >>> Frame 4/4: 175 - 225; fsc: 112.5
+            ...     # We would like to transform the fsc value
+            ...     # from 100 up 150 for the first 100 ms,
+            ...     # and then from 150 to 100 for the remaining 200 ms
+            ...     fsc = 100
+            ...     fsc += FU.add(0, 100, 50)
+            ...     fsc += FU.add(100, 200, -50)
+            ...     print(f"Frame {i}/{n}: {s} - {e}; fsc: {fsc}")
+            Frame 1/4: 25 - 75; fsc: 112.5
+            Frame 2/4: 75 - 125; fsc: 137.5
+            Frame 3/4: 125 - 175; fsc: 137.5
+            Frame 4/4: 175 - 225; fsc: 112.5
+        
+        Notes:
+            This method should be used within a loop iterating a FrameUtility object.
+
+        See Also:
+            [Utils.accelerate](pyonfx.utils.Utils.accelerate): For transforming percentage values with easing.
         """
         curr_ms = self.timestamps.frame_to_time(
             self.i + (self.n_fr - 1) // 2, TimeType.END, 3, True
@@ -624,58 +655,37 @@ class FrameUtility:
 
         curr = curr_ms - start_time
         total = end_time - start_time
-        return Utils.interpolate(curr / total, 0, end_value, accelerator)
+        return Utils.interpolate(curr / total, 0, end_value, acc)
 
 
 class ColorUtility:
-    """
-    This class helps to obtain all the color transformations written in a list of lines
-    (usually all the lines of your input .ass)
-    to later retrieve all of those transformations that fit between the start_time and end_time of a line passed,
-    without having to worry about interpolating times or other stressfull tasks.
+    """Extract and manage color transformations from ASS subtitle lines.
 
-    It is highly suggested to create this object just one time in your script, for performance reasons.
-
-    Note:
-        A few notes about the color transformations in your lines:
-
-        * Every color-tag has to be in the format of ``c&Hxxxxxx&``, do not forget the last &;
-        * You can put color changes without using transformations, like ``{\\1c&HFFFFFF&\\3c&H000000&}Test``, but those will be interpreted as ``{\\t(0,0,\\1c&HFFFFFF&\\3c&H000000&)}Test``;
-        * For an example of how color changes should be put in your lines, check `this <https://github.com/CoffeeStraw/PyonFX/blob/master/examples/2%20-%20Beginner/in2.ass#L34-L36>`_.
-
-        Also, it is important to remember that **color changes in your lines are treated as if they were continuous**.
-
-        For example, let's assume we have two lines:
-
-        #. ``{\\1c&HFFFFFF&\\t(100,150,\\1c&H000000&)}Line1``, starting at 0ms, ending at 100ms;
-        #. ``{}Line2``, starting at 100ms, ending at 200ms.
-
-        Even if the second line **doesn't have any color changes** and you would expect to have the style's colors,
-        **it will be treated as it has** ``\\1c&H000000&``. That could seem strange at first,
-        but thinking about your generated lines, **the majority** will have **start_time and end_time different** from the ones of your original file.
-
-        Treating transformations as if they were continous, **ColorUtility will always know the right colors** to pick for you.
-        Also, remember that even if you can't always see them directly on Aegisub, you can use transformations
-        with negative times or with times that exceed line total duration.
-
-    Parameters:
-        lines (list of Line): List of lines to be parsed
-        offset (integer, optional): Milliseconds you may want to shift all the color changes
-
-    Returns:
-        Returns a ColorUtility object.
-
+    Parses ASS Line objects to extract color change commands (\\1c, \\3c, \\4c) 
+    and their transformations (\\t tags), and provides interpolated color values
+    for smooth transitions during subtitle rendering.
+    
     Examples:
-        ..  code-block:: python3
-            :emphasize-lines: 2, 4
-
-            # Parsing all the lines in the file
-            CU = ColorUtility(lines)
-            # Parsing just a single line (the first in this case) in the file
-            CU = ColorUtility([ line[0] ])
+        >>> cu = ColorUtility(subtitle_lines)
+        >>> color_tags = cu.get_color_change(current_line)
+        >>> print(f"Color tags: {color_tags}")
+        \\1c&HFFFFFF&\\t(100,200,\\1c&H000000&)
+    
+    Notes:
+        - Create only one ColorUtility instance per ASS file for optimal performance.
+        - Lines without explicit colors inherit from the last defined color state.
+        
+    See Also:
+        `Utils.interpolate` for color interpolation between ASS color values.
     """
 
     def __init__(self, lines: list[Line], offset: int = 0):
+        """Initialize the ColorUtility object.
+
+        Args:
+            lines: A list of Line objects representing the subtitle lines to be analyzed for color changes.
+            offset: An optional integer (in milliseconds) to shift all color change timings, useful for synchronization.
+        """
         self.color_changes = []
         self.c1_req = False
         self.c3_req = False
@@ -784,30 +794,30 @@ class ColorUtility:
         c3: bool | None = None,
         c4: bool | None = None,
     ) -> str:
-        """Returns all the color_changes in the object that fit (in terms of time) between line.start_time and line.end_time.
-
-        Parameters:
-            line (Line object): The line of which you want to get the color changes
-            c1 (bool, optional): If False, you will not get color values containing primary color
-            c3 (bool, optional): If False, you will not get color values containing border color
-            c4 (bool, optional): If False, you will not get color values containing shadow color
-
+        """Generate color transformation tags for a subtitle line's time range.
+        
+        Returns interpolated color changes that occur within the line's time span,
+        including base colors and transformation tags. Automatically inherits colors
+        from previous lines when not explicitly overridden.
+        
+        Args:
+            line: [Line](pyonfx.ass_core.Line) object containing timing and style information.
+            c1: Include primary color changes. Auto-detected if None.
+            c3: Include border color changes. Auto-detected if None.
+            c4: Include shadow color changes. Auto-detected if None.
+        
         Returns:
-            A string containing color changes interpolated.
-
-        Note:
-            If c1, c3 or c4 is/are None, the script will automatically recognize what you used in the color changes in the lines and put only the ones considered essential.
-
+            str: ASS-formatted color tags for the line (e.g., "\\1c&HFFFFFF&\\t(100,200,\\1c&H000000&)").
+        
         Examples:
-            ..  code-block:: python3
-                :emphasize-lines: 6
-
-                # Assume that we have l as a copy of line and we're iterating over all the syl in the current line
-                # All the fun stuff of the effect creation...
-                l.start_time = line.start_time + syl.start_time
-                l.end_time   = line.start_time + syl.end_time
-
-                l.text = "{\\\\an5\\\\pos(%.3f,%.3f)\\\\fscx120\\\\fscy120%s}%s" % (syl.center, syl.middle, CU.get_color_change(l), syl.text)
+            >>> line.start_time, line.end_time = 1000, 2000
+            >>> cu.get_color_change(line)
+            "\\1c&HFFFFFF&\\3c&H000000&\\t(500,1000,\\1c&H000000&\\3c&HFFFFFF&)"
+            >>> cu.get_color_change(line, c1=True, c3=False, c4=False)
+            "\\1c&HFFFFFF&\\t(500,1000,\\1c&H000000&)"
+        
+        See Also:
+            [get_fr_color_change](pyonfx.utils.ColorUtility.get_fr_color_change) for frame-by-frame color values.
         """
         transform = ""
 
@@ -875,29 +885,30 @@ class ColorUtility:
         c3: bool | None = None,
         c4: bool | None = None,
     ) -> str:
-        """Returns the single color(s) in the color_changes that fit the current frame (line.start_time) in your frame loop.
-
-        Note:
-            If you get errors, try either modifying your \\\\t values or set your **fr parameter** in FU object to **10**.
-
-        Parameters:
-            line (Line object): The line of which you want to get the color changes
-            c1 (bool, optional): If False, you will not get color values containing primary color.
-            c3 (bool, optional): If False, you will not get color values containing border color.
-            c4 (bool, optional): If False, you will not get color values containing shadow color.
-
+        """Get interpolated color values for a specific frame time.
+        
+        Returns the exact color values at line.start_time by interpolating between
+        color transformations. Essential for frame-by-frame rendering where you need
+        precise color values at specific moments.
+        
+        Args:
+            line: [Line](pyonfx.ass_core.Line) object where start_time represents the current frame time.
+            c1: Include primary color interpolation. Auto-detected if None.
+            c3: Include border color interpolation. Auto-detected if None. 
+            c4: Include shadow color interpolation. Auto-detected if None.
+        
         Returns:
-            A string containing color changes interpolated.
-
+            str: Interpolated ASS color tags for the exact frame time (e.g., "\\1c&H808080&").
+        
         Examples:
-            ..  code-block:: python3
-                :emphasize-lines: 5
-
-                # Assume that we have l as a copy of line and we're iterating over all the syl in the current line and we're iterating over the frames
-                l.start_time = s
-                l.end_time   = e
-
-                l.text = "{\\\\an5\\\\pos(%.3f,%.3f)\\\\fscx120\\\\fscy120%s}%s" % (syl.center, syl.middle, CU.get_fr_color_change(l), syl.text)
+            >>> line.start_time = 1500  # Frame at 1.5 seconds
+            >>> cu.get_fr_color_change(line)
+            "\\1c&H808080&\\3c&HFF0000&"
+            >>> cu.get_fr_color_change(line, c1=True, c3=False)
+            "\\1c&H808080&"
+        
+        See Also:
+            [get_color_change](pyonfx.utils.ColorUtility.get_color_change) for complete transformation sequences over time ranges.
         """
         # If we don't have user's settings, we set c values
         # to the ones that we previously saved
