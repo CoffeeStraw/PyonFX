@@ -62,6 +62,6 @@ Enhance your development workflow by setting up your environment as follows:
 
 After completing these steps, you can start learning how to use the library! We prepared a series of tutorials for you, starting from [Exploring ASS values](first_steps/01_explore_ass_values.md).
 
-[^py]: For beginners, see [Think Python 2](http://greenteapress.com/thinkpython2/thinkpython2.pdf) (English) or [Think Python Italian](https://github.com/AllenDowney/ThinkPythonItalian/blob/master/thinkpython_italian.pdf) (Italian) for additional Python resources.
+[^py]: For beginners, we suggest starting with this [this comprehensive video guide](https://www.youtube.com/watch?v=b093aqAZiPU), which introduces the basics of Python step by step. If you want to explore further, ["Think Python 2"](http://greenteapress.com/thinkpython2/thinkpython2.pdf) is an excellent free PDF book (in English) that covers core programming concepts in more depth.
 
 [^ass]: For a comprehensive guide to ASS tags, see the [Aegisub official documentation](https://aegisub.org/docs/latest/ass_tags/).
