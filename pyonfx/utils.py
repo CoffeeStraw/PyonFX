@@ -193,7 +193,7 @@ class Utils:
         ) = 1.0,
     ) -> float:
         """Transform a progress percentage using an acceleration function.
-        
+
         Args:
             pct: A float representing the progress percentage, typically between 0.0 and 1.0.
             acc: A float, string, or callable defining the acceleration function. Defaults to 1.0 for linear progression.
@@ -203,16 +203,16 @@ class Utils:
 
         Returns:
             float: The transformed percentage value after applying the acceleration function.
-        
+
         Examples:
             >>> Utils.accelerate(0.5, 2.0)
             0.25
             >>> Utils.accelerate(0.5, "in_expo")
             0.3125
-        
+
         Notes:
             Refer to https://easings.net/ for guidance in choosing among the available easing functions.
-        
+
         See Also:
             [interpolate](pyonfx.utils.Utils.interpolate): Used for interpolating between values with easing.
         """
@@ -278,7 +278,7 @@ class Utils:
         ) = 1.0,
     ) -> _FloatStr:
         """Interpolate between two values with an optional acceleration (easing) function.
-        
+
         Args:
             pct: A float in the range [0.0, 1.0] representing the interpolation factor.
             val1: The starting value (ASS color, ASS alpha channel or number) for interpolation.
@@ -290,7 +290,7 @@ class Utils:
 
         Returns:
             The interpolated value, either a number or a string, matching the type of `val1` and `val2`.
-        
+
         Examples:
             >>> Utils.interpolate(0.5, 10, 20)
             15.0
@@ -300,10 +300,10 @@ class Utils:
             13.05
             >>> Utils.interpolate(0.5, 10, 20, 2.0)
             12.5
-        
+
         Notes:
             Refer to https://easings.net/ for guidance in choosing among the available easing functions.
-        
+
         See Also:
             [accelerate](pyonfx.utils.Utils.accelerate): Used to transform percentage values with easing.
         """
@@ -387,7 +387,7 @@ class Utils:
         offset_end=0,
     ):
         """Adjust the timing of a subtitle line based on a specified mode.
-        
+
         Args:
             mode: A string literal indicating the retime mode. Each mode applies a different timing adjustment strategy.
             line: The subtitle line object whose `start_time` and `end_time` will be adjusted.
@@ -396,13 +396,13 @@ class Utils:
                               "line", "preline", "postline", "set", and "abs".
             offset_start: An optional integer offset (in milliseconds) to add to the computed start time.
             offset_end: An optional integer offset (in milliseconds) to add to the computed end time.
-        
+
         Examples:
             >>> # Retiming a line based on the timing of a syllable
             >>> Utils.retime("syl", line, syl, offset_start=10, offset_end=5)
             >>> # Retiming a line to keep its original timing (no adjustment)
             >>> Utils.retime("line", line)
-        
+
         See Also:
             [kara-templater retime implementation](https://github.com/slackingway/karaOK/blob/master/autoload/ln.kara-templater-mod.lua#L352)
         """
@@ -471,7 +471,7 @@ class Utils:
 
 class FrameUtility:
     """Provide an accurate frame-by-frame iteration engine for subtitle processing.
-    
+
     This class enables precise operations on video frames by dividing a time interval (from `start_ms` to `end_ms`)
     into discrete frame segments based on a given timestamps object. It calculates the corresponding frame indices and yields
     a tuple for each frame segment containing:
@@ -479,7 +479,7 @@ class FrameUtility:
       - The end time of the frame segment (in milliseconds), clamped to the video duration.
       - The current frame index (starting at 1).
       - The total number of frame segments.
-    
+
     Examples:
         >>> # Assume `io.input_timestamps` is an instance of ABCTimestamps and the video has a 20 fps frame rate (50 ms per frame)
         >>> FU = FrameUtility(0, 110, io.input_timestamps)
@@ -488,7 +488,7 @@ class FrameUtility:
         Frame 1/3: 0 - 25
         Frame 2/3: 25 - 75
         Frame 3/3: 75 - 125
-    
+
     Notes:
         A mid-point approach is used to center each frame's timing around the player's seek time, ensuring that subtitles
         remain visible throughout the entire frame duration. This method is reliable for both constant frame rate (CFR) and
@@ -604,12 +604,12 @@ class FrameUtility:
         ) = 1.0,
     ) -> float:
         """Apply a frame-by-frame numeric transformation similar to the ASS '\\t' tag.
-        
+
         This method computes an adjustment value for the current frame by interpolating between 0 and `end_value` over a
         specified time interval defined by `start_time` and `end_time`. Mimicking the behavior of the ASS '\\t' tag,
         it calculates the interpolation progress based on the midpoint of the current frame within the interval and applies
         an optional acceleration (easing) function (`acc`) to modulate the transformation.
-        
+
         Args:
             start_time: The start time (in milliseconds) of the transformation interval.
             end_time: The end time (in milliseconds) of the transformation interval.
@@ -621,7 +621,7 @@ class FrameUtility:
 
         Returns:
             float: The computed adjustment value for the current frame.
-        
+
         Examples:
             >>> # Let's assume to have an Ass object named "io" having a 20 fps video (i.e. frames are 50 ms long)
             >>> FU = FrameUtility(25, 225, io.input_timestamps)
@@ -637,7 +637,7 @@ class FrameUtility:
             Frame 2/4: 75 - 125; fsc: 137.5
             Frame 3/4: 125 - 175; fsc: 137.5
             Frame 4/4: 175 - 225; fsc: 112.5
-        
+
         Notes:
             This method should be used within a loop iterating a FrameUtility object.
 
@@ -661,65 +661,67 @@ class FrameUtility:
 class ColorUtility:
     """Extract and manage color transformations from ASS subtitle lines.
 
-    Parses ASS Line objects to extract color change commands (\\1c, \\3c, \\4c) 
+    Parses ASS Line objects to extract color change commands (\\1c, \\3c, \\4c)
     and their transformations (\\t tags), and provides interpolated color values
     for smooth transitions during subtitle rendering.
-    
+
     Examples:
         >>> cu = ColorUtility(subtitle_lines)
         >>> color_tags = cu.get_color_change(current_line)
         >>> print(f"Color tags: {color_tags}")
         \\1c&HFFFFFF&\\t(100,200,\\1c&H000000&)
-    
+
     Notes:
         - Create only one ColorUtility instance per ASS file for optimal performance.
         - Lines without explicit colors inherit from the last defined color state.
-        
+
     See Also:
         `Utils.interpolate` for color interpolation between ASS color values.
     """
 
     # Compiled regex patterns
     _PATTERNS = {
-        'tags': re.compile(r'{.*?}'),
-        'transform': re.compile(r'\\t\(\s*(-?\d+?)\s*,\s*(-?\d+?)\s*,\s*(.+?)\s*\)'),
-        'c1': re.compile(r'\\1c(&H[0-9A-Fa-f]{6}&)'),
-        'c3': re.compile(r'\\3c(&H[0-9A-Fa-f]{6}&)'),
-        'c4': re.compile(r'\\4c(&H[0-9A-Fa-f]{6}&)')
+        "tags": re.compile(r"{.*?}"),
+        "transform": re.compile(r"\\t\(\s*(-?\d+?)\s*,\s*(-?\d+?)\s*,\s*(.+?)\s*\)"),
+        "c1": re.compile(r"\\1c(&H[0-9A-Fa-f]{6}&)"),
+        "c3": re.compile(r"\\3c(&H[0-9A-Fa-f]{6}&)"),
+        "c4": re.compile(r"\\4c(&H[0-9A-Fa-f]{6}&)"),
     }
-    
+
     def __init__(self, lines: list[Line], offset: int = 0):
         self.color_changes: list[dict[str, Any]] = []
-        self.required_colors = {'c1': False, 'c3': False, 'c4': False}
-        
+        self.required_colors = {"c1": False, "c3": False, "c4": False}
+
         for line in lines:
             # Extract color information from a single subtitle line
-            tags = self._PATTERNS['tags'].findall(line.raw_text)
+            tags = self._PATTERNS["tags"].findall(line.raw_text)
             for tag in tags:
                 self._process_static_colors(tag, line, offset)
                 self._process_transform_colors(tag, line, offset)
-    
+
     def _process_static_colors(self, tag: str, line: Line, offset: int) -> None:
         """Process static color declarations outside of transforms."""
-        static_content = self._PATTERNS['transform'].sub('', tag)
+        static_content = self._PATTERNS["transform"].sub("", tag)
         colors = self._extract_colors(static_content)
-        
+
         if any(colors.values()):
-            self.color_changes.append({
-                'start': line.start_time + offset,
-                'end': line.start_time + offset,
-                'acc': 1,
-                **colors
-            })
-    
+            self.color_changes.append(
+                {
+                    "start": line.start_time + offset,
+                    "end": line.start_time + offset,
+                    "acc": 1,
+                    **colors,
+                }
+            )
+
     def _process_transform_colors(self, tag: str, line: Line, offset: int) -> None:
         """Process color transformations within \\t tags."""
-        transforms = self._PATTERNS['transform'].findall(tag)
-        
+        transforms = self._PATTERNS["transform"].findall(tag)
+
         for start_str, end_str, content in transforms:
             start, end = int(start_str), int(end_str)
-            parts = content.split(',')
-            
+            parts = content.split(",")
+
             if len(parts) == 1:
                 acc, color_content = 1, parts[0]
             elif len(parts) == 2:
@@ -729,45 +731,44 @@ class ColorUtility:
                     continue  # Skip malformed transforms
             else:
                 continue  # Skip malformed transforms with too many parts
-            
+
             colors = self._extract_colors(color_content)
             if any(colors.values()):
                 abs_start = line.start_time + start + offset
                 abs_end = line.start_time + end + offset
-                self.color_changes.append({
-                    'start': abs_start,
-                    'end': abs_end,
-                    'acc': acc,
-                    **colors
-                })
-    
+                self.color_changes.append(
+                    {"start": abs_start, "end": abs_end, "acc": acc, **colors}
+                )
+
     def _extract_colors(self, content: str) -> dict[str, str | None]:
         """Extract c1, c3, c4 colors from content string."""
         colors = {}
-        for color_type in ['c1', 'c3', 'c4']:
+        for color_type in ["c1", "c3", "c4"]:
             match = self._PATTERNS[color_type].search(content)
             colors[color_type] = match.group(0) if match else None
             if match:
                 self.required_colors[color_type] = True
         return colors
-    
+
     def _get_base_colors(self, line: Line) -> dict[str, str]:
         """Get base colors from line style reference."""
         if line.styleref is None:
             raise ValueError("Line has no styleref")
-        
+
         return {
-            'c1': f"\\1c{line.styleref.color1}",
-            'c3': f"\\3c{line.styleref.color3}",
-            'c4': f"\\4c{line.styleref.color4}"
+            "c1": f"\\1c{line.styleref.color1}",
+            "c3": f"\\3c{line.styleref.color3}",
+            "c4": f"\\4c{line.styleref.color4}",
         }
-    
-    def _resolve_color_flags(self, c1: bool | None, c3: bool | None, c4: bool | None) -> dict[str, bool]:
+
+    def _resolve_color_flags(
+        self, c1: bool | None, c3: bool | None, c4: bool | None
+    ) -> dict[str, bool]:
         """Resolve color flags using defaults if None."""
         return {
-            'c1': self.required_colors['c1'] if c1 is None else c1,
-            'c3': self.required_colors['c3'] if c3 is None else c3,
-            'c4': self.required_colors['c4'] if c4 is None else c4
+            "c1": self.required_colors["c1"] if c1 is None else c1,
+            "c3": self.required_colors["c3"] if c3 is None else c3,
+            "c4": self.required_colors["c4"] if c4 is None else c4,
         }
 
     def get_color_change(
@@ -778,27 +779,27 @@ class ColorUtility:
         c4: bool | None = None,
     ) -> str:
         """Generate color transformation tags for a subtitle line's time range.
-        
+
         Returns interpolated color changes that occur within the line's time span,
         including base colors and transformation tags. Automatically inherits colors
         from previous lines when not explicitly overridden.
-        
+
         Args:
             line: [Line](pyonfx.ass_core.Line) object containing timing and style information.
             c1: Include primary color changes. Auto-detected if None.
             c3: Include border color changes. Auto-detected if None.
             c4: Include shadow color changes. Auto-detected if None.
-        
+
         Returns:
             str: ASS-formatted color tags for the line (e.g., "\\1c&HFFFFFF&\\t(100,200,\\1c&H000000&)").
-        
+
         Examples:
             >>> line.start_time, line.end_time = 1000, 2000
             >>> cu.get_color_change(line)
             "\\1c&HFFFFFF&\\3c&H000000&\\t(500,1000,\\1c&H000000&\\3c&HFFFFFF&)"
             >>> cu.get_color_change(line, c1=True, c3=False, c4=False)
             "\\1c&HFFFFFF&\\t(500,1000,\\1c&H000000&)"
-        
+
         See Also:
             [get_fr_color_change](pyonfx.utils.ColorUtility.get_fr_color_change) for frame-by-frame color values.
         """
@@ -806,35 +807,35 @@ class ColorUtility:
         base_colors = self._get_base_colors(line)
         current_colors = base_colors.copy()
         transform = ""
-        
+
         # Update base colors from previous changes and build transforms
         for change in self.color_changes:
-            if change['end'] <= line.start_time:
+            if change["end"] <= line.start_time:
                 # Update inherited colors from completed changes
-                for color_type in ['c1', 'c3', 'c4']:
+                for color_type in ["c1", "c3", "c4"]:
                     if change[color_type]:
                         current_colors[color_type] = change[color_type]
-            elif change['start'] <= line.end_time:
+            elif change["start"] <= line.end_time:
                 # Build transformation for overlapping changes
-                rel_start = max(1, change['start'] - line.start_time)
-                rel_end = max(1, change['end'] - line.start_time)
-                
+                rel_start = max(1, change["start"] - line.start_time)
+                rel_end = max(1, change["end"] - line.start_time)
+
                 transform += f"\\t({rel_start},{rel_end},"
-                if change['acc'] != 1:
-                    transform += str(change['acc'])
-                
-                for color_type in ['c1', 'c3', 'c4']:
+                if change["acc"] != 1:
+                    transform += str(change["acc"])
+
+                for color_type in ["c1", "c3", "c4"]:
                     if flags[color_type] and change[color_type]:
                         transform += change[color_type]
-                
+
                 transform += ")"
-        
+
         # Prepend base colors
         result = ""
-        for color_type in ['c1', 'c3', 'c4']:
+        for color_type in ["c1", "c3", "c4"]:
             if flags[color_type]:
                 result = current_colors[color_type] + result
-        
+
         return result + transform
 
     def get_fr_color_change(
@@ -845,72 +846,78 @@ class ColorUtility:
         c4: bool | None = None,
     ) -> str:
         """Get interpolated color values for a specific frame time.
-        
+
         Returns the exact color values at line.start_time by interpolating between
         color transformations. Essential for frame-by-frame rendering where you need
         precise color values at specific moments.
-        
+
         Args:
             line: [Line](pyonfx.ass_core.Line) object where start_time represents the current frame time.
             c1: Include primary color interpolation. Auto-detected if None.
-            c3: Include border color interpolation. Auto-detected if None. 
+            c3: Include border color interpolation. Auto-detected if None.
             c4: Include shadow color interpolation. Auto-detected if None.
-        
+
         Returns:
             str: Interpolated ASS color tags for the exact frame time (e.g., "\\1c&H808080&").
-        
+
         Examples:
             >>> line.start_time = 1500  # Frame at 1.5 seconds
             >>> cu.get_fr_color_change(line)
             "\\1c&H808080&\\3c&HFF0000&"
             >>> cu.get_fr_color_change(line, c1=True, c3=False)
             "\\1c&H808080&"
-        
+
         See Also:
             [get_color_change](pyonfx.utils.ColorUtility.get_color_change) for complete transformation sequences over time ranges.
         """
         flags = self._resolve_color_flags(c1, c3, c4)
         base_colors = self._get_base_colors(line)
         current_time = line.start_time
-        
+
         # Find the latest applicable color change
         latest_idx = -1
         for i, change in enumerate(self.color_changes):
-            if current_time >= change['start']:
+            if current_time >= change["start"]:
                 latest_idx = i
-        
+
         # No color changes found - use style defaults
         if latest_idx == -1:
-            return ''.join(base_colors[ct] for ct in ['c1', 'c3', 'c4'] if flags[ct])
-        
+            return "".join(base_colors[ct] for ct in ["c1", "c3", "c4"] if flags[ct])
+
         change = self.color_changes[latest_idx]
-        
+
         # Past the end of transformation - use final values
-        if current_time >= change['end']:
+        if current_time >= change["end"]:
             colors = []
-            for color_type in ['c1', 'c3', 'c4']:
+            for color_type in ["c1", "c3", "c4"]:
                 if flags[color_type] and change[color_type]:
                     colors.append(change[color_type])
-            return ''.join(colors)
-        
+            return "".join(colors)
+
         # Interpolate within the transformation
-        progress = (current_time - change['start']) / (change['end'] - change['start'])
+        progress = (current_time - change["start"]) / (change["end"] - change["start"])
         colors = []
-        
-        for color_type in ['c1', 'c3', 'c4']:
+
+        for color_type in ["c1", "c3", "c4"]:
             if not (flags[color_type] and change[color_type]):
                 continue
-                
+
             # Determine start color for interpolation
             if latest_idx == 0:
                 start_color = base_colors[color_type][3:]  # Remove \\Xc prefix
             else:
                 prev_change = self.color_changes[latest_idx - 1]
-                start_color = prev_change[color_type][3:] if prev_change[color_type] else base_colors[color_type][3:]
-            
+                start_color = (
+                    prev_change[color_type][3:]
+                    if prev_change[color_type]
+                    else base_colors[color_type][3:]
+                )
+
             end_color = change[color_type][3:]  # Remove \\Xc prefix
-            
-            interpolated = Utils.interpolate(progress, start_color, end_color, change['acc'])
+
+            interpolated = Utils.interpolate(
+                progress, start_color, end_color, change["acc"]
+            )
             colors.append(f"\\{color_type[1:]}{interpolated}")
-        
-        return ''.join(colors)
+
+        return "".join(colors)
