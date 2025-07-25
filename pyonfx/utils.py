@@ -16,7 +16,7 @@
 # along with this program. If not, see http://www.gnu.org/licenses/.
 
 import re
-from typing import Callable, Iterable, Literal, TypeVar
+from typing import Callable, Iterable, Literal, TypeVar, Any
 
 import rpeasings
 from tqdm import tqdm
@@ -679,113 +679,96 @@ class ColorUtility:
         `Utils.interpolate` for color interpolation between ASS color values.
     """
 
+    # Compiled regex patterns
+    _PATTERNS = {
+        'tags': re.compile(r'{.*?}'),
+        'transform': re.compile(r'\\t\(\s*(-?\d+?)\s*,\s*(-?\d+?)\s*,\s*(.+?)\s*\)'),
+        'c1': re.compile(r'\\1c(&H[0-9A-Fa-f]{6}&)'),
+        'c3': re.compile(r'\\3c(&H[0-9A-Fa-f]{6}&)'),
+        'c4': re.compile(r'\\4c(&H[0-9A-Fa-f]{6}&)')
+    }
+    
     def __init__(self, lines: list[Line], offset: int = 0):
-        """Initialize the ColorUtility object.
-
-        Args:
-            lines: A list of Line objects representing the subtitle lines to be analyzed for color changes.
-            offset: An optional integer (in milliseconds) to shift all color change timings, useful for synchronization.
-        """
-        self.color_changes = []
-        self.c1_req = False
-        self.c3_req = False
-        self.c4_req = False
-
-        # Compiling regex
-        tag_all = re.compile(r"{.*?}")
-        tag_t = re.compile(r"\\t\( *?(-?\d+?) *?, *?(-?\d+?) *?, *(.+?) *?\)")
-        tag_c1 = re.compile(r"\\1c(&H.{6}&)")
-        tag_c3 = re.compile(r"\\3c(&H.{6}&)")
-        tag_c4 = re.compile(r"\\4c(&H.{6}&)")
-
+        self.color_changes: list[dict[str, Any]] = []
+        self.required_colors = {'c1': False, 'c3': False, 'c4': False}
+        
         for line in lines:
-            # Obtaining all tags enclosured in curly brackets
-            tags = tag_all.findall(line.raw_text)
-
-            # Let's search all color changes in the tags
+            # Extract color information from a single subtitle line
+            tags = self._PATTERNS['tags'].findall(line.raw_text)
             for tag in tags:
-                # Get everything beside \t to see if there are some colors there
-                other_tags = tag_t.sub("", tag)
-
-                # Searching for colors in the other tags
-                c1, c3, c4 = (
-                    tag_c1.search(other_tags),
-                    tag_c3.search(other_tags),
-                    tag_c4.search(other_tags),
-                )
-
-                # If we found something, add to the list as a color change
-                if c1 or c3 or c4:
-                    if c1:
-                        c1 = c1.group(0)
-                        self.c1_req = True
-                    if c3:
-                        c3 = c3.group(0)
-                        self.c3_req = True
-                    if c4:
-                        c4 = c4.group(0)
-                        self.c4_req = True
-
-                    self.color_changes.append(
-                        {
-                            "start": line.start_time + offset,
-                            "end": line.start_time + offset,
-                            "acc": 1,
-                            "c1": c1,
-                            "c3": c3,
-                            "c4": c4,
-                        }
-                    )
-
-                # Find all transformation in tag
-                ts = tag_t.findall(tag)
-
-                # Working with each transformation
-                for t in ts:
-                    # Parsing start, end, optional acceleration and colors
-                    start, end, acc_colors = int(t[0]), int(t[1]), t[2].split(",")
-                    acc, c1, c3, c4 = 1, None, None, None
-
-                    # Do we have also acceleration?
-                    if len(acc_colors) == 1:
-                        c1, c3, c4 = (
-                            tag_c1.search(acc_colors[0]),
-                            tag_c3.search(acc_colors[0]),
-                            tag_c4.search(acc_colors[0]),
-                        )
-                    elif len(acc_colors) == 2:
-                        acc = float(acc_colors[0])
-                        c1, c3, c4 = (
-                            tag_c1.search(acc_colors[1]),
-                            tag_c3.search(acc_colors[1]),
-                            tag_c4.search(acc_colors[1]),
-                        )
-                    else:
-                        # This transformation is malformed (too many ','), let's skip this
-                        continue
-
-                    # If found, extract from groups
-                    if c1:
-                        c1 = c1.group(0)
-                        self.c1_req = True
-                    if c3:
-                        c3 = c3.group(0)
-                        self.c3_req = True
-                    if c4:
-                        c4 = c4.group(0)
-                        self.c4_req = True
-
-                    # Saving in the list
-                    self.color_changes.append(
-                        {
-                            "start": line.start_time + start + offset,
-                            "end": line.start_time + end + offset,
-                            "acc": acc,
-                            "c1": c1,
-                            "c3": c3,
-                            "c4": c4,
-                        }
-                    )
+                self._process_static_colors(tag, line, offset)
+                self._process_transform_colors(tag, line, offset)
+    
+    def _process_static_colors(self, tag: str, line: Line, offset: int) -> None:
+        """Process static color declarations outside of transforms."""
+        static_content = self._PATTERNS['transform'].sub('', tag)
+        colors = self._extract_colors(static_content)
+        
+        if any(colors.values()):
+            self.color_changes.append({
+                'start': line.start_time + offset,
+                'end': line.start_time + offset,
+                'acc': 1,
+                **colors
+            })
+    
+    def _process_transform_colors(self, tag: str, line: Line, offset: int) -> None:
+        """Process color transformations within \\t tags."""
+        transforms = self._PATTERNS['transform'].findall(tag)
+        
+        for start_str, end_str, content in transforms:
+            start, end = int(start_str), int(end_str)
+            parts = content.split(',')
+            
+            if len(parts) == 1:
+                acc, color_content = 1, parts[0]
+            elif len(parts) == 2:
+                try:
+                    acc, color_content = float(parts[0]), parts[1]
+                except ValueError:
+                    continue  # Skip malformed transforms
+            else:
+                continue  # Skip malformed transforms with too many parts
+            
+            colors = self._extract_colors(color_content)
+            if any(colors.values()):
+                abs_start = line.start_time + start + offset
+                abs_end = line.start_time + end + offset
+                self.color_changes.append({
+                    'start': abs_start,
+                    'end': abs_end,
+                    'acc': acc,
+                    **colors
+                })
+    
+    def _extract_colors(self, content: str) -> dict[str, str | None]:
+        """Extract c1, c3, c4 colors from content string."""
+        colors = {}
+        for color_type in ['c1', 'c3', 'c4']:
+            match = self._PATTERNS[color_type].search(content)
+            colors[color_type] = match.group(0) if match else None
+            if match:
+                self.required_colors[color_type] = True
+        return colors
+    
+    def _get_base_colors(self, line: Line) -> dict[str, str]:
+        """Get base colors from line style reference."""
+        if line.styleref is None:
+            raise ValueError("Line has no styleref")
+        
+        return {
+            'c1': f"\\1c{line.styleref.color1}",
+            'c3': f"\\3c{line.styleref.color3}",
+            'c4': f"\\4c{line.styleref.color4}"
+        }
+    
+    def _resolve_color_flags(self, c1: bool | None, c3: bool | None, c4: bool | None) -> dict[str, bool]:
+        """Resolve color flags using defaults if None."""
+        return {
+            'c1': self.required_colors['c1'] if c1 is None else c1,
+            'c3': self.required_colors['c3'] if c3 is None else c3,
+            'c4': self.required_colors['c4'] if c4 is None else c4
+        }
 
     def get_color_change(
         self,
@@ -819,64 +802,40 @@ class ColorUtility:
         See Also:
             [get_fr_color_change](pyonfx.utils.ColorUtility.get_fr_color_change) for frame-by-frame color values.
         """
+        flags = self._resolve_color_flags(c1, c3, c4)
+        base_colors = self._get_base_colors(line)
+        current_colors = base_colors.copy()
         transform = ""
-
-        # If we don't have user's settings, we set c values
-        # to the ones that we previously saved
-        c1 = self.c1_req if c1 is None else c1
-        c3 = self.c3_req if c3 is None else c3
-        c4 = self.c4_req if c4 is None else c4
-
-        if line.styleref is None:
-            raise ValueError("Line has no styleref")
-
-        # Reading default colors
-        base_c1 = "\\1c" + line.styleref.color1
-        base_c3 = "\\3c" + line.styleref.color3
-        base_c4 = "\\4c" + line.styleref.color4
-
-        for color_change in self.color_changes:
-            if color_change["end"] <= line.start_time:
-                # Get base colors from this color change, since it is before my current line
-                # Last color change written in .ass wins
-                if color_change["c1"]:
-                    base_c1 = color_change["c1"]
-                if color_change["c3"]:
-                    base_c3 = color_change["c3"]
-                if color_change["c4"]:
-                    base_c4 = color_change["c4"]
-            elif color_change["start"] <= line.end_time:
-                # We have found a valid color change, append it to the transform
-                start_time = color_change["start"] - line.start_time
-                end_time = color_change["end"] - line.start_time
-
-                # We don't want to have times = 0
-                start_time = 1 if start_time == 0 else start_time
-                end_time = 1 if end_time == 0 else end_time
-
-                transform += "\\t(%d,%d," % (start_time, end_time)
-
-                if color_change["acc"] != 1:
-                    transform += str(color_change["acc"])
-
-                if c1 and color_change["c1"]:
-                    transform += color_change["c1"]
-                if c3 and color_change["c3"]:
-                    transform += color_change["c3"]
-                if c4 and color_change["c4"]:
-                    transform += color_change["c4"]
-
+        
+        # Update base colors from previous changes and build transforms
+        for change in self.color_changes:
+            if change['end'] <= line.start_time:
+                # Update inherited colors from completed changes
+                for color_type in ['c1', 'c3', 'c4']:
+                    if change[color_type]:
+                        current_colors[color_type] = change[color_type]
+            elif change['start'] <= line.end_time:
+                # Build transformation for overlapping changes
+                rel_start = max(1, change['start'] - line.start_time)
+                rel_end = max(1, change['end'] - line.start_time)
+                
+                transform += f"\\t({rel_start},{rel_end},"
+                if change['acc'] != 1:
+                    transform += str(change['acc'])
+                
+                for color_type in ['c1', 'c3', 'c4']:
+                    if flags[color_type] and change[color_type]:
+                        transform += change[color_type]
+                
                 transform += ")"
-
-        # Appending default color found, if requested
-        if c4:
-            transform = base_c4 + transform
-        if c3:
-            transform = base_c3 + transform
-        if c1:
-            transform = base_c1 + transform
-
-        return transform
+        
+        # Prepend base colors in reverse order (ASS precedence)
+        result = ""
+        for color_type in ['c4', 'c3', 'c1']:
+            if flags[color_type]:
+                result = current_colors[color_type] + result
+        
+        return result + transform
 
     def get_fr_color_change(
         self,
@@ -910,105 +869,48 @@ class ColorUtility:
         See Also:
             [get_color_change](pyonfx.utils.ColorUtility.get_color_change) for complete transformation sequences over time ranges.
         """
-        # If we don't have user's settings, we set c values
-        # to the ones that we previously saved
-        c1 = self.c1_req if c1 is None else c1
-        c3 = self.c3_req if c3 is None else c3
-        c4 = self.c4_req if c4 is None else c4
-
-        if line.styleref is None:
-            raise ValueError("Line has no styleref")
-
-        # Reading default colors
-        base_c1 = "\\1c" + line.styleref.color1
-        base_c3 = "\\3c" + line.styleref.color3
-        base_c4 = "\\4c" + line.styleref.color4
-
-        # Searching valid color_change
+        flags = self._resolve_color_flags(c1, c3, c4)
+        base_colors = self._get_base_colors(line)
         current_time = line.start_time
-        latest_index = -1
-
-        for i, color_change in enumerate(self.color_changes):
-            if current_time >= color_change["start"]:
-                latest_index = i
-
-        # If no color change is found, take default from style
-        if latest_index == -1:
-            colors = ""
-            if c1:
-                colors += base_c1
-            if c3:
-                colors += base_c3
-            if c4:
-                colors += base_c4
-            return colors
-
-        # If we have passed the end of the lastest color change available, then take the final values of it
-        if current_time >= self.color_changes[latest_index]["end"]:
-            colors = ""
-            if c1 and self.color_changes[latest_index]["c1"]:
-                colors += self.color_changes[latest_index]["c1"]
-            if c3 and self.color_changes[latest_index]["c3"]:
-                colors += self.color_changes[latest_index]["c3"]
-            if c4 and self.color_changes[latest_index]["c4"]:
-                colors += self.color_changes[latest_index]["c4"]
-            return colors
-
-        # Else, interpolate the latest color change
-        start = current_time - self.color_changes[latest_index]["start"]
-        end = (
-            self.color_changes[latest_index]["end"]
-            - self.color_changes[latest_index]["start"]
-        )
-        pct = start / end
-
-        # If we're in the first color_change, interpolate with base colors
-        if latest_index == 0:
-            colors = ""
-            if c1 and self.color_changes[latest_index]["c1"]:
-                colors += "\\1c" + Utils.interpolate(
-                    pct,
-                    base_c1[3:],
-                    self.color_changes[latest_index]["c1"][3:],
-                    self.color_changes[latest_index]["acc"],
-                )
-            if c3 and self.color_changes[latest_index]["c3"]:
-                colors += "\\3c" + Utils.interpolate(
-                    pct,
-                    base_c3[3:],
-                    self.color_changes[latest_index]["c3"][3:],
-                    self.color_changes[latest_index]["acc"],
-                )
-            if c4 and self.color_changes[latest_index]["c4"]:
-                colors += "\\4c" + Utils.interpolate(
-                    pct,
-                    base_c4[3:],
-                    self.color_changes[latest_index]["c4"][3:],
-                    self.color_changes[latest_index]["acc"],
-                )
-            return colors
-
-        # Else, we interpolate between current color change and previous
-        colors = ""
-        if c1:
-            colors += "\\1c" + Utils.interpolate(
-                pct,
-                self.color_changes[latest_index - 1]["c1"][3:],
-                self.color_changes[latest_index]["c1"][3:],
-                self.color_changes[latest_index]["acc"],
-            )
-        if c3:
-            colors += "\\3c" + Utils.interpolate(
-                pct,
-                self.color_changes[latest_index - 1]["c3"][3:],
-                self.color_changes[latest_index]["c3"][3:],
-                self.color_changes[latest_index]["acc"],
-            )
-        if c4:
-            colors += "\\4c" + Utils.interpolate(
-                pct,
-                self.color_changes[latest_index - 1]["c4"][3:],
-                self.color_changes[latest_index]["c4"][3:],
-                self.color_changes[latest_index]["acc"],
-            )
-        return colors
+        
+        # Find the latest applicable color change
+        latest_idx = -1
+        for i, change in enumerate(self.color_changes):
+            if current_time >= change['start']:
+                latest_idx = i
+        
+        # No color changes found - use style defaults
+        if latest_idx == -1:
+            return ''.join(base_colors[ct] for ct in ['c1', 'c3', 'c4'] if flags[ct])
+        
+        change = self.color_changes[latest_idx]
+        
+        # Past the end of transformation - use final values
+        if current_time >= change['end']:
+            colors = []
+            for color_type in ['c1', 'c3', 'c4']:
+                if flags[color_type] and change[color_type]:
+                    colors.append(change[color_type])
+            return ''.join(colors)
+        
+        # Interpolate within the transformation
+        progress = (current_time - change['start']) / (change['end'] - change['start'])
+        colors = []
+        
+        for color_type in ['c1', 'c3', 'c4']:
+            if not (flags[color_type] and change[color_type]):
+                continue
+                
+            # Determine start color for interpolation
+            if latest_idx == 0:
+                start_color = base_colors[color_type][3:]  # Remove \\Xc prefix
+            else:
+                prev_change = self.color_changes[latest_idx - 1]
+                start_color = prev_change[color_type][3:] if prev_change[color_type] else base_colors[color_type][3:]
+            
+            end_color = change[color_type][3:]  # Remove \\Xc prefix
+            
+            interpolated = Utils.interpolate(progress, start_color, end_color, change['acc'])
+            colors.append(f"\\{color_type[1:]}{interpolated}")
+        
+        return ''.join(colors)
