@@ -829,9 +829,9 @@ class ColorUtility:
                 
                 transform += ")"
         
-        # Prepend base colors in reverse order (ASS precedence)
+        # Prepend base colors
         result = ""
-        for color_type in ['c4', 'c3', 'c1']:
+        for color_type in ['c1', 'c3', 'c4']:
             if flags[color_type]:
                 result = current_colors[color_type] + result
         
