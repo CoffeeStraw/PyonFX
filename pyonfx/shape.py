@@ -37,14 +37,32 @@ from shapely.ops import unary_union
 
 
 class ShapeElement:
-    """Represents a single drawing command with its associated coordinates."""
+    """Represents a single ASS drawing command and its associated coordinates.
+
+    This class encapsulates a drawing command used in the ASS format and stores the related coordinates
+    as `shapely.geometry.Point` objects. It validates the command against allowed values ("m", "n", "l", "p", "b", "s", "c")
+    and provides utility methods for creating and representing these commands.
+
+    Attributes:
+        command (str): The drawing command (e.g., "m", "n", "l", "p", "b", "s", "c").
+        coordinates (list[Point]): A list of `Point` objects representing the coordinate pairs.
+
+    See Also:
+        [Shape](pyonfx.shape.Shape)
+    """
 
     command: str
     """The drawing command (one of "m", "n", "l", "p", "b", "s", "c")."""
     coordinates: list[Point]
-    """List of (x, y) coordinate pairs for this command."""
+    """List of `Point` objects representing the coordinate pairs for this command."""
 
     def __init__(self, command: str, coordinates: list[Point]):
+        """Initialize a ShapeElement instance.
+
+        Args:
+            command (str): The ASS drawing command. Allowed values are "m", "n", "l", "p", "b", "s", "c".
+            coordinates (list[Point]): A list of `Point` objects representing the coordinate pairs.
+        """
         if command not in {"m", "n", "l", "p", "b", "s", "c"}:
             raise ValueError(f"Invalid command '{command}'")
         self.command = command
@@ -63,15 +81,21 @@ class ShapeElement:
 
     @classmethod
     def from_ass_drawing_cmd(cls, command: str, *args: str) -> list["ShapeElement"]:
-        """Parses a drawing command and its arguments from an ASS drawing string.
+        """Parse an ASS drawing command into one or more ShapeElement instances.
 
         Since some commands can be implicit, this method can return more than one element.
 
         Args:
-            command (str): The drawing command (one of "m", "n", "l", "p", "b", "s", "c").
-            *args (str): The arguments for the command.
+            command (str): The ASS drawing command. Must be one of "m", "n", "l", "p", "b", "s", "c".
+            *args (str): A sequence of string arguments representing numeric values for coordinates.
 
         Returns:
+            list[ShapeElement]: A list of ShapeElement instances created from the command.
+
+        Notes:
+            - Command 'c' does not accept any arguments.
+            - Command 'l' returns one element for each encountered coordinate.
+            - Command 'b' groups coordinates into sets of three.
         """
         if len(args) % 2 != 0:
             raise ValueError(
@@ -128,36 +152,28 @@ class ShapeElement:
 
 
 class Shape:
-    """High-level wrapper around ASS drawing commands.
+    """High-level container for ASS drawing commands.
 
-    A :class:`Shape` instance stores and manipulates the vector outlines that you
-    would normally place in a ``{\\p}`` override tag.
+    This class represents a vector outline for ASS subtitles, storing its geometry as a sequence of [ShapeElement](pyonfx.shape.ShapeElement) objects.
+    It dynamically generates an ASS drawing command string from its internal elements, ensuring consistency between the geometry and its textual representation.
+    The `Shape` class provides numerous methods for geometric transformations (e.g., move, scale, rotate, shear), analysis (e.g., bounding box computation), boolean operations, and morphing.
 
-    Internally the outline is represented as a list of :class:`pyonfx.shape.ShapeElement` objects exposed through :py:attr:`elements`.
-    The textual ASS representation returned by the read-only :py:attr:`drawing_cmds` property
-    is generated *on-the-fly* from that list, so it can never fall out of sync with the actual geometry.
+    Attributes:
+        elements: List of drawing command elements representing the shape outline.
+        drawing_cmds: The dynamically generated ASS drawing command string derived from `elements`.
 
-    The class provides a rich tool-set to work with shapes: bounding-box
-    calculation, geometric transformations, curve flattening, segmentations and more.
-    Most methods mutate the instance and return ``self`` so they can be *chained*.
-
-    ``Shape`` also implements :py:meth:`__iter__`, therefore you can simply write::
-
-        >>> for element in shape:
-        >>>     ...
-
-    The iterator yields the underlying :class:`ShapeElement` objects **in the
-    same order** they appear in the ASS drawing string.  Every explicit command
-    (``m``, ``n``, ``l``, ``p``, ``b``, ``s``, ``c``) is returned one-to-one.
-    In addition, *implicit* continuations after a command - for example extra
-    coordinate pairs that follow an ``l`` or ``b`` - are split so that each
-    segment becomes its own :class:`ShapeElement`::
-
+    Examples:
         >>> shape = Shape("m 0 0 l 10 0 10 10")
-        >>> list(shape)
-        [ShapeElement('m', [Point(0, 0)]),
-         ShapeElement('l', [Point(10, 0)]),
-         ShapeElement('l', [Point(10, 10)])]
+        >>> shape.move(5, 5)
+        'm 5 5 l 15 5 15 15'
+        >>> for element in shape:
+        ...     print(element)
+
+    Notes:
+        Transformations typically return a new `Shape` instance to allow method chaining.
+
+    See Also:
+        [ShapeElement](pyonfx.shape.ShapeElement)
     """
 
     elements: list[ShapeElement]
@@ -189,9 +205,7 @@ class Shape:
 
     @staticmethod
     def _cmds_to_elements(drawing_cmds: str) -> list[ShapeElement]:
-        """
-        Parses the drawing commands string and updates the internal list of ShapeElement objects.
-        """
+        """Parses the drawing commands string and updates the internal list of ShapeElement objects."""
         cmds_and_points = drawing_cmds.split()
         if not cmds_and_points:
             return []
@@ -260,15 +274,20 @@ class Shape:
         return "0" if result == "-0" else result
 
     def to_multipolygon(self, tolerance: float = 1.0) -> MultiPolygon:
-        """Converts shape to a Shapely MultiPolygon with proper shell-hole relationships.
+        """Convert the shape to a Shapely MultiPolygon.
 
-        Polygons don't have curves, so :func:`Shape.flatten` is automatically called with the given tolerance.
+        It processes the shape into individual closed loops that are then assembled into polygons with proper shell-hole relationships.
+        It automatically calls [flatten](pyonfx.shape.Shape.flatten) to convert curves into straight line segments.
 
-        Parameters:
-            tolerance (float): Angle in degree to define a curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
+        Args:
+            tolerance: The tolerance angle in degrees used to determine when a bezier curve is considered flat. Higher values yield lower accuracy but faster processing.
 
         Returns:
-            A MultiPolygon where each polygon represents a compound with outer shell and holes.
+            MultiPolygon: A MultiPolygon where each polygon consists of an outer shell (and optional holes) representing distinct contours of the shape.
+
+        Examples:
+            >>> shape = Shape("m 0 0 l 10 0 10 10 l 0 10 c")
+            >>> mp = shape.to_multipolygon(tolerance=1.0)
         """
         # Work on a copy to avoid modifying the original shape
         shape_copy = Shape(self.drawing_cmds)
@@ -336,14 +355,22 @@ class Shape:
     def from_multipolygon(
         cls, multipolygon: MultiPolygon, min_point_spacing: float = 0.5
     ) -> "Shape":
-        """Creates a Shape from a Shapely MultiPolygon.
+        """Create a Shape instance from a Shapely MultiPolygon.
 
-        Parameters:
-            multipolygon (MultiPolygon): The MultiPolygon to convert.
-            min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both `|Δx|` and `|Δy|` from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
+        Args:
+            multipolygon: The Shapely MultiPolygon geometry to convert.
+            min_point_spacing: Per-axis spacing threshold - a vertex is kept only if both `|Δx|` and `|Δy|` from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
 
         Returns:
-            A new Shape instance representing the MultiPolygon.
+            Shape: A new Shape instance representing the geometry of the provided MultiPolygon.
+
+        Examples:
+            >>> from shapely.geometry import MultiPolygon, Polygon
+            >>> mp = MultiPolygon([Polygon([(0,0), (10,0), (10,10), (0,10)])])
+            >>> shape = Shape.from_multipolygon(mp, min_point_spacing=0.5)
+
+        See Also:
+            [to_multipolygon](pyonfx.shape.Shape.to_multipolygon)
         """
         if not isinstance(multipolygon, MultiPolygon):
             raise TypeError("Expected a MultiPolygon instance")
@@ -396,27 +423,18 @@ class Shape:
         return cls(elements=elements)
 
     def bounding(self, exact: bool = False) -> tuple[float, float, float, float]:
-        """Calculates shape bounding box.
+        """Calculate the bounding box of the shape.
 
-        **Tips:** *Using this you can get more precise information about a shape (width, height, position).*
-
-        Parameters:
-            exact (bool): Whether the calculation of the bounding box should be exact, which is more precise for Bézier curves.
+        Args:
+            exact: If True, perform an exact calculation by considering curve details; if False, use a faster approximation (libass).
 
         Returns:
-            A tuple (x0, y0, x1, y1) containing coordinates of the bounding box.
+            tuple[float, float, float, float]: A tuple (x_min, y_min, x_max, y_max) representing the bounding coordinates of the shape.
 
         Examples:
-            ..  code-block:: python3
-
-                print( "Left-top: %d %d\\nRight-bottom: %d %d" % ( Shape("m 10 5 l 25 5 25 42 10 42").bounding() ) )
-                print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding() )
-                print( Shape("m 313 312 b 254 287 482 38 277 212 l 436 269 b 378 388 461 671 260 481").bounding(exact=True) )
-
-            >>> Left-top: 10 5
-            >>> Right-bottom: 25 42
-            >>> (254.0, 38.0, 482.0, 671.0)
-            >>> (260.0, 150.67823683425252, 436.0, 544.871772934194)
+            >>> shape = Shape("m 10 5 l 25 5 25 42 10 42")
+            >>> shape.bounding()
+            (10.0, 5.0, 25.0, 42.0)  # left, top, right, bottom
         """
         all_points = [coord for element in self for coord in element.coordinates]
 
@@ -527,21 +545,30 @@ class Shape:
         tolerance: float = 1.0,
         min_point_spacing: float = 0.5,
     ) -> "Shape":
-        """Return the boolean combination between *self* and *other*.
+        """Perform a boolean operation between two shapes.
 
-        The two shapes are converted to Shapely ``MultiPolygon`` objects (curves are
-        automatically *flattened* with the given *tolerance* just like in
-        :py:meth:`to_multipolygon`). The requested boolean operation is performed
-        and the resulting geometry is converted back to a :class:`Shape`.
+        This method converts both shapes to Shapely MultiPolygon objects (flattening any Bézier curves with the provided tolerance)
+        and performs the specified boolean operation (union, intersection, difference, or symmetric difference).
+        The result is converted back into a Shape instance.
 
-        Parameters:
-            other: The other shape to combine with *self*.
-            op: One of `union`, `intersection`, `difference` or `xor` (symmetric difference).
-            tolerance: Angle in degrees used when flattening Bézier curves (see :py:meth:`flatten`).
-            min_point_spacing: Per-axis spacing threshold passed to :py:meth:`from_multipolygon`.
+        Args:
+            other: The other shape to combine with this shape.
+            op: The boolean operation to perform. Use "union" for combined area, "intersection" for overlapping area, "difference" for subtraction, or "xor" for symmetric difference.
+            tolerance: The tolerance angle in degrees used for flattening curves. Higher tolerance reduces processing time but lowers accuracy.
+            min_point_spacing: The minimum spacing between consecutive points when converting back from polygons to a shape.
 
         Returns:
-            A new Shape instance representing the result of the boolean operation.
+            Shape: A new Shape instance representing the resulting shape after the boolean operation.
+
+        Examples:
+            >>> shape1 = Shape("m 0 0 l 10 0 10 10 0 10")
+            >>> shape2 = Shape("m 5 5 l 15 5 15 15 5 15")
+            >>> shape1.boolean(shape2, op="intersection", tolerance=1.0, min_point_spacing=0.5)
+            m 10 10 l 10 5 5 5 5 10
+
+        See Also:
+            [to_multipolygon](pyonfx.shape.Shape.to_multipolygon)
+            [from_multipolygon](pyonfx.shape.Shape.from_multipolygon)
         """
         if not isinstance(other, Shape):
             raise TypeError("other must be a Shape instance")
@@ -582,23 +609,21 @@ class Shape:
             | Callable[[float, float, str], tuple[float, float]]
         ),
     ) -> "Shape":
-        """Sends every point of a shape through given transformation function to change them.
+        """Sends every point of the shape through a transformation function.
 
-        **Tips:** *Working with outline points can be used to deform the whole shape and make f.e. a wobble effect.*
+        This method applies a user-provided transformation function to each coordinate of the shape's elements, allowing for arbitrary deformations or adjustments.
+        The function can accept two parameters (x and y) or three parameters (x, y, and the command type), providing flexibility in the transformation logic.
 
-        Parameters:
-            fun (function): A function with two (or optionally three) parameters. It defines how each coordinate will be changed. The first two parameters represent the x and y coordinates of each point; the optional third parameter represents the type of point (move, line, bezier, etc.).
+        Args:
+            fun: A function that takes the x and y coordinates (and optionally the drawing command as the third argument) and returns a tuple with the transformed (x, y) coordinates.
 
         Returns:
-            A new Shape instance with transformed points.
+            Shape: A new Shape instance with each point transformed according to the provided function.
 
         Examples:
-            ..  code-block:: python3
-
-                original = Shape("m 0 0 l 20 0 20 10 0 10")
-                print ( original.map(lambda x, y: (x+10, y+5) ) )
-
-            >>> m 10 5 l 30 5 30 15 10 15
+            >>> original = Shape("m 0 0 l 20 0 20 10 0 10")
+            >>> original.map(lambda x, y: (x + 10, y + 5))
+            m 10 5 l 30 5 30 15 10 15
         """
         if not callable(fun):
             raise TypeError("(Lambda) function expected")
@@ -633,23 +658,21 @@ class Shape:
         return Shape(elements=transformed_elements)
 
     def move(self, x: float, y: float) -> "Shape":
-        """Moves shape coordinates in given direction.
+        """Move the shape by the specified x and y offsets.
 
-        | This function is a high level function, it just uses Shape.map, which is more advanced.
+        This method translates every point in the shape by adding the given x and y offsets to the corresponding coordinates.
 
-        Parameters:
-            x (int or float): Displacement along the x-axis.
-            y (int or float): Displacement along the y-axis.
+        Args:
+            x: The displacement along the x-axis.
+            y: The displacement along the y-axis.
 
         Returns:
-            A new Shape instance with the transformed points.
+            Shape: A new Shape instance with the coordinates moved by the specified offsets.
 
         Examples:
-            ..  code-block:: python3
-
-                print( Shape("m 0 0 l 30 0 30 20 0 20").move(-5, 10) )
-
-            >>> m -5 10 l 25 10 25 30 -5 30
+            >>> shape = Shape("m 0 0 l 30 0 30 20 0 20")
+            >>> shape.move(-5, 10)
+            m -5 10 l 25 10 25 30 -5 30
         """
         if x == 0 and y == 0:
             return self
@@ -657,25 +680,22 @@ class Shape:
         return self.map(lambda cx, cy: (cx + x, cy + y))
 
     def align(self, an: int = 5, anchor: int | None = None) -> "Shape":
-        """Moves the outline so that a chosen **pivot inside the shape** coincides
-        with the point that will be used for ``\\pos`` when the line is rendered
-        with a given ``{\\an..}`` tag.
+        """Align the shape based on a specified alignment code and pivot.
 
-        | If no argument for anchor is passed, it will automatically center the shape.
+        This method adjusts the shape's position so that a chosen pivot inside the shape
+        coincides with the position used for rendering (i.e., the \\pos point in ASS).
 
-        Parameters:
-            an (int): Alignment of the subtitle line (``{\\an1}`` … ``{\\an9}``).
-            anchor (int, optional): Pivot inside the shape - uses the same keypad convention.  Defaults to *an*.
+        Args:
+            an: The alignment of the subtitle line (e.g., 1 through 9 corresponding to positions such as bottom-left, center, top-right, etc.).
+            anchor: The pivot inside the shape to be used for alignment. If not provided, defaults to the value of 'an'.
 
         Returns:
-            A new Shape instance with the transformed points.
+            Shape: A new Shape instance with the shape aligned according to the specified parameters.
 
         Examples:
-            ..  code-block:: python3
-
-                print( Shape("m 10 10 l 30 10 30 20 10 20").align() )
-
-            >>> m 0 0 l 20 0 20 10 0 10
+            >>> shape = Shape("m 10 10 l 30 10 30 20 10 20")
+            >>> shape.align()
+            m 0 0 l 20 0 20 10 0 10
         """
         if anchor is None:
             anchor = an
@@ -733,27 +753,22 @@ class Shape:
         fscy: float = 100,
         origin: tuple[float, float] = (0.0, 0.0),
     ) -> "Shape":
-        """Scales shape coordinates horizontally and vertically, similar to ASS \\fscx and \\fscy tags.
+        """Scale the shape by specified horizontal and vertical scale factors, optionally around a given origin.
 
-        Parameters:
-            fscx (int or float): Horizontal scale factor as percentage (100 = normal, 200 = double width, 50 = half width).
-            fscy (int or float): Vertical scale factor as percentage (100 = normal, 200 = double height, 50 = half height).
-            origin (tuple[float, float], optional): The pivot point around which the scaling is applied.
+        This method scales the shape's coordinates relative to a specified origin point, which serves as the pivot for the scaling transformation.
+
+        Args:
+            fscx: The horizontal scaling factor as a percentage (100 means no change).
+            fscy: The vertical scaling factor as a percentage (100 means no change).
+            origin: The pivot point (x, y) around which scaling is performed. Default is (0.0, 0.0).
 
         Returns:
-            A new Shape instance with the transformed points.
+            Shape: A new Shape instance with the coordinates scaled accordingly.
 
         Examples:
-            ..  code-block:: python3
-
-                # Double the width, keep height the same
-                print( Shape("m 0 50 l 0 0 50 0 50 50").scale(fscx=200) )
-
-                # Scale to half size
-                print( Shape("m 0 50 l 0 0 50 0 50 50").scale(fscx=50, fscy=50) )
-
-            >>> m 0 50 l 0 0 100 0 100 50
-            >>> m 0 25 l 0 0 25 0 25 25
+            >>> shape = Shape("m 0 50 l 0 0 50 0 50 50")
+            >>> shape.scale(fscx=200)
+            m 0 50 l 0 0 100 0 100 50
         """
         if fscx == 100.0 and fscy == 100.0:
             return self
@@ -773,14 +788,27 @@ class Shape:
         frz: float = 0.0,
         origin: tuple[float, float] = (0.0, 0.0),
     ) -> "Shape":
-        """Rotates the shape mimicking the behaviour of \\frx, \\fry and \\frz tags.
+        """Rotate the shape by specified angles about given axes around a pivot point.
 
-        Parameters:
-            frx, fry, frz: Rotation angles in **degrees** around, respectively, the X, Y and Z axes.
-            origin: Pivot around which the rotation is applied.
+        This method applies rotation transformations to the shape's coordinates based on the provided angles for the x, y, and z axes, in degrees.
+        The pivot point around which the rotation is applied is specified by the 'origin' parameter.
+
+        Args:
+            frx: The rotation angle around the x-axis (in degrees).
+            fry: The rotation angle around the y-axis (in degrees).
+            frz: The rotation angle around the z-axis (in degrees).
+            origin: The pivot point (x, y) for the rotation.
 
         Returns:
-            A new Shape instance with the transformed points.
+            Shape: A new Shape instance with the coordinates rotated as specified.
+
+        Examples:
+            >>> shape = Shape("m 0 0 l 30 0 30 20 0 20")
+            >>> shape.rotate(frx=0, fry=0, frz=45, origin=(15,10))
+            m -2.678 13.536 l 18.536 -7.678 32.678 6.464 11.464 27.678
+
+        Notes:
+            The rotation is applied in the order: X-axis, then Y-axis, then Z-axis.
         """
         if frx == 0 and fry == 0 and frz == 0:
             return self
@@ -831,15 +859,22 @@ class Shape:
         fay: float = 0.0,
         origin: tuple[float, float] = (0.0, 0.0),
     ) -> "Shape":
-        """Applies a shear (aka slant/skew) transformation to the shape, mimicking the \\fax and \\fay tags.
+        """Apply a shear transformation to the shape.
 
-        Parameters:
-            fax: Horizontal shear factor. Positive values slant the top of the shape to the right, negative to the left.
-            fay: Vertical shear factor. Positive values slant the right side of the shape downwards, negative upwards.
-            origin: Pivot around which the shear is applied.
+        This method deforms the shape by applying a shear transformation relative to a specified origin, which acts as the pivot.
+
+        Args:
+            fax: The horizontal shear factor. Positive values slant the top of the shape to the right, negative values slant to the left.
+            fay: The vertical shear factor. Positive values slant the right side of the shape downward, negative values slant upward.
+            origin: The pivot point (x, y) for the shear transformation.
 
         Returns:
-            A new Shape instance with the transformed points.
+            Shape: A new Shape instance with the coordinates sheared accordingly.
+
+        Examples:
+            >>> shape = Shape("m 0 0 l 30 0 30 20 0 20")
+            >>> shape.shear(fax=0.5, fay=0, origin=(15,10))
+            m -5 0 l 25 0 35 20 5 20
         """
         if fax == 0.0 and fay == 0.0:
             return self
@@ -861,15 +896,20 @@ class Shape:
         return self.map(lambda x, y: _shear(x, y))
 
     def flatten(self, tolerance: float = 1.0) -> "Shape":
-        """Splits shape's bezier curves into lines.
+        """Flatten the shape's Bézier curves into line segments.
 
-        | This is a low level function. Instead, you should use :func:`split` which already calls this function.
+        This method processes the shape by subdividing Bézier curves into multiple straight line segments.
+        The subdivision is controlled by the tolerance parameter, which defines the threshold angle (in degrees) at which a curve is considered flat.
+        This conversion is useful for operations that require linear segments, such as detailed transformations or morphing.
 
-        Parameters:
-            tolerance (float): Angle in degree to define a curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
+        Args:
+            tolerance: The angle in degrees used to determine when a Bézier curve is flat enough to be approximated by a straight line. Higher values yield fewer segments and faster processing but lower accuracy.
 
         Returns:
-            A new Shape instance with the flattened points.
+            Shape: A new Shape instance with the curves converted into line segments.
+
+        Notes:
+            Flattening curves may significantly increase the number of points, which can impact performance for subsequent operations.
         """
         if tolerance < 0:
             raise ValueError("Tolerance must be a positive number")
@@ -987,23 +1027,22 @@ class Shape:
         return Shape(elements=flattened_elements)
 
     def split(self, max_len: float = 16, tolerance: float = 1.0) -> "Shape":
-        """Splits shape bezier curves into lines and splits lines into shorter segments with maximum given length.
+        """Split the shape into smaller segments.
 
-        **Tips:** *You can call this before using :func:`map` to work with more outline points for smoother deforming.*
+        This method first flattens any Bézier curves in the shape, then subdivides the resulting line segments so that no segment exceeds the specified maximum length.
+        This process increases the number of points in the shape, which can be useful for detailed deformations or morphing.
 
-        Parameters:
-            max_len (int or float): The max length that you want all the lines to be.
-            tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy).
+        Args:
+            max_len: The maximum allowed length for any line segment. Segments longer than this value will be subdivided.
+            tolerance: The tolerance angle in degrees used to flatten Bézier curves before splitting.
 
         Returns:
-            A new Shape instance with the split points.
+            Shape: A new Shape instance with the split line segments.
 
         Examples:
-            ..  code-block:: python3
-
-                print( Shape("m -100.5 0 l 100 0 b 100 100 -100 100 -100.5 0 c").split() )
-
-            >>> m -100.5 0 l -100 0 -90 0 -80 0 -70 0 -60 0 -50 0 -40 0 -30 0 -20 0 -10 0 0 0 10 0 20 0 30 0 40 0 50 0 60 0 70 0 80 0 90 0 100 0 l 99.964 2.325 99.855 4.614 99.676 6.866 99.426 9.082 99.108 11.261 98.723 13.403 98.271 15.509 97.754 17.578 97.173 19.611 96.528 21.606 95.822 23.566 95.056 25.488 94.23 27.374 93.345 29.224 92.403 31.036 91.405 32.812 90.352 34.552 89.246 36.255 88.086 37.921 86.876 39.551 85.614 41.144 84.304 42.7 82.945 44.22 81.54 45.703 80.088 47.15 78.592 48.56 77.053 49.933 75.471 51.27 73.848 52.57 72.184 53.833 70.482 55.06 68.742 56.25 66.965 57.404 65.153 58.521 63.307 59.601 61.427 60.645 59.515 61.652 57.572 62.622 55.599 63.556 53.598 64.453 51.569 65.314 49.514 66.138 47.433 66.925 45.329 67.676 43.201 68.39 41.052 69.067 38.882 69.708 36.692 70.312 34.484 70.88 32.259 71.411 27.762 72.363 23.209 73.169 18.61 73.828 13.975 74.341 9.311 74.707 4.629 74.927 -0.062 75 -4.755 74.927 -9.438 74.707 -14.103 74.341 -18.741 73.828 -23.343 73.169 -27.9 72.363 -32.402 71.411 -34.63 70.88 -36.841 70.312 -39.033 69.708 -41.207 69.067 -43.359 68.39 -45.49 67.676 -47.599 66.925 -49.683 66.138 -51.743 65.314 -53.776 64.453 -55.782 63.556 -57.759 62.622 -59.707 61.652 -61.624 60.645 -63.509 59.601 -65.361 58.521 -67.178 57.404 -68.961 56.25 -70.707 55.06 -72.415 53.833 -74.085 52.57 -75.714 51.27 -77.303 49.933 -78.85 48.56 -80.353 47.15 -81.811 45.703 -83.224 44.22 -84.59 42.7 -85.909 41.144 -87.178 39.551 -88.397 37.921 -89.564 36.255 -90.68 34.552 -91.741 32.812 -92.748 31.036 -93.699 29.224 -94.593 27.374 -95.428 25.488 -96.205 23.566 -96.92 21.606 -97.575 19.611 -98.166 17.578 -98.693 15.509 -99.156 13.403 -99.552 11.261 -99.881 9.082 -100.141 6.866 -100.332 4.614 -100.452 2.325 -100.5 0
+            >>> shape = Shape("m 0 50 l 0 0 50 0 50 50")
+            >>> shape.split()
+            m 0 50 l 0 48 0 32 0 16 0 0 2 0 18 0 34 0 50 0 50 2 50 18 50 34 50 50 48 50 32 50 16 50 0 50
         """
         if max_len <= 0:
             raise ValueError(
@@ -1107,20 +1146,24 @@ class Shape:
         kind: Literal["fill", "border"] = "border",
         join: Literal["round", "bevel", "mitre"] = "round",
     ) -> "Shape":
-        """Return a *buffered* version of the shape.
+        """Return a buffered version of the shape.
 
-        A *buffer* is the set of points whose distance from the original geometryis <= to *dist*.
-        You could use this to create a shape representing the border you usually get with ``{\\bord}``,
-        or to expand/contract the shape.
+        It makes a thicker or thinner version of the original shape by adding or removing space around it, based on the distances you specify.
+        The "kind" option decides if you get the whole new shape filled in or just the edge line.
 
-        Parameters:
-            dist_xy (float): Horizontal buffer distance.  Positive values "expand" the shape, negative values "contract" it.
-            dist_y (float | None, optional): Vertical buffer distance.  If *None* the same value as *dist_xy* is used.  The sign **must** match that of *dist_xy*.
-            kind ({"fill", "border"}, optional): "fill" ⇒ return the filled buffered geometry, "border" ⇒ return only the ring between the original shape and the buffered geometry (external or internal border).
-            join ({"round", "bevel", "mitre"}, optional): Corner-join style.
+        Args:
+            dist_xy: Horizontal buffer distance. Positive values expand the shape, and negative values contract it.
+            dist_y: Vertical buffer distance. If None, the same value as dist_xy is used. The sign must match that of dist_xy.
+            kind: Determines whether to return the filled buffered geometry ("fill") or just the border ("border").
+            join: The corner join style to use on buffered corners.
 
         Returns:
-            A new Shape instance with the buffered points.
+            Shape: A new Shape instance representing the buffered shape.
+
+        Examples:
+            >>> shape = Shape("m 0 0 l 100 0 100 50 0 50")
+            >>> shape.buffer(5, kind="border", join="round")
+            m -3.333 50 l -3.269 50.65 (...)
         """
         if join not in ("round", "bevel", "mitre"):
             raise ValueError("join must be one of 'round', 'bevel', or 'mitre'")
@@ -1523,32 +1566,30 @@ class Shape:
         cost_threshold: float = 2.5,
         ensure_shell_pairs: bool = True,
     ) -> "Shape":
-        """Interpolates the current shape towards *target*, returning a new `Shape` that represents the intermediate state at fraction *t*.
+        """Interpolate the current shape toward a target shape.
 
-        Parameters:
-            target (Shape): Destination shape.
-            t (float): Interpolation factor (0 ≤ t ≤ 1).
-            max_len (int or float): The max length that you want all the lines to be.
-            tolerance (float): Angle in degree to define a bezier curve as flat (increasing it will boost performance during reproduction, but lower accuracy)
-            min_point_spacing (float): Per-axis spacing threshold - a vertex is kept only if both `|Δx|` and `|Δy|` from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
-            w_dist (float, optional): Weight for the centroid-distance term (higher values make proximity more important).
-            w_area (float, optional): Weight for the relative area-difference term (higher values make size similarity more important).
-            w_overlap (float, optional): Weight for the overlap / IoU term that penalises pairs with little spatial intersection.
-            cost_threshold (float, optional): Maximum acceptable cost for a pairing. Pairs whose cost is above this threshold are treated as unmatched and will grow/shrink to the closest centroid.
-            ensure_shell_pairs (bool, optional): If ``True`` *shell* rings that would otherwise remain unmatched will be force-paired with the shell that yields the minimum cost. This guarantees that every visible contour morphs into something, at the price of allowing the same shell to be reused multiple times.
+        This method computes an intermediate shape by morphing the current shape into a target shape based on an interpolation factor t (where 0 corresponds to the source shape and 1 corresponds to the target shape).
+        The morph is performed by decomposing both shapes into closed ring segments and matching corresponding rings based on spatial properties. Matched rings are linearly interpolated, and unmatched rings are processed to appear or disappear gradually.
+
+        Args:
+            target: The target shape to morph into.
+            t: Interpolation factor between 0 and 1, where 0 returns the original shape and 1 returns the target shape.
+            max_len: The maximum allowed length for any line segment when splitting curves before morphing.
+            tolerance: The tolerance angle in degrees used when flattening curves.
+            min_point_spacing: Per-axis spacing threshold - a vertex is kept only if both `|Δx|` and `|Δy|` from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
+            w_dist: Weight for the centroid-distance term (higher values make proximity more important).
+            w_area: Weight for the relative area-difference term (higher values make size similarity more important).
+            w_overlap: Weight for the overlap / IoU term that penalises pairs with little spatial intersection.
+            cost_threshold: Maximum acceptable cost for a pairing. Pairs whose cost is above this threshold are treated as unmatched and will grow/shrink to the closest centroid.
+            ensure_shell_pairs: If `True`, shell rings that would otherwise remain unmatched will be force-paired with the shell that yields the minimum cost. This guarantees that every visible contour morphs into something, at the price of allowing the same shell to be reused multiple times.
 
         Returns:
-            A new Shape instance representing the morph at `t`.
+            Shape: A new Shape instance representing the intermediate morph state.
 
-        Note:
-            Shapes are first decomposed into compounds (outer shells with holes).
-            Then, individual loops are matched based on:
-            - Centroid distance (preferring loops with closer centers);
-            - Area similarity (preferring loops of similar size);
-            - Overlap (preferring loops that share space);
-            - Shell/hole role (avoiding matching shells with holes).
-
-            The matched loops are interpolated. The unmatched ones are either shrunk or grown.
+        Examples:
+            >>> source = Shape("m 0 0 l 100 0 100 100 0 100 c")
+            >>> target = Shape("m 50 50 l 150 50 150 150 50 150 c")
+            >>> morph = source.morph(target, t=0.5)
         """
 
         # Fast-path validations
@@ -1603,45 +1644,34 @@ class Shape:
         cost_threshold: float = 2.5,
         ensure_shell_pairs: bool = True,
     ) -> dict[tuple[str | None, str | None], "Shape"]:
-        """Interpolates **multiple** shapes at once and returns a dictionary mapping
-        (src_id, tgt_id) tuples to their interpolated shapes.
+        """Interpolate multiple shapes simultaneously.
 
-        This is a higher-level variant of :py:meth:`morph` that works on two
-        *collections* of shapes rather than a single pair. Rings from all
-        sources are matched against rings from all destinations using the
-        same cost function (centroid distance, area similarity, overlap),
-        then each matched pair is interpolated at the requested point in
-        time *t*.
+        This class method performs a multi-shape morphing operation by interpolating between collections of source and target shapes.
+        It decomposes each shape into rings, matches corresponding rings across the source and target collections based on spatial relationships, and computes intermediate shapes at a given interpolation factor t.
+        The output is a dictionary mapping source-target identifier tuples to the resulting interpolated Shape.
 
-        Parameters:
-            src_shapes (dict[str, Shape]): Dictionary ``id →`` *starting* shape.
-            tgt_shapes (dict[str, Shape]): Dictionary ``id →`` *ending* shape.
-            t (float): Interpolation factor (``0`` = *src*, ``1`` = *dst*).
-            max_len (int or float): Maximum length of line segments after splitting.
-            tolerance (float): Angle in degrees to consider a Bézier curve flat during flattening.
-            min_point_spacing (float): Minimum per-axis spacing when converting back from polygons to shapes.
-            w_dist (float): Weight of the centroid-distance term in the cost function.
-            w_area (float): Weight of the relative area-difference term.
-            w_overlap (float): Weight of the overlap / IoU penalty term.
-            cost_threshold (float): Maximum acceptable pairing cost; above this value rings are treated as unmatched.
-            ensure_shell_pairs (bool): Force every *shell* to morph into something even if the best match is above *cost_threshold*.
+        Args:
+            src_shapes: A dictionary mapping source shape identifiers to their corresponding Shape instances.
+            tgt_shapes: A dictionary mapping target shape identifiers to their corresponding Shape instances.
+            t: Interpolation factor between 0 and 1. A value of 0 returns the source shapes and 1 returns the target shapes.
+            max_len: Maximum allowed length for any line segment after splitting curves.
+            tolerance: The tolerance angle in degrees used when flattening curves.
+            min_point_spacing: Per-axis spacing threshold - a vertex is kept only if both `|Δx|` and `|Δy|` from the previous vertex are ≥ this value (increasing it will boost performance during reproduction, but lower accuracy).
+            w_dist: Weight for the centroid-distance term (higher values make proximity more important).
+            w_area: Weight for the relative area-difference term (higher values make size similarity more important).
+            w_overlap: Weight for the overlap / IoU term that penalises pairs with little spatial intersection.
+            cost_threshold: Maximum acceptable cost for a pairing. Pairs whose cost is above this threshold are treated as unmatched and will grow/shrink to the closest centroid.
+            ensure_shell_pairs: If `True`, shell rings that would otherwise remain unmatched will be force-paired with the shell that yields the minimum cost. This guarantees that every visible contour morphs into something, at the price of allowing the same shell to be reused multiple times.
 
         Returns:
-            dict[tuple[str | None, str | None], Shape]: A dictionary where keys are (src_id, tgt_id) tuples and values are the interpolated shapes. src_id is None if the geometry is appearing, tgt_id is None if the geometry is disappearing.
+            dict[tuple[str | None, str | None], Shape]: A dictionary mapping tuples of source and target identifiers to the corresponding interpolated Shape. A source identifier of None indicates an appearing shape, while a target identifier of None indicates a disappearing shape.
 
         Examples:
-            ..  code-block:: python3
-
-                start = {
-                    'A': Shape.star(5, 20, 40),
-                    'B': Shape.ellipse(50, 30).move(100, 0),
-                }
-                end = {
-                    'X': Shape.polygon(6, 45),
-                }
-                morphs = Shape.morph_multi(start, end, t=0.5)
-                for (src_id, tgt_id), shape in morphs.items():
-                    print(f"{src_id} → {tgt_id}: {shape}")
+            >>> src = { 'A': Shape.star(5, 20, 40), 'B': Shape.ellipse(50, 30).move(100, 0) }
+            >>> tgt = { 'X': Shape.polygon(6, 45) }
+            >>> morphs = Shape.morph_multi(src, tgt, t=0.5)
+            >>> for (src_id, tgt_id), shape in morphs.items():
+            ...     print(f"{src_id} -> {tgt_id}: {shape}")
         """
         # Basic validation
         if not 0 <= t <= 1:
@@ -1841,14 +1871,14 @@ class Shape:
 
     @classmethod
     def polygon(cls, edges: int, side_length: float) -> "Shape":
-        """Returns a shape representing a regular *n*-sided polygon.
+        """Creates a regular n-sided polygon shape.
 
-        Parameters:
-            edges (int): Number of sides.
-            side_length (float): Length of each side.
+        Args:
+            edges: Number of sides for the polygon (must be at least 3).
+            side_length: The length of each side (must be positive).
 
         Returns:
-            A shape representing the polygon.
+            Shape: A Shape object representing the polygon.
         """
         if edges < 3:
             raise ValueError("Edges must be ≥ 3")
@@ -1875,16 +1905,14 @@ class Shape:
 
     @classmethod
     def ellipse(cls, w: float, h: float) -> "Shape":
-        """Returns a shape object of an ellipse with given width and height, centered around (0,0).
+        """Creates an ellipse shape centered at the origin.
 
-        **Tips:** *You could use that to create rounded stribes or arcs in combination with blurring for light effects.*
-
-        Parameters:
-            w (int or float): The width for the ellipse.
-            h (int or float): The height for the ellipse.
+        Args:
+            w: The width of the ellipse.
+            h: The height of the ellipse.
 
         Returns:
-            A shape object representing an ellipse.
+            Shape: A Shape object representing the ellipse.
         """
         try:
             w2, h2 = w / 2, h / 2
@@ -1922,16 +1950,14 @@ class Shape:
 
     @classmethod
     def ring(cls, out_r: float, in_r: float) -> "Shape":
-        """Returns a shape object of a ring with given inner and outer radius, centered around (0,0).
+        """Creates a ring shape with specified inner and outer radii centered at the origin.
 
-        **Tips:** *A ring with increasing inner radius, starting from 0, can look like an outfading point.*
-
-        Parameters:
-            out_r (int or float): The outer radius for the ring.
-            in_r (int or float): The inner radius for the ring.
+        Args:
+            out_r: The outer radius of the ring.
+            in_r: The inner radius of the ring (must be less than out_r).
 
         Returns:
-            A shape object representing a ring.
+            Shape: A Shape object representing the ring.
         """
         try:
             out_r2, in_r2 = out_r * 2, in_r * 2
@@ -2007,16 +2033,14 @@ class Shape:
 
     @classmethod
     def heart(cls, size: float, offset: float = 0) -> "Shape":
-        """Returns a shape object of a heart object with given size (width&height) and vertical offset of center point, centered around (0,0).
+        """Creates a heart shape with specified dimensions and vertical offset.
 
-        **Tips:** *An offset=size*(2/3) results in a splitted heart.*
-
-        Parameters:
-            size (int or float): The width&height for the heart.
-            offset (int or float): The vertical offset of center point.
+        Args:
+            size: The width and height of the heart.
+            offset: The vertical offset for the heart's center point (default is 0).
 
         Returns:
-            A shape object representing an heart.
+            Shape: A Shape object representing the heart.
         """
         try:
             mult = 100 * size / 30
@@ -2048,8 +2072,16 @@ class Shape:
     def _glance_or_star(
         cls, edges: int, inner_size: float, outer_size: float, g_or_s: str
     ) -> "Shape":
-        """
-        General function to create a shape object representing star or glance.
+        """Generates a shape for a star or glance based on provided parameters.
+
+        Args:
+            edges: The number of edges in the shape.
+            inner_size: The size used for the inner vertex or control points.
+            outer_size: The size used for the outer vertex.
+            g_or_s: Flag to determine the style ('l' for star with lines, 'b' for glance with curves).
+
+        Returns:
+            Shape: A Shape object representing the generated star or glance.
         """
         # Alias for utility functions
         f = cls.format_value
@@ -2094,33 +2126,29 @@ class Shape:
 
     @classmethod
     def star(cls, edges: int, inner_size: float, outer_size: float) -> "Shape":
-        """Returns a shape object of a star object with given number of outer edges and sizes, centered around (0,0).
+        """Creates a star shape centered at the origin.
 
-        **Tips:** *Different numbers of edges and edge distances allow individual n-angles.*
-
-        Parameters:
-            edges (int): The number of edges of the star.
-            inner_size (int or float): The inner edges distance from center.
-            outer_size (int or float): The outer edges distance from center.
+        Args:
+            edges: The number of edges for the star.
+            inner_size: The distance from the center to the inner vertices.
+            outer_size: The distance from the center to the outer vertices.
 
         Returns:
-            A shape object as a string representing a star.
+            Shape: A Shape object representing the star.
         """
         return cls._glance_or_star(edges, inner_size, outer_size, "l")
 
     @classmethod
     def glance(cls, edges: int, inner_size: float, outer_size: float) -> "Shape":
-        """Returns a shape object of a glance object with given number of outer edges and sizes, centered around (0,0).
+        """Creates a glance shape with curved transitions between edges.
 
-        **Tips:** *Glance is similar to Star, but with curves instead of inner edges between the outer edges.*
-
-        Parameters:
-            edges (int): The number of edges of the star.
-            inner_size (int or float): The inner edges distance from center.
-            outer_size (int or float): The control points for bezier curves between edges distance from center.
+        Args:
+            edges: The number of edges for the glance.
+            inner_size: The distance from the center to the inner control points.
+            outer_size: The control point distance for the curves between outer edges.
 
         Returns:
-            A shape object as a string representing a glance.
+            Shape: A Shape object representing the glance.
         """
         return cls._glance_or_star(edges, inner_size, outer_size, "b")
 
