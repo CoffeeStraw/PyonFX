@@ -4,7 +4,7 @@ In this tutorial, you'll learn how to create a new subtitle line and produce a n
 
 ## Materials
 
-As in the previous tutorial, we'll work with the [hello_world.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/hello_world.ass) file.
+We'll continue working with the [hello_world.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/hello_world.ass) file of the previous tutorial.
 
 ## Code Walkthrough
 
@@ -18,15 +18,15 @@ from pyonfx import Ass
 
 **1. Setting Up Input and Output Files**
 
-The `Ass` class does more than just parse input files — it also manages output generation. When initializing an `Ass` object, you can specify both input and output file paths:
+The `Ass` class does more than just parse input files—it also manages output generation. When initializing an `Ass` object, you can specify both input and output file paths:
 
 ```python
 io = Ass("hello_world.ass", path_output="output.ass")
 ```
 
-This setup creates an output buffer that will become your new ASS file. By default, PyonFX copies all original lines to the output but comments them out, so you can see both the original content and your modifications. You can control this behavior with the `keep_original` parameter: see the [Ass initialization documentation](../../reference/ass_core.md#pyonfx.ass_core.Ass.__init__) for more details.
+This setup creates an output buffer that will become your new ASS file. By default, PyonFX copies all original lines to the output but comments them out, so you can see both the original content and your modifications. You can control this behavior with the `keep_original` parameter—see the [Ass initialization documentation](../../reference/ass_core.md#pyonfx.ass_core.Ass.__init__) for more details.
 
-Let's now extract the data from our input file as we did in the previous tutorial:
+Now let's extract the data from our input file as we did in the previous tutorial:
 
 ```python
 meta, styles, lines = io.get_data()
@@ -40,9 +40,9 @@ When creating new lines in PyonFX, always start by copying an existing line rath
 output_line = lines[0].copy()
 ```
 
-The `copy()` method duplicates everything: timing information, style, actor/effect fields, margins, and so on. This approach saves significant effort because manually setting up a new line requires configuring dozens of attributes correctly.
+The `copy()` method duplicates everything: timing information, style, actor/effect fields, margins, and more. This approach saves significant effort because manually setting up a new line requires configuring dozens of attributes correctly.
 
-Starting with a copy means you only need to modify the specific properties you want to change — typically `text`, `start_time`, `end_time` and `layer`.
+Starting with a copy means you only need to modify the specific properties you want to change—typically `text`, `start_time`, `end_time`, and `layer`.
 
 **3. Modifying the Line**
 
@@ -92,7 +92,7 @@ When Aegisub opens, you'll see something like this:
 
 ![Aegisub showing output with original commented lines and new modified line](imgs/hello_world_aegisub_output_preview.png)
 
-Notice how the original lines appear commented out, while your new line appears as an active subtitle with the same fields as the original but with your modified text.
+Notice how the original lines appear commented out, while your new line appears as an active subtitle with the same timing and styling as the original but with your modified text.
 
 ## Conclusion
 

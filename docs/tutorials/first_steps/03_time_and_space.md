@@ -8,7 +8,7 @@ As with previous tutorials, we'll continue working with the [hello_world.ass](ht
 
 ## Understanding ASS Alignment Numbers
 
-Before diving into the code, it's crucial to recall ASS alignment numbers. These numbers (1-9) determine how text is positioned relative to a given coordinate point:
+Before diving into the code, let's recall ASS alignment numbers. These numbers (1-9) determine how text is positioned relative to a given coordinate point:
 
 ```
 7 ─ 8 ─ 9    (Top)
@@ -64,7 +64,7 @@ PyonFX provides convenient properties for accessing different anchor points of a
 - **Horizontal positions**: `line.left`, `line.center`, `line.right`
 - **Vertical positions**: `line.top`, `line.middle`, `line.bottom`
 
-These fields represent the pixel coordinates based on the text's layout and the video resolution.
+These properties represent pixel coordinates based on the text's layout and the video resolution.
 
 > Note: while we're exploring these with full lines in this tutorial, these positioning properties become even more powerful when working with individual words, syllables, and characters within a line—allowing you to position each text element precisely where it originally appeared when creating advanced karaoke effects.
 
@@ -85,9 +85,9 @@ Here's what's happening:
 - `\\pos(%.3f,%.3f)` positions the text at specific pixel coordinates, which are passed as arguments:
     - `line.left` gives us the left edge coordinate of the original text
     - `line.bottom` gives us the bottom edge coordinate of the original text
-- And finally, we use the `%s` placeholder to insert the original text.
+- Finally, we use the `%s` placeholder to insert the original text.
 
-Together, these place our `an1`-aligned text exactly where the original text appeared. Notice the difference of the control point position rendered in Aegisub:
+Together, these place our `an1`-aligned text exactly where the original text appeared. Notice the difference in the control point position rendered in Aegisub:
 
 ![Control Point Position](imgs/time_and_space_control_point_position.png)
 
@@ -122,7 +122,7 @@ io.write_line(l)
 
 Each line is positioned to appear in exactly the same visual location as the original, but uses a different alignment number and displays at a different time with a unique color.
 
-**5. The Complete Nine-Alignment Demonstration**
+**4. The Complete Nine-Alignment Demonstration**
 
 If you continue with all the other alignments, you'll get a 4.5-second sequence where the same text appears in all nine alignment positions, with a different color for each alignment:
 
@@ -136,7 +136,7 @@ If you continue with all the other alignments, you'll get a 4.5-second sequence 
 - **3.5-4.0s**: Top Center (an8)
 - **4.0-4.5s**: Top Right (an9)
 
-**6. Saving and Previewing**
+**5. Saving and Previewing**
 
 As always, we finish by saving our output and opening it in Aegisub:
 
@@ -145,7 +145,7 @@ io.save()
 io.open_aegisub()
 ```
 
-In the preview, you'll see your 9 new lines, each rendered as following:
+In the preview, you'll see your 9 new lines, each rendered as follows:
 
 ![Nine Alignment Sequence](imgs/time_and_space_nine_alignment_sequence.png)
 

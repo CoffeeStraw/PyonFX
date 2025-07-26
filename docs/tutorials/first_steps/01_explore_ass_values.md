@@ -7,13 +7,13 @@ We assume you have already read the [Install & Set-up](../installing.md) tutoria
 ## Materials
 Before starting, please download the following ASS file: [hello_world.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/hello_world.ass)
 
-We will make use of it for the current and future tutorials.
+We will use this file throughout the current and future tutorials.
 
 ## Code Walkthrough
 
 **0. Importing PyonFX**
 
-Let's start by importing PyonFX. It's a good practice to import only the classes you need, so for this tutorial we will only import the `Ass` class.
+Let's start by importing PyonFX. It's a good practice to import only the classes you need, so for this tutorial we'll import only the `Ass` class.
 
 ```python
 from pyonfx import Ass
@@ -30,11 +30,11 @@ io = Ass("hello_world.ass")
 meta, styles, lines = io.get_data()
 ```
 
-At this point, you find yourself with three important objects:
+Now you have three important objects to work with:
 
-- `meta`: contains metadata from the ASS file.
-- `styles`: a dictionary of styles defined in the ASS file;
-- `lines`: a list of dialogue lines with detailed segmentation;
+- `meta`: contains metadata from the ASS file
+- `styles`: a dictionary of styles defined in the ASS file
+- `lines`: a list of dialogue lines with detailed segmentation
 
 **2. Displaying ASS Data**
 
@@ -53,7 +53,7 @@ print(meta)
     Meta(wrap_style=0, scaled_border_and_shadow=True, play_res_x=1280, play_res_y=720, audio=None, video='?dummy:23.976000:480:1280:720:59:59:59:', timestamps=<video_timestamps.fps_timestamps.FPSTimestamps object at 0x000001FB6F9864B0>)
     ```
 
-Notably, the metadata includes audio and video file references (`audio` and `video`), display resolution (`play_res_x` and `play_res_y`), and a timestamp object associated to the video file (`timestamps`). For a complete list of attributes and their meanings, refer to the [Meta](../../reference/ass_core.md#pyonfx.ass_core.Meta) documentation.
+Notably, the metadata includes audio and video file references (`audio` and `video`), display resolution (`play_res_x` and `play_res_y`), and a timestamp object associated with the video file (`timestamps`). For a complete list of attributes and their meanings, refer to the [Meta](../../reference/ass_core.md#pyonfx.ass_core.Meta) documentation.
 
 *Exploring Styles:*
 
@@ -71,13 +71,11 @@ for style_name, style in styles.items():
     "Subtitle": Style(name='Subtitle', fontname='Arial', fontsize=40.0, color1='&HFFFFFF&', alpha1='&H00&', color2='&H0000FF&', alpha2='&H00&', color3='&H000000&', alpha3='&H00&', color4='&H000000&', alpha4='&H00&', bold=True, italic=False, underline=False, strikeout=False, scale_x=100.0, scale_y=100.0, spacing=0.0, angle=0.0, border_style=False, outline=2.0, shadow=0.0, alignment=2, margin_l=12, margin_r=15, margin_v=15, encoding=1)
     ```
 
-Does it look familiar?
-
-If you thought about this:
+This should look familiar! The structure closely resembles what you'd find in Aegisub's style editor:
 
 ![Aegisub Style Editor Window](imgs/aegisub_style.png){width="500"}
 
-You are correct! This structure closely resembles what you'd find in Aegisub’s style editor. For more details on each attribute, see the [Style](../../reference/ass_core.md#pyonfx.ass_core.Style) documentation.
+For more details on each attribute, see the [Style](../../reference/ass_core.md#pyonfx.ass_core.Style) documentation.
 
 *Inspecting Dialogue Lines:*
 
@@ -92,18 +90,18 @@ print(lines[0])
     Line(comment=False, layer=0, start_time=1000, end_time=3000, style='Romaji', styleref=Style(fontname='Arial', ...), actor='', margin_l=0, margin_r=0, margin_v=0, effect='', raw_text='{\\k50}Hel{\\k50}lo {\\k50}world!', text='Hello world!', i=0, leadin=1001, leadout=1001, width=204.84375, height=40.0, ascent=32.40625, descent=7.59375, internal_leading=4.203125, external_leading=1.171875, x=638.5, y=15, left=536.078125, center=638.5, right=740.921875, top=15, middle=35.0, bottom=55.0, words=[Word(i=0, text='Hello', ...), ... (+1 more)], syls=[Syllable(i=0, text='Hel', ...), ... (+2 more)], chars=[Char(i=0, text='H', ...), ... (+11 more)])
     ```
 
-You should find this familiar as well: it has a lot of properties you'd find in the Aegisub Line Editor:
+This should also look familiar — it contains many properties you'd find in Aegisub's Line Editor:
 ![Aegisub Line Editor Window](imgs/aegisub_line_editor.png)
 
-In particular, we can see time information such as start/end times (`start_time` and `end_time`), the applied style name and its corresponding object (`style` and `styleref`), raw text and its version stripped of ASS tags (`raw_text` and `text`). You can also read a lot of other attributes, but don't worry about them for now.
+In particular, you can see timing information (`start_time` and `end_time`), the applied style name and its corresponding object (`style` and `styleref`), and both raw text and its version stripped of ASS tags (`raw_text` and `text`). There are many other attributes, but don't worry about them for now.
 
-Crucially, each `Line` object contains segmented data too:
+Most importantly, each `Line` object contains segmented data:
 
-- `Word` objects: segments of the line's text split by spaces;
-- `Syllable` objects: segments of the line's text defined by the karaoke time tag (`\k`);
-- `Char` objects: the individual characters of the line's text.
+- `Word` objects: segments of the line's text split by spaces
+- `Syllable` objects: segments of the line's text defined by karaoke timing tags (`\k`)
+- `Char` objects: the individual characters of the line's text
 
-Let's take a look at these segments: print the first word, syllable, and character of the first line.
+Let's examine these segments by printing the first word, syllable, and character of the first line:
 
 ```python
 print(lines[0].words[0], "\n")
@@ -124,9 +122,9 @@ Notice how many attributes from the parent `Line` are shared with its words, syl
 
 ## Conclusion
 
-Great job! :tada: You’ve successfully explored the structure of an ASS file using PyonFX. In this tutorial, you learned how to load and parse an ASS file, inspect its metadata, review style configurations, and examine the segmentation of dialogue into words, syllables, and characters.
+Great job! :tada: You've successfully explored the structure of an ASS file using PyonFX. In this tutorial, you learned how to load and parse an ASS file, inspect its metadata, review style configurations, and examine the segmentation of dialogue into words, syllables, and characters.
 
-Up next, we’ll guide you through writing your first line in a new ASS file.
+Up next, we'll guide you through writing your first line in a new ASS file.
 
 ## Full Source Code
 ??? abstract "Show full source code"
