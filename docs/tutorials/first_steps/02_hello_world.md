@@ -52,13 +52,6 @@ Now we can safely modify our copied line. Let's change the text to demonstrate t
 output_line.text = "I am a new line!"
 ```
 
-But you could also modify other properties like timing:
-```python
-# Example: shift timing by 2 seconds
-output_line.start_time += 2000
-output_line.end_time += 2000
-```
-
 **4. Adding the Line to Output**
 
 After modifying the line, add it to the output buffer using the `write_line()` method:
