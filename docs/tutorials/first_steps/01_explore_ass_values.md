@@ -5,7 +5,7 @@ Welcome to the first tutorial of PyonFX! In this guide, you'll learn how to use 
 We assume you have already read the [Install & Set-up](../installing.md) tutorial.
 
 ## Materials
-Before starting, please download the following ASS file: [hello_world.ass](https://raw.githubusercontent.com/CoffeeStraw/PyonFX/refs/heads/master/examples/tutorials/0_first_steps/hello_world.ass)
+Before starting, please download the following ASS file: [hello_world.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/hello_world.ass)
 
 We will make use of it for the current and future tutorials.
 
