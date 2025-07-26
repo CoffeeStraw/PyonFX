@@ -1869,6 +1869,128 @@ class Shape:
             result[(src_id, tgt_id)] = Shape.from_multipolygon(mp, min_point_spacing)
         return result
 
+    PIXEL: str = "m 0 1 l 0 0 1 0 1 1"
+    """A string representing a pixel."""
+
+    @classmethod
+    def triangle(cls, width: float, height: float) -> "Shape":
+        """Creates a triangle centered at the origin with the specified width and height.
+
+        The triangle is defined by three vertices:
+        - Top vertex at (0, height/2).
+        - Bottom-left vertex at (-width/2, -height/2).
+        - Bottom-right vertex at (width/2, -height/2).
+
+        Args:
+            width: The width of the triangle base (must be positive).
+            height: The height of the triangle (must be positive).
+
+        Returns:
+            Shape: A new Shape instance representing the triangle.
+        """
+        if width <= 0 or height <= 0:
+            raise ValueError("Width and height must be positive")
+
+        # Calculate vertices
+        half_w = width / 2
+        half_h = height / 2
+        vertices = [
+            (0, half_h),  # Top vertex
+            (-half_w, -half_h),  # Bottom-left vertex
+            (half_w, -half_h),  # Bottom-right vertex
+        ]
+
+        # Build ASS path command
+        f = cls.format_value
+        path_parts = [f"m {f(vertices[0][0])} {f(vertices[0][1])}"]
+
+        for vertex in vertices[1:]:
+            path_parts.append(f"l {f(vertex[0])} {f(vertex[1])}")
+
+        return cls(" ".join(path_parts)).align()
+
+    @classmethod
+    def rectangle(cls, width: float, height: float) -> "Shape":
+        """Creates a rectangle shape with the specified width and height.
+
+        Args:
+            width: The width of the rectangle (must be positive).
+            height: The height of the rectangle (must be positive).
+
+        Returns:
+            Shape: A new Shape instance representing the rectangle.
+        """
+        if width <= 0 or height <= 0:
+            raise ValueError("Width and height must be positive")
+
+        f = cls.format_value
+        return cls(
+            "m 0 0 l %s 0 %s %s 0 %s 0 0" % (f(width), f(width), f(height), f(height))
+        )
+
+    @classmethod
+    def square(cls, size: float) -> "Shape":
+        """Creates a square shape with the given side length.
+
+        Args:
+            size: The side length of the square (must be positive).
+
+        Returns:
+            Shape: A new Shape instance representing the square.
+        """
+        return cls.rectangle(size, size)
+
+    @classmethod
+    def rounded_rectangle(cls, width: float, height: float, radius: float) -> "Shape":
+        """Creates a rounded rectangle shape.
+
+        Args:
+            width: Rectangle width in pixels (must be positive).
+            height: Rectangle height in pixels (must be positive).
+            radius: Corner radius in pixels (must be <= min(width/2, height/2)).
+
+        Returns:
+            Shape: A rounded rectangle with origin at top-left (0,0), extending to (width, height).
+        """
+        if width <= 0 or height <= 0:
+            raise ValueError("Width and height must be positive")
+        if radius < 0:
+            raise ValueError("Radius must be non-negative")
+        if radius > min(width / 2, height / 2):
+            raise ValueError("Radius is too large for the given dimensions")
+
+        f = cls.format_value
+        k = 0.5522847498 * radius  # Bezier approximation constant
+        w, h, r = width, height, radius
+
+        # Each tuple: (line_end_x, line_end_y, bezier_c1x, c1y, c2x, c2y, end_x, end_y)
+        segments = [
+            (w - r, 0, w - r + k, 0, w, k, w, r),  # Top edge + top-right corner
+            (
+                w,
+                h - r,
+                w,
+                h - r + k,
+                w - k,
+                h,
+                w - r,
+                h,
+            ),  # Right edge + bottom-right corner
+            (r, h, r - k, h, 0, h - k, 0, h - r),  # Bottom edge + bottom-left corner
+            (0, r, 0, r - k, k, 0, r, 0),  # Left edge + top-left corner
+        ]
+
+        cmd = [f"m {f(r)} {f(0)}"]
+        for lx, ly, c1x, c1y, c2x, c2y, ex, ey in segments:
+            cmd.extend(
+                [
+                    f"l {f(lx)} {f(ly)}",
+                    f"b {f(c1x)} {f(c1y)} {f(c2x)} {f(c2y)} {f(ex)} {f(ey)}",
+                ]
+            )
+
+        return cls(" ".join(cmd))
+
     @classmethod
     def polygon(cls, edges: int, side_length: float) -> "Shape":
         """Creates a regular n-sided polygon shape.
@@ -1947,6 +2069,18 @@ class Shape:
                 f(h2),  # curve 4
             )
         )
+
+    @classmethod
+    def circle(cls, radius: float) -> "Shape":
+        """Creates a circle shape with the given radius.
+
+        Args:
+            radius: The radius of the circle (must be positive).
+
+        Returns:
+            Shape: A new Shape instance representing the circle.
+        """
+        return cls.ellipse(2 * radius, 2 * radius)
 
     @classmethod
     def ring(cls, out_r: float, in_r: float) -> "Shape":
@@ -2151,6 +2285,3 @@ class Shape:
             Shape: A Shape object representing the glance.
         """
         return cls._glance_or_star(edges, inner_size, outer_size, "b")
-
-    PIXEL: str = "m 0 1 l 0 0 1 0 1 1"
-    """A string representing a pixel."""
