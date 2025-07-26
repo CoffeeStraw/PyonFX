@@ -44,11 +44,11 @@ class ShapeElement:
     and provides utility methods for creating and representing these commands.
 
     Attributes:
-        command (str): The drawing command (e.g., "m", "n", "l", "p", "b", "s", "c").
-        coordinates (list[Point]): A list of `Point` objects representing the coordinate pairs.
+        command: The drawing command (e.g., "m", "n", "l", "p", "b", "s", "c").
+        coordinates: A list of `Point` objects representing the coordinate pairs.
 
     See Also:
-        [Shape](pyonfx.shape.Shape)
+        [`Shape`][pyonfx.shape.Shape]
     """
 
     command: str
@@ -60,8 +60,8 @@ class ShapeElement:
         """Initialize a ShapeElement instance.
 
         Args:
-            command (str): The ASS drawing command. Allowed values are "m", "n", "l", "p", "b", "s", "c".
-            coordinates (list[Point]): A list of `Point` objects representing the coordinate pairs.
+            command: The ASS drawing command. Allowed values are "m", "n", "l", "p", "b", "s", "c".
+            coordinates: A list of `Point` objects representing the coordinate pairs.
         """
         if command not in {"m", "n", "l", "p", "b", "s", "c"}:
             raise ValueError(f"Invalid command '{command}'")
@@ -86,8 +86,8 @@ class ShapeElement:
         Since some commands can be implicit, this method can return more than one element.
 
         Args:
-            command (str): The ASS drawing command. Must be one of "m", "n", "l", "p", "b", "s", "c".
-            *args (str): A sequence of string arguments representing numeric values for coordinates.
+            command: The ASS drawing command. Must be one of "m", "n", "l", "p", "b", "s", "c".
+            *args: A sequence of string arguments representing numeric values for coordinates.
 
         Returns:
             list[ShapeElement]: A list of ShapeElement instances created from the command.
@@ -154,7 +154,7 @@ class ShapeElement:
 class Shape:
     """High-level container for ASS drawing commands.
 
-    This class represents a vector outline for ASS subtitles, storing its geometry as a sequence of [ShapeElement](pyonfx.shape.ShapeElement) objects.
+    This class represents a vector outline for ASS subtitles, storing its geometry as a sequence of [`ShapeElement`][pyonfx.shape.ShapeElement] objects.
     It dynamically generates an ASS drawing command string from its internal elements, ensuring consistency between the geometry and its textual representation.
     The `Shape` class provides numerous methods for geometric transformations (e.g., move, scale, rotate, shear), analysis (e.g., bounding box computation), boolean operations, and morphing.
 
@@ -173,7 +173,7 @@ class Shape:
         Transformations typically return a new `Shape` instance to allow method chaining.
 
     See Also:
-        [ShapeElement](pyonfx.shape.ShapeElement)
+        [`ShapeElement`][pyonfx.shape.ShapeElement]
     """
 
     elements: list[ShapeElement]
@@ -277,7 +277,7 @@ class Shape:
         """Convert the shape to a Shapely MultiPolygon.
 
         It processes the shape into individual closed loops that are then assembled into polygons with proper shell-hole relationships.
-        It automatically calls [flatten](pyonfx.shape.Shape.flatten) to convert curves into straight line segments.
+        It automatically calls [`flatten`][pyonfx.shape.Shape.flatten] to convert curves into straight line segments.
 
         Args:
             tolerance: The tolerance angle in degrees used to determine when a bezier curve is considered flat. Higher values yield lower accuracy but faster processing.
@@ -370,7 +370,7 @@ class Shape:
             >>> shape = Shape.from_multipolygon(mp, min_point_spacing=0.5)
 
         See Also:
-            [to_multipolygon](pyonfx.shape.Shape.to_multipolygon)
+            [`to_multipolygon`][pyonfx.shape.Shape.to_multipolygon]
         """
         if not isinstance(multipolygon, MultiPolygon):
             raise TypeError("Expected a MultiPolygon instance")
@@ -567,8 +567,8 @@ class Shape:
             m 10 10 l 10 5 5 5 5 10
 
         See Also:
-            [to_multipolygon](pyonfx.shape.Shape.to_multipolygon)
-            [from_multipolygon](pyonfx.shape.Shape.from_multipolygon)
+            [`to_multipolygon`][pyonfx.shape.Shape.to_multipolygon]
+            [`from_multipolygon`][pyonfx.shape.Shape.from_multipolygon]
         """
         if not isinstance(other, Shape):
             raise TypeError("other must be a Shape instance")

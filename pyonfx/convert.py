@@ -187,7 +187,7 @@ class Convert:
             (255, 0, 0)
 
         See Also:
-            [Convert.color_ass_to_rgb](pyonfx.convert.Convert.color_ass_to_rgb), [Convert.color_rgb_to_ass](pyonfx.convert.Convert.color_rgb_to_ass)
+            [`Convert.color_ass_to_rgb`][pyonfx.convert.Convert.color_ass_to_rgb], [`Convert.color_rgb_to_ass`][pyonfx.convert.Convert.color_rgb_to_ass]
         """
         try:
             # Text for exception if input is out of ranges
@@ -313,7 +313,7 @@ class Convert:
             "#EFCDAB"
 
         See Also:
-            [Convert.color_rgb_to_ass](pyonfx.convert.Convert.color_rgb_to_ass)
+            [`Convert.color_rgb_to_ass`][pyonfx.convert.Convert.color_rgb_to_ass]
         """
         result = Convert.color(
             color_ass, ColorModel.ASS, ColorModel.RGB_STR if as_str else ColorModel.RGB
@@ -345,7 +345,7 @@ class Convert:
                 print(Convert.color_ass_to_hsv("&HABCDEF&", round_output=False))
 
         See Also:
-            [Convert.color_rgb_to_hsv](pyonfx.convert.Convert.color_rgb_to_hsv)
+            [`Convert.color_rgb_to_hsv`][pyonfx.convert.Convert.color_rgb_to_hsv]
         """
         result = Convert.color(color_ass, ColorModel.ASS, ColorModel.HSV, round_output)
         return cast(tuple[int, int, int] | tuple[float, float, float], result)
@@ -365,7 +365,7 @@ class Convert:
             (0.8686973182678561, 0.023239204013187575, 0.054516093943155375)
 
         See Also:
-            [Convert.color_oklab_to_rgb](pyonfx.convert.Convert.color_oklab_to_rgb)
+            [`Convert.color_oklab_to_rgb`][pyonfx.convert.Convert.color_oklab_to_rgb]
         """
         result = Convert.color(
             color_ass, ColorModel.ASS, ColorModel.OKLAB, round_output=False
@@ -389,7 +389,7 @@ class Convert:
             "&HEFCDAB&"
 
         See Also:
-            [Convert.color_ass_to_rgb](pyonfx.convert.Convert.color_ass_to_rgb)
+            [`Convert.color_ass_to_rgb`][pyonfx.convert.Convert.color_ass_to_rgb]
         """
         result = Convert.color(
             color_rgb,
@@ -419,7 +419,7 @@ class Convert:
             (210.0, 28.45, 93.73)
 
         See Also:
-            [Convert.color_hsv_to_rgb](pyonfx.convert.Convert.color_hsv_to_rgb)
+            [`Convert.color_hsv_to_rgb`][pyonfx.convert.Convert.color_hsv_to_rgb]
         """
         result = Convert.color(
             color_rgb,
@@ -446,7 +446,7 @@ class Convert:
             (0.6279553606145516, 0.22486306106597398, 0.1258462985307351)
 
         See Also:
-            [Convert.color_oklab_to_rgb](pyonfx.convert.Convert.color_oklab_to_rgb)
+            [`Convert.color_oklab_to_rgb`][pyonfx.convert.Convert.color_oklab_to_rgb]
         """
         r, g, b = [x / 255 for x in color_rgb]
 
@@ -494,7 +494,7 @@ class Convert:
             "&H00FF55&"
 
         See Also:
-            [Convert.color_ass_to_hsv](pyonfx.convert.Convert.color_ass_to_hsv)
+            [`Convert.color_ass_to_hsv`][pyonfx.convert.Convert.color_ass_to_hsv]
         """
         result = Convert.color(color_hsv, ColorModel.HSV, ColorModel.ASS)
         return cast(str, result)
@@ -524,7 +524,7 @@ class Convert:
             (84.99999999999999, 255.0, 0.0)
 
         See Also:
-            [Convert.color_rgb_to_hsv](pyonfx.convert.Convert.color_rgb_to_hsv)
+            [`Convert.color_rgb_to_hsv`][pyonfx.convert.Convert.color_rgb_to_hsv]
         """
         result = Convert.color(
             color_hsv,
@@ -553,7 +553,7 @@ class Convert:
             (255, 0, 0)  # example output
 
         See Also:
-            [Convert.color_rgb_to_oklab](pyonfx.convert.Convert.color_rgb_to_oklab)
+            [`Convert.color_rgb_to_oklab`][pyonfx.convert.Convert.color_rgb_to_oklab]
         """
         L, a_val, b_val = color_oklab
 
@@ -606,7 +606,7 @@ class Convert:
             "&H00FF55&"  # example output
 
         See Also:
-            [Convert.color_ass_to_oklab](pyonfx.convert.Convert.color_ass_to_oklab)
+            [`Convert.color_ass_to_oklab`][pyonfx.convert.Convert.color_ass_to_oklab]
         """
         result = Convert.color(color_oklab, ColorModel.OKLAB, ColorModel.ASS)
         return cast(str, result)
@@ -638,7 +638,7 @@ class Convert:
             A known limitation is that the output line must use '\\an7' and '\\pos(.left, .top)' for accurate displacement.
 
         See Also:
-            [Convert.text_to_clip](pyonfx.convert.Convert.text_to_clip)
+            [`Convert.text_to_clip`][pyonfx.convert.Convert.text_to_clip]
         """
         if obj.styleref is None:
             raise ValueError("Object must have a style reference and text content")
@@ -692,7 +692,7 @@ class Convert:
             >>> io.write_line(l)
 
         See Also:
-            [Convert.text_to_shape](pyonfx.convert.Convert.text_to_shape)
+            [`Convert.text_to_shape`][pyonfx.convert.Convert.text_to_shape]
         """
         if obj.styleref is None:
             raise ValueError("Object must have a style reference")
@@ -767,10 +767,10 @@ class Convert:
 
         Notes:
             To optimize the ASS file size, it is recommended to use a dedicated pixel style.
-            A pre-made pixel style ([Ass.PIXEL_STYLE](pyonfx.ass_core.Ass.PIXEL_STYLE)) is provided in the Ass class and can be added to your ASS output using the [add_style](pyonfx.ass_core.Ass.add_style) method.
+            A pre-made pixel style ([`Ass.PIXEL_STYLE`][pyonfx.ass_core.Ass.PIXEL_STYLE]) is provided in the Ass class and can be added to your ASS output using the [`add_style`][pyonfx.ass_core.Ass.add_style] method.
 
         See Also:
-            [Convert.shape_to_pixels](pyonfx.convert.Convert.shape_to_pixels)
+            [`Convert.shape_to_pixels`][pyonfx.convert.Convert.shape_to_pixels]
         """
         shape = Convert.text_to_shape(obj).move(obj.left % 1, obj.top % 1)
         return Convert.shape_to_pixels(shape, supersampling, output_rgba)
@@ -802,10 +802,10 @@ class Convert:
 
         Notes:
             To optimize the ASS file size, it is recommended to use a dedicated pixel style.
-            A pre-made pixel style ([Ass.PIXEL_STYLE](pyonfx.ass_core.Ass.PIXEL_STYLE)) is provided in the Ass class and can be added to your ASS output using the [add_style](pyonfx.ass_core.Ass.add_style) method.
+            A pre-made pixel style ([`Ass.PIXEL_STYLE`][pyonfx.ass_core.Ass.PIXEL_STYLE]) is provided in the Ass class and can be added to your ASS output using the [`add_style`][pyonfx.ass_core.Ass.add_style] method.
 
         See Also:
-            [Convert.text_to_pixels](pyonfx.convert.Convert.text_to_pixels)
+            [`Convert.text_to_pixels`][pyonfx.convert.Convert.text_to_pixels]
         """
         # Validate input
         if supersampling < 1 or not isinstance(supersampling, int):
@@ -901,10 +901,10 @@ class Convert:
 
         Notes:
             To optimize the ASS file size, it is recommended to use a dedicated pixel style.
-            A pre-made pixel style ([Ass.PIXEL_STYLE](pyonfx.ass_core.Ass.PIXEL_STYLE)) is provided in the Ass class and can be added to your ASS output using the [add_style](pyonfx.ass_core.Ass.add_style) method.
+            A pre-made pixel style ([`Ass.PIXEL_STYLE`][pyonfx.ass_core.Ass.PIXEL_STYLE]) is provided in the Ass class and can be added to your ASS output using the [`add_style`][pyonfx.ass_core.Ass.add_style] method.
 
         See Also:
-            [pyonfx.pixel.PixelCollection.apply_texture](pyonfx.pixel.PixelCollection.apply_texture)
+            [`PixelCollection.apply_texture`][pyonfx.pixel.PixelCollection.apply_texture]
         """
         dirname = os.path.dirname(os.path.abspath(sys.argv[0]))
         if not os.path.isabs(image_path):

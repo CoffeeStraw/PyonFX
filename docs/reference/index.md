@@ -7,7 +7,6 @@ Start exploring using the sidebar or the links below:
 
 * [ass_core](ass_core.md)
 * [convert](convert.md)
-* [font](font.md)
 * [pixel](pixel.md)
 * [shape](shape.md)
 * [utils](utils.md)

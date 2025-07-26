@@ -35,12 +35,12 @@ class Utils:
 
     @staticmethod
     def progress_bar(
-        iterable: Iterable[_LineWordSyllableChar], **kwargs
+        iterable: Iterable[_LineWordSyllableChar], **kwargs: Any
     ) -> Iterable[_LineWordSyllableChar]:
-        """Wrap an iterable of [Line](pyonfx.ass_core.Line), [Word](pyonfx.ass_core.Word), [Syllable](pyonfx.ass_core.Syllable), or [Char](pyonfx.ass_core.Char) with a tqdm progress bar.
+        """Wrap an iterable of [`Line`][pyonfx.ass_core.Line], [`Word`][pyonfx.ass_core.Word], [`Syllable`][pyonfx.ass_core.Syllable], or [`Char`][pyonfx.ass_core.Char] with a tqdm progress bar.
 
         Args:
-            iterable: An iterable containing elements of type [Line](pyonfx.ass_core.Line), [Word](pyonfx.ass_core.Word), [Syllable](pyonfx.ass_core.Syllable), or [Char](pyonfx.ass_core.Char).
+            iterable: An iterable containing elements of type [`Line`][pyonfx.ass_core.Line], [`Word`][pyonfx.ass_core.Word], [`Syllable`][pyonfx.ass_core.Syllable], or [`Char`][pyonfx.ass_core.Char].
             **kwargs: Additional arguments passed to the tqdm progress bar.
 
         Returns:
@@ -53,7 +53,7 @@ class Utils:
             ...     process(item)
 
         See Also:
-            [all_non_empty](pyonfx.utils.Utils.all_non_empty): Which also uses `progress_bar` for optionally wrapping its returned iterable.
+            [`all_non_empty`][pyonfx.utils.Utils.all_non_empty]: Which also uses `progress_bar` for optionally wrapping its returned iterable.
         """
         # Convert to list to support multiple passes and len()
         items = list(iterable)
@@ -101,8 +101,8 @@ class Utils:
         """Filter and return non-empty elements from a given iterable.
 
         Args:
-            lines_words_syls_or_chars: An iterable containing elements of type [Line](pyonfx.ass_core.Line), [Word](pyonfx.ass_core.Word), [Syllable](pyonfx.ass_core.Syllable), or [Char](pyonfx.ass_core.Char).
-            filter_comment: If True, filters out objects with comments (only applicable for [Line](pyonfx.ass_core.Line) objects).
+            lines_words_syls_or_chars: An iterable containing elements of type [`Line`][pyonfx.ass_core.Line], [`Word`][pyonfx.ass_core.Word], [`Syllable`][pyonfx.ass_core.Syllable], or [`Char`][pyonfx.ass_core.Char].
+            filter_comment: If True, filters out objects with comments (only applicable for [`Line`][pyonfx.ass_core.Line] objects).
             filter_whitespace_text: If True, filters out objects whose text attribute is empty or contains only whitespace.
             filter_empty_duration: If True, filters out objects with a duration less than or equal to zero.
             renumber_indexes: If True, reassigns indexes (`i`, `word_i`, `syl_i`) of the filtered objects.
@@ -116,7 +116,7 @@ class Utils:
             ...     print(item.text)
 
         See Also:
-            [progress_bar](pyonfx.utils.Utils.progress_bar): Used to wrap the iterable with a progress indicator.
+            [`progress_bar`][pyonfx.utils.Utils.progress_bar]: Used to wrap the iterable with a progress indicator.
         """
         out: list[Utils._LineWordSyllableChar] = []
         for obj in lines_words_syls_or_chars:
@@ -214,7 +214,7 @@ class Utils:
             Refer to https://easings.net/ for guidance in choosing among the available easing functions.
 
         See Also:
-            [interpolate](pyonfx.utils.Utils.interpolate): Used for interpolating between values with easing.
+            [`interpolate`][pyonfx.utils.Utils.interpolate]: Used for interpolating between values with easing.
         """
         if pct == 0.0 or pct == 1.0:
             return pct
@@ -305,7 +305,7 @@ class Utils:
             Refer to https://easings.net/ for guidance in choosing among the available easing functions.
 
         See Also:
-            [accelerate](pyonfx.utils.Utils.accelerate): Used to transform percentage values with easing.
+            [`accelerate`][pyonfx.utils.Utils.accelerate]: Used to transform percentage values with easing.
         """
         if pct > 1.0 or pct < 0:
             raise ValueError(
@@ -383,15 +383,15 @@ class Utils:
         line: Line,
         word_syl_or_char: Word | Syllable | Char | None = None,
         *,
-        offset_start=0,
-        offset_end=0,
+        offset_start: int = 0,
+        offset_end: int = 0,
     ):
         """Adjust the timing of a subtitle line based on a specified mode.
 
         Args:
             mode: A string literal indicating the retime mode. Each mode applies a different timing adjustment strategy.
             line: The subtitle line object whose `start_time` and `end_time` will be adjusted.
-            word_syl_or_char: An optional element ([Word](pyonfx.ass_core.Word), [Syllable](pyonfx.ass_core.Syllable), or [Char](pyonfx.ass_core.Char))
+            word_syl_or_char: An optional element ([`Word`][pyonfx.ass_core.Word], [`Syllable`][pyonfx.ass_core.Syllable], or [`Char`][pyonfx.ass_core.Char])
                               providing timing reference for modes that require relative timing. Must be provided for modes other than
                               "line", "preline", "postline", "set", and "abs".
             offset_start: An optional integer offset (in milliseconds) to add to the computed start time.
@@ -642,7 +642,7 @@ class FrameUtility:
             This method should be used within a loop iterating a FrameUtility object.
 
         See Also:
-            [Utils.accelerate](pyonfx.utils.Utils.accelerate): For transforming percentage values with easing.
+            [`accelerate`][pyonfx.utils.Utils.accelerate]: For transforming percentage values with easing.
         """
         curr_ms = self.timestamps.frame_to_time(
             self.i + (self.n_fr - 1) // 2, TimeType.END, 3, True
@@ -785,7 +785,7 @@ class ColorUtility:
         from previous lines when not explicitly overridden.
 
         Args:
-            line: [Line](pyonfx.ass_core.Line) object containing timing and style information.
+            line: [`Line`][pyonfx.ass_core.Line] object containing timing and style information.
             c1: Include primary color changes. Auto-detected if None.
             c3: Include border color changes. Auto-detected if None.
             c4: Include shadow color changes. Auto-detected if None.
@@ -801,7 +801,7 @@ class ColorUtility:
             "\\1c&HFFFFFF&\\t(500,1000,\\1c&H000000&)"
 
         See Also:
-            [get_fr_color_change](pyonfx.utils.ColorUtility.get_fr_color_change) for frame-by-frame color values.
+            [`get_fr_color_change`][pyonfx.utils.ColorUtility.get_fr_color_change] for frame-by-frame color values.
         """
         flags = self._resolve_color_flags(c1, c3, c4)
         base_colors = self._get_base_colors(line)
@@ -852,7 +852,7 @@ class ColorUtility:
         precise color values at specific moments.
 
         Args:
-            line: [Line](pyonfx.ass_core.Line) object where start_time represents the current frame time.
+            line: [`Line`][pyonfx.ass_core.Line] object where start_time represents the current frame time.
             c1: Include primary color interpolation. Auto-detected if None.
             c3: Include border color interpolation. Auto-detected if None.
             c4: Include shadow color interpolation. Auto-detected if None.
@@ -868,7 +868,7 @@ class ColorUtility:
             "\\1c&H808080&"
 
         See Also:
-            [get_color_change](pyonfx.utils.ColorUtility.get_color_change) for complete transformation sequences over time ranges.
+            [`get_color_change`][pyonfx.utils.ColorUtility.get_color_change] for complete transformation sequences over time ranges.
         """
         flags = self._resolve_color_flags(c1, c3, c4)
         base_colors = self._get_base_colors(line)
