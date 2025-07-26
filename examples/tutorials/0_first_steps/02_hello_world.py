@@ -7,13 +7,13 @@ This tutorial covers the basic workflow to produce a new subtitle output:
 • Writing the modified line to the output
 
 Exercise:
-• Try changing the text of the copied line.
+• Try changing the text of the copied line, or the start and end times.
 """
 
 from pyonfx import Ass
 
 # Load the input ASS file and get the data
-io = Ass("../../ass/hello_world.ass")
+io = Ass("../../ass/hello_world.ass", path_output="output.ass")
 meta, styles, lines = io.get_data()
 
 # Create a copy of the first line for the output
@@ -32,8 +32,3 @@ io.save()
 io.open_aegisub()
 
 # REMEMBER: always duplicate lines for output — keep the original intact
-
-# COMMENTS TO BE REMOVED ONCE THE TUTORIAL IS PUBLISHED:
-# Be sure to mention in the tutorial that if you don't specify output_file it will default to "output.ass"
-# Be sure to mention that the output file is saved in the same directory as the script
-# Be sure to mention that by default the output file will have all original lines commented out (controllable with the keep_original parameter)

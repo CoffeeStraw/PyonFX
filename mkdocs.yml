@@ -70,6 +70,7 @@ nav:
       # - "Structured objects": tutorials/structured_objects.md
       - First Steps:
         - "Exploring ASS values": tutorials/first_steps/01_explore_ass_values.md
+        - "Hello World": tutorials/first_steps/02_hello_world.md
   - Guides:
       - "TBD": guides/404
   - Reference:
