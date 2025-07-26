@@ -72,6 +72,7 @@ nav:
         - "Exploring ASS values": tutorials/first_steps/01_explore_ass_values.md
         - "Hello World": tutorials/first_steps/02_hello_world.md
         - "Timing & Positioning": tutorials/first_steps/03_time_and_space.md
+        - "Text Segmentation": tutorials/first_steps/04_text_segmentation.md
   - Guides:
       - "TBD": guides/404
   - Reference:
