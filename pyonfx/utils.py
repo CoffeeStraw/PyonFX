@@ -380,6 +380,7 @@ class Utils:
             "abs",
             "sylpct",
         ],
+        output_line: Line,
         line: Line,
         word_syl_or_char: Word | Syllable | Char | None = None,
         *,
@@ -390,7 +391,8 @@ class Utils:
 
         Args:
             mode: A string literal indicating the retime mode. Each mode applies a different timing adjustment strategy.
-            line: The subtitle line object whose `start_time` and `end_time` will be adjusted.
+            output_line: The subtitle line object whose `start_time` and `end_time` will be adjusted.
+            line: The subtitle line object whose `start_time` and `end_time` will be used as reference.
             word_syl_or_char: An optional element ([`Word`][pyonfx.ass_core.Word], [`Syllable`][pyonfx.ass_core.Syllable], or [`Char`][pyonfx.ass_core.Char])
                               providing timing reference for modes that require relative timing. Must be provided for modes other than
                               "line", "preline", "postline", "set", and "abs".
@@ -399,9 +401,9 @@ class Utils:
 
         Examples:
             >>> # Retiming a line based on the timing of a syllable
-            >>> Utils.retime("syl", line, syl, offset_start=10, offset_end=5)
+            >>> Utils.retime("syl", l, line, syl, offset_start=10, offset_end=5)
             >>> # Retiming a line to keep its original timing (no adjustment)
-            >>> Utils.retime("line", line)
+            >>> Utils.retime("line", l, line)
 
         See Also:
             [kara-templater retime implementation](https://github.com/slackingway/karaOK/blob/master/autoload/ln.kara-templater-mod.lua#L352)
@@ -465,8 +467,8 @@ class Utils:
             new_start += offset_start
             new_end += offset_end
 
-        line.start_time = new_start
-        line.end_time = new_end
+        output_line.start_time = new_start
+        output_line.end_time = new_end
 
 
 class FrameUtility:
