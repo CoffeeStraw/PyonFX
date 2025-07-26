@@ -55,7 +55,7 @@ l.start_time = 0
 l.end_time = 500
 ```
 
-This sets the line to display from 0ms to 500ms (half a second). Each time you call `io.write_line(l)`, PyonFX will add this line to the output with whatever timing and properties you've set.
+This sets the line to display from 0ms to 500ms (half a second).
 
 **2. Positioning Properties**
 
@@ -87,7 +87,9 @@ Here's what's happening:
     - `line.bottom` gives us the bottom edge coordinate of the original text
 - And finally, we use the `%s` placeholder to insert the original text.
 
-Together, these place our `an1`-aligned text exactly where the original text appeared.
+Together, these place our `an1`-aligned text exactly where the original text appeared. Notice the difference of the control point position rendered in Aegisub:
+
+![Control Point Position](imgs/time_and_space_control_point_position.png)
 
 **3. Demonstrating All Nine Alignments**
 
