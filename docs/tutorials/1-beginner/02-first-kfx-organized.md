@@ -126,10 +126,10 @@ for line in Utils.all_non_empty(lines):
 `Utils.all_non_empty()` is incredibly handy—it automatically:
 
 - Skips commented lines and empty syllables (no more manual `if syl.text == "":` checks)
+- Reassigns indexes (`i`, `word_i`, `syl_i`, ...) of the filtered objects
 - Shows a progress bar while the iteration is in progress
-- Handles edge cases you might forget
 
-Your code becomes cleaner and more robust with just one function call. For more details, check its documentation [here](../../reference/utils.md#pyonfx.Utils.all_non_empty).
+Your code becomes cleaner and more robust with just one function call. For more details, check its documentation [here](../../reference/utils.md#pyonfx.utils.Utils.all_non_empty).
 
 **5. Effect Tracking with Decorators**
 
