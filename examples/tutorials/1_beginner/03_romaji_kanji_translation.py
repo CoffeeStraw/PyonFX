@@ -52,10 +52,10 @@ def main_effect(line: Line, syl: Syllable, l: Line):
     fscy = line.styleref.scale_y
 
     # New values
-    new_fscx = fscx * 1.25
-    new_fscy = fscy * 1.25
     new_c1 = "&HFFFFFF&"
     new_c3 = "&HABABAB&"
+    new_fscx = fscx * 1.25
+    new_fscy = fscy * 1.25
 
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
