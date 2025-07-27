@@ -18,7 +18,7 @@ Exercise:
 
 from pyonfx import Ass, Line, Syllable, Utils
 
-io = Ass("../../ass/romaji_kanji_sub.ass")
+io = Ass("../../ass/romaji_kanji_translation.ass")
 meta, styles, lines = io.get_data()
 
 

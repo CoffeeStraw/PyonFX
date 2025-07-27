@@ -23,7 +23,7 @@ Exercise:
 
 from pyonfx import Ass, Line, Syllable, Utils
 
-io = Ass("../../ass/romaji_kanji_sub.ass", vertical_kanji=True)
+io = Ass("../../ass/romaji_kanji_translation.ass", vertical_kanji=True)
 meta, styles, lines = io.get_data()
 
 

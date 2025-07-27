@@ -6,7 +6,7 @@ In this tutorial, we'll refactor that same effect into clean, organized function
 
 ## Materials
 
-We'll continue working with the same [romaji_kanji_sub.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/romaji_kanji_sub.ass) file from the previous tutorial.
+We'll continue working with the same [romaji_kanji_translation.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/romaji_kanji_translation.ass) file from the previous tutorial.
 
 ## Why Organize Your Code?
 
@@ -26,7 +26,7 @@ We start similarly, but import a few more PyonFX components:
 ```python
 from pyonfx import Ass, Line, Syllable, Utils
 
-io = Ass("../../ass/romaji_kanji_sub.ass")
+io = Ass("romaji_kanji_translation.ass")
 meta, styles, lines = io.get_data()
 ```
 

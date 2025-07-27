@@ -6,7 +6,7 @@ In this tutorial, you'll create your first real karaoke effect (KFX) using PyonF
 
 ## Materials
 
-For this tutorial, we'll work with a more complex subtitle file: [romaji_kanji_sub.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/romaji_kanji_sub.ass). This file contains three types of subtitle lines:
+For this tutorial, we'll work with a more complex subtitle file: [romaji_kanji_translation.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/romaji_kanji_translation.ass). This file contains three types of subtitle lines:
 
 - **Romaji lines** (phonetic Japanese) - alignment 7 or higher
 - **Kanji lines** (Japanese characters) - intermediate alignment  
@@ -34,7 +34,7 @@ We start with our familiar pattern, but with our new karaoke file:
 from pyonfx import Ass
 
 # Load the karaoke file
-io = Ass("romaji_kanji_sub.ass")
+io = Ass("romaji_kanji_translation.ass")
 meta, styles, lines = io.get_data()
 ```
 

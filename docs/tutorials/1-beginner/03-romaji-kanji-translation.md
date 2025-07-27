@@ -6,7 +6,7 @@ This is where your organized code structure really pays off—we'll reuse your e
 
 ## Materials
 
-We'll continue working with the same [romaji_kanji_sub.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/romaji_kanji_sub.ass) file, but this time we'll process all the lines instead of filtering out the kanji and translation lines.
+We'll continue working with the same [romaji_kanji_translation.ass](https://github.com/CoffeeStraw/PyonFX/blob/v1.0.0/examples/ass/romaji_kanji_translation.ass) file, but this time we'll process all the lines instead of filtering out the kanji and translation lines.
 
 ## Code Walkthrough
 
@@ -17,7 +17,7 @@ We start similarly, but with one important addition—the `vertical_kanji` param
 ```python
 from pyonfx import Ass, Line, Syllable, Utils
 
-io = Ass("../../ass/romaji_kanji_sub.ass", vertical_kanji=True)
+io = Ass("../../ass/romaji_kanji_translation.ass", vertical_kanji=True)
 meta, styles, lines = io.get_data()
 ```
 
