@@ -71,9 +71,3 @@ for line in lines:
 # Save and preview
 io.save()
 io.open_aegisub()
-
-# COMMENTS TO BE REMOVED ONCE THE TUTORIAL IS PUBLISHED:
-# - Explain what is leadin/leadout/highlight effects, and why it's a convenient sub-division
-# - Explain what are line.leadin, line.leadout, line.styleref.color1, line.styleref.color3
-# - Note why we need to skip empty syllables
-# - Note the layer property being set to 0 for leadin and leadout effects and 1 for the main effect (explain why)
