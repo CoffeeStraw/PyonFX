@@ -37,7 +37,7 @@ The new imports are:
 
 **1. Leadin Function**
 
-Let's convert our three-phase effect into separate functions. Each function handles one specific phase:
+Let's convert our three-phase effect into separate functions, starting with one for the leadin effect:
 
 ```python
 def leadin_effect(line: Line, syl: Syllable, l: Line):
@@ -129,7 +129,7 @@ for line in Utils.all_non_empty(lines):
 - Shows a progress bar while the iteration is in progress
 - Handles edge cases you might forget
 
-Your code becomes cleaner and more robust with just one function call.
+Your code becomes cleaner and more robust with just one function call. For more details, check its documentation [here](../../reference/utils.md#pyonfx.Utils.all_non_empty).
 
 **5. Effect Tracking with Decorators**
 
