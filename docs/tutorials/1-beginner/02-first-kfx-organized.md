@@ -10,12 +10,12 @@ We'll continue working with the same [romaji_kanji_sub.ass](https://github.com/C
 
 ## Why Organize Your Code?
 
-Before diving in, let's understand why code organization matters for karaoke effects:
+We encourage organizing your code because:
 
-- **Clarity**: Each effect phase has its own function, making the logic clear
-- **Debugging**: When something goes wrong, you know exactly which function to check
-- **Reusability**: Functions can be easily copied to other projects or mixed and matched
-- **Maintenance**: Tweaking timing or styling becomes much simpler when effects are isolated
+- **Clarity**: Giving each effect phase its own function keeps the logic easy to follow.
+- **Debugging**: If something doesn't work as expected, you'll know exactly where to look.
+- **Reusability**: Well-structured functions can be easily reused in other projects or combined in new ways.
+- **Maintenance**: Isolating effects makes it much easier to tweak timing or styling down the road.
 
 ## Code Walkthrough
 
