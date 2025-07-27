@@ -90,7 +90,7 @@ io.open_aegisub()
 
 When Aegisub opens, you'll see something like this:
 
-![Aegisub showing output with original commented lines and new modified line](imgs/hello_world_aegisub_output_preview.png)
+![Aegisub showing output with original commented lines and new modified line](imgs/hello-world-aegisub-output-preview.png)
 
 Notice how the original lines appear commented out, while your new line appears as an active subtitle with the same timing and styling as the original but with your modified text.
 

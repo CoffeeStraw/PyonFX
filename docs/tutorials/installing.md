@@ -60,7 +60,7 @@ Enhance your development workflow by setting up your environment as follows:
 
 ## What's next
 
-After completing these steps, you can start learning how to use the library! We prepared a series of tutorials for you, starting from [Exploring ASS values](first_steps/01_explore_ass_values.md).
+After completing these steps, you can start learning how to use the library! We prepared a series of tutorials for you, starting from [Exploring ASS values](0-first-steps/01-explore-ass-values.md).
 
 [^py]: For beginners, we suggest starting with this [this comprehensive video guide](https://www.youtube.com/watch?v=b093aqAZiPU), which introduces the basics of Python step by step. If you want to explore further, ["Think Python 2"](http://greenteapress.com/thinkpython2/thinkpython2.pdf) is an excellent free PDF book (in English) that covers core programming concepts in more depth.
 

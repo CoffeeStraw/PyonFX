@@ -73,7 +73,7 @@ for style_name, style in styles.items():
 
 This should look familiar! The structure closely resembles what you'd find in Aegisub's style editor:
 
-![Aegisub Style Editor Window](imgs/aegisub_style.png){width="500"}
+![Aegisub Style Editor Window](imgs/aegisub-style.png){width="500"}
 
 For more details on each attribute, see the [Style](../../reference/ass_core.md#pyonfx.ass_core.Style) documentation.
 
@@ -91,7 +91,7 @@ print(lines[0])
     ```
 
 This should also look familiar — it contains many properties you'd find in Aegisub's Line Editor:
-![Aegisub Line Editor Window](imgs/aegisub_line_editor.png)
+![Aegisub Line Editor Window](imgs/aegisub-line-editor.png)
 
 In particular, you can see timing information (`start_time` and `end_time`), the applied style name and its corresponding object (`style` and `styleref`), and both raw text and its version stripped of ASS tags (`raw_text` and `text`). There are many other attributes, but don't worry about them for now.
 

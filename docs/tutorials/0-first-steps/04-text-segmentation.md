@@ -1,4 +1,4 @@
-# Tutorial: Text Segmentation
+# Tutorial: Text Segmentation with PyonFX
 
 In this tutorial, you'll learn about one of PyonFX's most used features: **automatic text segmentation**. You'll discover how PyonFX breaks down subtitle lines into individual words, syllables, and characters, and how to work with each segment to create precise karaoke effects.
 
@@ -36,7 +36,7 @@ l = line.copy()
 
 **1. Exploring Syllable Segmentation**
 
-Let's start by understanding how syllables work, since they're the foundation of most karaoke effects. First, let's examine what syllables look like in detail, similar to what we did in [Exploring ASS values](01_explore_ass_values.md):
+Let's start by understanding how syllables work, since they're the foundation of most karaoke effects. First, let's examine what syllables look like in detail, similar to what we did in [Exploring ASS values](01-explore-ass-values.md):
 
 ```python
 # Let's explore the syllables of our line
@@ -86,7 +86,7 @@ for syl in line.syls:
 
 This creates a basic effect where each syllable appears individually in its timing window, positioned at its natural location within the line. If you save and open this in Aegisub, you'll see something like:
 
-![Syllable effect](imgs/text_segmentation_hello_world_1.gif)
+![Syllable effect](imgs/text-segmentation-hello-world-1.gif)
 
 **3. Adding Colors for Clarity**
 
@@ -180,7 +180,7 @@ io.open_aegisub()
 
 You should get something like:
 
-![Text segmentation](imgs/text_segmentation_hello_world_2.gif)
+![Text segmentation](imgs/text-segmentation-hello-world-2.gif)
 
 Notice that:
 - **Words** start and end times coincide with the line's start and end times

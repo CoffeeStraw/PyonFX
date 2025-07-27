@@ -89,7 +89,7 @@ Here's what's happening:
 
 Together, these place our `an1`-aligned text exactly where the original text appeared. Notice the difference in the control point position rendered in Aegisub:
 
-![Control Point Position](imgs/time_and_space_control_point_position.png)
+![Control Point Position](imgs/time-and-space-control-point-position.png)
 
 **3. Demonstrating All Nine Alignments**
 
@@ -147,7 +147,7 @@ io.open_aegisub()
 
 In the preview, you'll see your 9 new lines, each rendered as follows:
 
-![Nine Alignment Sequence](imgs/time_and_space_nine_alignment_sequence.png)
+![Nine Alignment Sequence](imgs/time-and-space-nine-alignment-sequence.png)
 
 ## Conclusion
 

@@ -69,10 +69,12 @@ nav:
       - "Install & Set-up": tutorials/installing.md
       # - "Structured objects": tutorials/structured_objects.md
       - First Steps:
-        - "Exploring ASS values": tutorials/first_steps/01_explore_ass_values.md
-        - "Hello World": tutorials/first_steps/02_hello_world.md
-        - "Timing & Positioning": tutorials/first_steps/03_time_and_space.md
-        - "Text Segmentation": tutorials/first_steps/04_text_segmentation.md
+        - "Exploring ASS values": tutorials/0-first-steps/01-explore-ass-values.md
+        - "Hello World": tutorials/0-first-steps/02-hello-world.md
+        - "Timing & Positioning": tutorials/0-first-steps/03-time-and-space.md
+        - "Text Segmentation": tutorials/0-first-steps/04-text-segmentation.md
+      - Beginner:
+        - "First Karaoke Effect": tutorials/1-beginner/01-first-kfx.md
   - Guides:
       - "TBD": guides/404
   - Reference:
