@@ -85,6 +85,3 @@ for line in Utils.all_non_empty(lines):
 
 io.save()
 io.open_aegisub()
-
-# COMMENTS TO BE REMOVED ONCE THE TUTORIAL IS PUBLISHED:
-# - Mention that a side effect of `Utils.all_non_empty()` is that it renders a progress bar
