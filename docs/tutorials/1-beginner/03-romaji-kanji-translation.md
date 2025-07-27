@@ -17,7 +17,7 @@ We start similarly, but with one important addition—the `vertical_kanji` param
 ```python
 from pyonfx import Ass, Line, Syllable, Utils
 
-io = Ass("../../ass/romaji_kanji_translation.ass", vertical_kanji=True)
+io = Ass("romaji_kanji_translation.ass", vertical_kanji=True)
 meta, styles, lines = io.get_data()
 ```
 
