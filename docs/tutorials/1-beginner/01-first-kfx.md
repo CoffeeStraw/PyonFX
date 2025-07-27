@@ -12,7 +12,9 @@ For this tutorial, we'll work with a more complex subtitle file: [romaji_kanji_t
 - **Kanji lines** (Japanese characters) - intermediate alignment  
 - **Translation lines** (English) - lower alignment
 
-For now, let's focus on the arguably most important lines: the Romaji lines.
+Please ensure that you have downloaded and installed [Migu Font](https://www.freejapanesefont.com/migu-font-%E3%83%9F%E3%82%B0%E3%83%95%E3%82%A9%E3%83%B3%E3%83%88/), a free and publicly available Japanese font, so that the subtitles display correctly.
+
+This tutorial will focus on the Romaji lines.
 
 ## Understanding Karaoke Effects
 
