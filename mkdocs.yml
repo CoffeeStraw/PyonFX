@@ -77,6 +77,8 @@ nav:
         - "First Karaoke Effect": tutorials/1-beginner/01-first-kfx.md
         - "Organizing Your First KFX": tutorials/1-beginner/02-first-kfx-organized.md
         - "Romaji, Kanji & Translation": tutorials/1-beginner/03-romaji-kanji-translation.md
+      - Intermediate:
+        - "Variations": tutorials/2-intermediate/01-variations.md
   - Guides:
       - "TBD": guides/404
   - Reference:

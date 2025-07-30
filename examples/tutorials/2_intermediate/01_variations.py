@@ -91,7 +91,7 @@ def main_effect(line: Line, syl: Syllable, l: Line):
 
 
 @io.track
-def echo_effect(line: Line, syl: Syllable, l: Line):
+def main_echo_effect(line: Line, syl: Syllable, l: Line):
     l.layer = 1
     l.start_time = line.start_time + syl.start_time
     l.end_time = line.start_time + syl.end_time
@@ -126,6 +126,7 @@ def echo_effect(line: Line, syl: Syllable, l: Line):
         # Target scale increases with each layer
         current_fscx = fscx + (target_fscx - fscx) * (i / n_echo_layers)
         current_fscy = fscy + (target_fscy - fscy) * (i / n_echo_layers)
+        # Alpha decreases with each layer (from base_alpha to target_alpha)
         current_alpha = Convert.alpha_dec_to_ass(
             base_alpha + (target_alpha - base_alpha) * (i / n_echo_layers)
         )
@@ -171,7 +172,7 @@ def romaji(line: Line, l: Line):
     for syl in Utils.all_non_empty(line.syls):
         leadin_effect(line, syl, l)
         if syl.inline_fx == "echo":
-            echo_effect(line, syl, l)
+            main_echo_effect(line, syl, l)
         else:
             main_effect(line, syl, l)
         leadout_effect(line, syl, l)
@@ -182,7 +183,7 @@ def kanji(line: Line, l: Line):
     for syl in Utils.all_non_empty(line.syls):
         leadin_effect(line, syl, l)
         if syl.inline_fx == "echo":
-            echo_effect(line, syl, l)
+            main_echo_effect(line, syl, l)
         else:
             main_effect(line, syl, l)
         leadout_effect(line, syl, l)
@@ -193,9 +194,10 @@ def translation(line: Line, l: Line):
     l.start_time = line.start_time - line.leadin // 2
     l.end_time = line.end_time + line.leadout // 2
 
-    fade_tags = rf"\fad({line.leadin // 2}, {line.leadout // 2})"
-    color_tags = cu.get_color_change(line, c1=True, c3=True)
-    tags = f"{fade_tags}{color_tags}"
+    tags = (
+        rf"\fad({line.leadin // 2}, {line.leadout // 2})"
+        f"{cu.get_color_change(l, c1=True, c3=True)}"
+    )
 
     l.text = f"{{{tags}}}{line.text}"
 
