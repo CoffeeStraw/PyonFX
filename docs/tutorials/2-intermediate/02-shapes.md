@@ -1,4 +1,4 @@
-# Tutorial: Shape Effects with PyonFX
+# Tutorial: Adding Shapes to your Karaoke Effects
 
 Welcome to the second tutorial of the intermediate series.
 
@@ -247,5 +247,5 @@ And thus, this concludes the intermediate series. The advanced series will cover
 ## Full Source Code
 ??? abstract "Show full source code"
     ```python
-    --8<-- "examples/tutorials/2_intermediate/02_shape_effects.py"
+    --8<-- "examples/tutorials/2_intermediate/02_shapes.py"
     ```

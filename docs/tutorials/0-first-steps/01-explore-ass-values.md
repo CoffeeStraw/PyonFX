@@ -21,8 +21,6 @@ from pyonfx import Ass
 
 The `Ass` class is the primary interface for working with ASS files. It handles file loading, parsing, manipulation, and output generation, serving as your main tool for subtitle processing.
 
-![ASS file processing workflow diagram](imgs/ass-processing-workflow.png)
-
 **1. Loading and Parsing the ASS File**
 
 Next, we load the ASS file using the `Ass` class. Upon initialization, the class immediately parses the file, and you can access the data using the `get_data` method:

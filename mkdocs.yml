@@ -79,7 +79,7 @@ nav:
         - "Romaji, Kanji & Translation": tutorials/1-beginner/03-romaji-kanji-translation.md
       - Intermediate:
         - "Variations": tutorials/2-intermediate/01-variations.md
-        - "Shapes": tutorials/2-intermediate/02-shape-effects.md
+        - "Shapes": tutorials/2-intermediate/02-shapes.md
   - Guides:
       - "TBD": guides/404
   - Reference:
