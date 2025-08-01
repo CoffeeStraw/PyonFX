@@ -19,7 +19,9 @@ Let's start by importing PyonFX. It's a good practice to import only the classes
 from pyonfx import Ass
 ```
 
-The `Ass` class is at the heart of working with ASS files. It provides methods for loading, parsing, manipulating, writing, and previewing your subtitles.
+The `Ass` class is the primary interface for working with ASS files. It handles file loading, parsing, manipulation, and output generation, serving as your main tool for subtitle processing.
+
+![ASS file processing workflow diagram](imgs/ass-processing-workflow.png)
 
 **1. Loading and Parsing the ASS File**
 
@@ -122,7 +124,7 @@ Notice how many attributes from the parent `Line` are shared with its words, syl
 
 ## Conclusion
 
-Great job! :tada: You've successfully explored the structure of an ASS file using PyonFX. In this tutorial, you learned how to load and parse an ASS file, inspect its metadata, review style configurations, and examine the segmentation of dialogue into words, syllables, and characters.
+Good job. You've successfully explored the structure of an ASS file using PyonFX. In this tutorial, you learned how to load and parse an ASS file, inspect its metadata, review style configurations, and examine the segmentation of dialogue into words, syllables, and characters.
 
 Up next, we'll guide you through writing your first line in a new ASS file.
 

@@ -85,7 +85,7 @@ These metrics help you track your subtitle generation progress and performance. 
 PyonFX provides a convenient method to open your output file directly in Aegisub for review:
 
 ```python
-io.open_aegisub()
+io.open_aegisub()  # requires Aegisub to be installed and available in your system PATH
 ```
 
 When Aegisub opens, you'll see something like this:
@@ -96,7 +96,7 @@ Notice how the original lines appear commented out, while your new line appears 
 
 ## Conclusion
 
-Excellent work! :tada: You've successfully learned the fundamental workflow for creating modified ASS files with PyonFX. In this tutorial, you discovered how to set up input and output files, copy existing lines as templates, modify line properties, and save your changes. This pattern of copying, modifying, and writing lines forms the foundation for more complex subtitle effects and transformations.
+Good job. You've successfully learned the fundamental workflow for creating modified ASS files with PyonFX. In this tutorial, you discovered how to set up input and output files, copy existing lines as templates, modify line properties, and save your changes. This pattern of copying, modifying, and writing lines forms the foundation for more complex subtitle effects and transformations.
 
 In the next tutorial, we'll dive into line positioning and timing, exploring how to precisely control where and when your subtitles appear on screen using PyonFX's positioning properties and alignment options.
 

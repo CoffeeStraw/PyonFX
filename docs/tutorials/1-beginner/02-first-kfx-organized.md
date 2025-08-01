@@ -185,7 +185,7 @@ The visual result is identical to the previous tutorial, but your code is now pr
 
 ## Conclusion
 
-Excellent work! :tada: You've transformed a functional but messy karaoke effect into clean, professional code. You've learned to break effects into logical functions, use PyonFX utilities to handle common tasks, and track your effects with decorators.
+Good job. You've transformed functional but messy karaoke code into clean, professional structure. You've learned to break effects into logical functions, use PyonFX utilities to handle common tasks, and track your effects with decorators.
 
 This organizational pattern will serve you well as effects become more complex. Up next, we'll also show some love to the kanji and translation lines.
 

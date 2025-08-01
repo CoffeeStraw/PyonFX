@@ -1,6 +1,6 @@
 # Tutorial: Shape Effects with PyonFX
 
-Welcome to the final tutorial of the intermediate series! :rocket:
+Welcome to the second tutorial of the intermediate series.
 
 You've built a solid karaoke system with variations and theming. In this tutorial, you'll learn how to use PyonFX's `Shape` module to integrate geometric shapes into your karaoke effects. You'll create moving, rotating, and animated shapes that add visual interest to complement your syllable highlighting.
 
@@ -236,7 +236,7 @@ You'll now see an enhanced karaoke experience with:
 
 ## Conclusion
 
-Excellent work! :tada: You've now learned the basics of the PyonFX's shape system. You've discovered how to create geometric animations and build utility functions for reusable animation patterns. Your karaoke effects now include heart decorations with pulsing animations and a particle effect.
+Great job. You've now learned the fundamentals of PyonFX's shape system. You've discovered how to create geometric animations and build utility functions for reusable animation patterns. Your karaoke effects now include heart decorations with pulsing animations and dynamic particle effects.
 
 You've built a solid foundation covering text segmentation, timing, positioning, theming, variations, and shape integration. This gives you the tools needed to create engaging karaoke effects for a variety of projects.
 

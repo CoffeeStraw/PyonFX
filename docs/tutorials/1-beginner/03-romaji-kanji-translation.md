@@ -141,7 +141,7 @@ You'll now see a complete karaoke experience:
 
 ## Conclusion
 
-Excellent work! :tada: You've just completed the beginner series and created a complete, professional karaoke system that handles all three subtitle types appropriately. You've learned how organized code enables easy extension, how PyonFX's features like `vertical_kanji` make complex layouts manageable, and how to structure effects that can grow with your needs.
+Great job. You've just completed the beginner series and created a complete karaoke system that handles all three subtitle types appropriately. You've learned how organized code enables easy extension, how PyonFX's features like `vertical_kanji` make complex layouts manageable, and how to structure effects that can grow with your needs.
 
 You now have the foundation to stand on your own and create simple karaoke effects for any project 🥲. You understand text segmentation, timing, positioning, and how to organize your code for maintainability and reuse.
 

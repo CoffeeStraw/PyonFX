@@ -1,8 +1,8 @@
 # Tutorial: Adding Variations to Your Karaoke Effects
 
-Welcome to the intermediate series! :rocket:
+Welcome to the intermediate series.
 
-You've built a solid foundation with a complete three-line karaoke system, but it can quickly become boring: we should add some variety. Different singers might need different visual styles or special moments in songs (e.g. refrains) might call for dedicated effects.
+You've built a solid foundation with a complete three-line karaoke system, but it can quickly become repetitive. Different singers might need different visual styles or special moments in songs (e.g. refrains) might call for dedicated effects.
 
 In this tutorial, you'll learn how to add variations by defining when to do so directly in your .ass file, and then reading them in your code to apply the variations.
 
@@ -263,7 +263,7 @@ You'll now see a sophisticated karaoke experience with:
 
 ## Conclusion
 
-Outstanding work! :tada: You've transformed your basic karaoke system into a varied effect system. You've learned to leverage PyonFX's advanced features like actor-based theming, inline effect detection, and color preservation utilities.
+Excellent work. You've transformed your basic karaoke system into a sophisticated variation system. You've learned to leverage PyonFX's advanced features like actor-based theming, inline effect detection, and color preservation utilities.
 
 In the next tutorial, we'll explore one of the PyonFX most powerful classes: the `Shape` class.
 

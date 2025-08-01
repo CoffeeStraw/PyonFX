@@ -8,7 +8,7 @@ As with previous tutorials, we'll continue working with the [hello_world.ass](ht
 
 ## Understanding ASS Alignment Numbers
 
-Before diving into the code, let's recall ASS alignment numbers. These numbers (1-9) determine how text is positioned relative to a given coordinate point:
+Before diving into the code, let's recall how the `\an` alignment tag works and review the corresponding numbers. These numbers (1-9) determine how text is positioned relative to a given coordinate point:
 
 ```
 7 ─ 8 ─ 9    (Top)
@@ -151,7 +151,7 @@ In the preview, you'll see your 9 new lines, each rendered as follows:
 
 ## Conclusion
 
-Excellent progress! :tada: You've mastered the fundamentals of subtitle positioning and timing with PyonFX. You now understand how ASS alignment numbers work, how to use PyonFX's positioning properties to place text precisely, and how to control your generated lines' timing.
+Great progress. You've mastered the fundamentals of subtitle positioning and timing with PyonFX. You now understand how ASS alignment numbers work, how to use PyonFX's positioning properties to place text precisely, and how to control your generated lines' timing.
 
 In the next tutorial, we'll explore how to combine these positioning and timing concepts with text segments (words, syllables, and characters).
 

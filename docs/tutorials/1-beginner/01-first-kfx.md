@@ -1,8 +1,8 @@
 # Tutorial: Your First KFX with PyonFX
 
-Welcome to the beginner series! :rocket:
+Welcome to the beginner series.
 
-In this tutorial, you'll create your first real karaoke effect (KFX) using PyonFX. We'll move beyond basic text positioning to build a nice three-phase effect that makes syllables come alive on screen.
+In this tutorial, you'll create your first real karaoke effect (KFX) using PyonFX. We'll move beyond basic text positioning to build a structured three-phase effect that provides visual feedback synchronized with vocal timing.
 
 ## Materials
 
@@ -198,7 +198,7 @@ io.open_aegisub()
 
 ## Conclusion
 
-Fantastic work! :tada: You've just created your first professional karaoke effect. You've learned to build a complete three-phase system that makes syllables appear, highlight, and fade with perfect timing.
+Excellent work. You've just created your first karaoke effect. You've learned to build a complete three-phase system that makes syllables appear, highlight, and fade with perfect timing.
 
 The effect looks great, but I bet you noticed the code is getting complex. In the next tutorial, we'll refactor this into clean, reusable functions that will make your karaoke workflow much more efficient and maintainable.
 

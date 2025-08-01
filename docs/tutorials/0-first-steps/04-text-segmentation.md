@@ -194,7 +194,7 @@ This timing relationship reveals the intended use of each segment type:
 
 ## Conclusion
 
-Fantastic work! :tada: You've mastered PyonFX's text segmentation system, learning how to work with words, syllables, and characters as individual entities, and how each segment maintains its positioning and timing properties.
+Excellent work. You've mastered PyonFX's text segmentation system, learning how to work with words, syllables, and characters as individual entities, and how each segment maintains its positioning and timing properties.
 
 Get ready, because in the next tutorial, we'll create our first karaoke effect!
 
