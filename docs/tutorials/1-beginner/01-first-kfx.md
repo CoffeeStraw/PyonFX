@@ -185,6 +185,20 @@ The details:
 
 ![Leadout effect visualization](imgs/leadout.gif)
 
+??? question "Coming from Aegisub's Karaoke Templater? Try `Utils.retime`"
+	`Utils.retime` is PyonFX’s drop-in replacement for the **retime** directive used in Aegisub templates. Pass a *mode* plus optional offsets and it will set both `l.start_time` and `l.end_time` for you—no manual maths required.
+	
+	```python
+	# Lead-in
+	Utils.retime("start2syl", l, line, syl, offset_start=-line.leadin // 2)
+
+	# Highlight
+	Utils.retime("syl", l, line, syl)
+
+	# Lead-out
+	Utils.retime("syl2end", l, line, syl, offset_end=line.leadout // 2)
+	```
+
 **7. Bringing it all together**
 
 Save and preview your masterpiece:

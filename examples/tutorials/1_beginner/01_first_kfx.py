@@ -38,6 +38,7 @@ for line in lines:
         l.layer = 0
         l.start_time = line.start_time - line.leadin // 2
         l.end_time = line.start_time + syl.start_time
+        # Or use: Utils.retime("start2syl", l, line, syl, offset_start=-line.leadin // 2)
 
         tags = rf"\an5\pos({syl.center},{syl.middle})\fad({line.leadin//2},0)"
         l.text = f"{{{tags}}}{syl.text}"
@@ -48,6 +49,7 @@ for line in lines:
         l.layer = 1
         l.start_time = line.start_time + syl.start_time
         l.end_time = line.start_time + syl.end_time
+        # Or use: Utils.retime("syl", l, line, syl)
 
         tags = (
             rf"\an5\pos({syl.center},{syl.middle})"
@@ -62,6 +64,7 @@ for line in lines:
         l.layer = 0
         l.start_time = line.start_time + syl.end_time
         l.end_time = line.end_time + line.leadout // 2
+        # Or use: Utils.retime("syl2end", l, line, syl, offset_end=line.leadout // 2)
 
         tags = rf"\an5\pos({syl.center},{syl.middle})\fad(0,{line.leadout//2})"
         l.text = f"{{{tags}}}{syl.text}"
