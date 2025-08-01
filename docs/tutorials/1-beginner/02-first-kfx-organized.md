@@ -58,7 +58,7 @@ Notice the function signature—it takes the original `line`, current `syl`lable
 While moving our main effect to a separate function, let's also make it more robust:
 
 ```python
-def main_effect(line: Line, syl: Syllable, l: Line):
+def highlight_effect(line: Line, syl: Syllable, l: Line):
     l.layer = 1
     l.start_time = line.start_time + syl.start_time
     l.end_time = line.start_time + syl.end_time
@@ -120,7 +120,7 @@ for line in Utils.all_non_empty(lines):
         l = line.copy()
         for syl in Utils.all_non_empty(line.syls):
             leadin_effect(line, syl, l)
-            main_effect(line, syl, l)
+            highlight_effect(line, syl, l)
             leadout_effect(line, syl, l)
 ```
 
@@ -142,7 +142,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     # ... function code ...
 
 @io.track
-def main_effect(line: Line, syl: Syllable, l: Line):
+def highlight_effect(line: Line, syl: Syllable, l: Line):
     # ... function code ...
 
 @io.track
@@ -164,7 +164,7 @@ When you run your script, you'll get detailed statistics for each effect:
     ├────────────────┼─────────┼─────────┼────────────┼────────────────┤
     │ leadin_effect  │      45 │      45 │      0.001 │              0 │
     ├────────────────┼─────────┼─────────┼────────────┼────────────────┤
-    │ main_effect    │      45 │      45 │      0.001 │              0 │
+    │ highlight_effect    │      45 │      45 │      0.001 │              0 │
     ├────────────────┼─────────┼─────────┼────────────┼────────────────┤
     │ leadout_effect │      45 │      45 │          0 │              0 │
     ╰────────────────┴─────────┴─────────┴────────────┴────────────────╯

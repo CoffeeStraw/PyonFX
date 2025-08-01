@@ -5,7 +5,7 @@ This tutorial recreates the KFX seen in '01_first_kfx.py', but using an organize
 
 We have refactored the code into three distinct functions:
 • `leadin_effect`: makes the syllable fade in before being sung
-• `main_effect`: highlights the syllable with scaling and color transitions
+• `highlight_effect`: highlights the syllable with scaling and color transitions
 • `leadout_effect`: makes the syllable fade out after being sung
 
 We also use:
@@ -37,7 +37,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
 
 
 @io.track
-def main_effect(line: Line, syl: Syllable, l: Line):
+def highlight_effect(line: Line, syl: Syllable, l: Line):
     l.layer = 1
     l.start_time = line.start_time + syl.start_time
     l.end_time = line.start_time + syl.end_time
@@ -85,7 +85,7 @@ for line in Utils.all_non_empty(lines):
         l = line.copy()
         for syl in Utils.all_non_empty(line.syls):
             leadin_effect(line, syl, l)
-            main_effect(line, syl, l)
+            highlight_effect(line, syl, l)
             leadout_effect(line, syl, l)
 
 io.save()

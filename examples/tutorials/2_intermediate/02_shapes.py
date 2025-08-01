@@ -5,7 +5,7 @@ This tutorial demonstrates how to make use of the Shape class to enrich KFXes.
 
 The script creates two main effect types:
 • `heartbeat_effect`: Continuous pulsing hearts on left and right sides of the screen
-• `main_effect_shapes`: Random shapes that move and rotate behind each syllable during singing
+• `highlight_effect_shapes`: Random shapes that move and rotate behind each syllable during singing
 
 Exercise:
 • Try creating a pattern of equally spaced semi-transparent shapes behind the line instead of the 2 hearts
@@ -94,7 +94,7 @@ def heartbeat_effect(line: Line, l: Line):
 
 
 @io.track
-def main_effect_shapes(line: Line, syl: Syllable, l: Line):
+def highlight_effect_shapes(line: Line, syl: Syllable, l: Line):
     """Creates random moving and rotating shapes behind syllables"""
     l.layer = 0
     l.start_time = line.start_time + syl.start_time
@@ -161,7 +161,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
 
 
 @io.track
-def main_effect(line: Line, syl: Syllable, l: Line):
+def highlight_effect(line: Line, syl: Syllable, l: Line):
     l.layer = 1
     l.start_time = line.start_time + syl.start_time
     l.end_time = line.start_time + syl.end_time
@@ -206,8 +206,8 @@ def romaji(line: Line, l: Line):
     heartbeat_effect(line, l)
     for syl in Utils.all_non_empty(line.syls):
         leadin_effect(line, syl, l)
-        main_effect(line, syl, l)
-        main_effect_shapes(line, syl, l)
+        highlight_effect(line, syl, l)
+        highlight_effect_shapes(line, syl, l)
         leadout_effect(line, syl, l)
 
 

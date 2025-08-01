@@ -126,7 +126,7 @@ Now let's create random moving shapes that appear behind syllables:
 
 ```python
 @io.track
-def main_effect_shapes(line: Line, syl: Syllable, l: Line):
+def highlight_effect_shapes(line: Line, syl: Syllable, l: Line):
     """Creates random moving and rotating shapes behind syllables"""
     l.layer = 0
     l.start_time = line.start_time + syl.start_time
@@ -194,7 +194,7 @@ Each shape starts at the syllable's center, moves to a random nearby position, r
 
 **4. Reusing Previous Leadin/Main/Leadout Effects**
 
-Since they are not the focus of this tutorial, let's reuse the same `leadin_effect()`, `main_effect()`, and `leadout_effect()` functions from the [previous tutorial](../1-beginner/03-romaji-kanji-translation.md). Simply copy and paste them into your code.
+Since they are not the focus of this tutorial, let's reuse the same `leadin_effect()`, `highlight_effect()`, and `leadout_effect()` functions from the [previous tutorial](../1-beginner/03-romaji-kanji-translation.md). Simply copy and paste them into your code.
 
 **5. Enhanced Line Processors with the new effects**
 
@@ -206,8 +206,8 @@ def romaji(line: Line, l: Line):
     heartbeat_effect(line, l)
     for syl in Utils.all_non_empty(line.syls):
         leadin_effect(line, syl, l)
-        main_effect(line, syl, l)
-        main_effect_shapes(line, syl, l)
+        highlight_effect(line, syl, l)
+        highlight_effect_shapes(line, syl, l)
         leadout_effect(line, syl, l)
 
 

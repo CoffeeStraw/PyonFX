@@ -21,7 +21,7 @@ This tutorial will focus on the Romaji lines.
 Before diving into code, let's understand what makes a good karaoke effect. Most follow a three-phase timing structure:
 
 - **Leadin Phase**: Text begins transitioning slightly before the syllable timing. Think of it as a gentle "get ready" cue that prevents jarring sudden changes
-- **Highlight Phase** (or *Main Effect*): This is your color change, scaling, or animation that clearly shows when to sing. It's perfectly synchronized with the vocal timing, and it's what defines the character of the karaoke style
+- **Highlight Phase** (or *Main Phase*): This is your color change, scaling, or animation that clearly shows when to sing. It's perfectly synchronized with the vocal timing, and it's what defines the character of the karaoke style
 - **Leadout Phase**: After singing ends, text gracefully transitions away rather than vanishing instantly. This maintains visual continuity and feels much more polished
 
 In this tutorial, we'll create a simple effect that follows this pattern.

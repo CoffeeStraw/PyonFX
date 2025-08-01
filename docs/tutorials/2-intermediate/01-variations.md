@@ -113,7 +113,7 @@ Let's also apply the theme to the main effect:
 
 ```python
 @io.track
-def main_effect(line: Line, syl: Syllable, l: Line):
+def highlight_effect(line: Line, syl: Syllable, l: Line):
     l.layer = 1
     l.start_time = line.start_time + syl.start_time
     l.end_time = line.start_time + syl.end_time
@@ -215,7 +215,7 @@ def romaji(line: Line, l: Line):
         if syl.inline_fx == "echo":
             main_echo_effect(line, syl, l)
         else:
-            main_effect(line, syl, l)
+            highlight_effect(line, syl, l)
         leadout_effect(line, syl, l)
 ```
 

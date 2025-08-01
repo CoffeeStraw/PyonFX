@@ -40,7 +40,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     io.write_line(l)
 
 @io.track
-def main_effect(line: Line, syl: Syllable, l: Line):
+def highlight_effect(line: Line, syl: Syllable, l: Line):
     # ... same as before ...
 
 @io.track
@@ -59,7 +59,7 @@ Now we'll create specialized functions for each subtitle type. Let's start with 
 def romaji(line: Line, l: Line):
     for syl in Utils.all_non_empty(line.syls):
         leadin_effect(line, syl, l)
-        main_effect(line, syl, l)
+        highlight_effect(line, syl, l)
         leadout_effect(line, syl, l)
 ```
 
@@ -74,7 +74,7 @@ For kanji lines, we'll create a separate handler:
 def kanji(line: Line, l: Line):
     for syl in Utils.all_non_empty(line.syls):
         leadin_effect(line, syl, l)
-        main_effect(line, syl, l)
+        highlight_effect(line, syl, l)
         leadout_effect(line, syl, l)
 ```
 
