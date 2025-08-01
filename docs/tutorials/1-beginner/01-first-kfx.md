@@ -187,6 +187,8 @@ The details:
 
 ??? question "Coming from Aegisub's Karaoke Templater? Try `Utils.retime`"
 	`Utils.retime` is PyonFX’s drop-in replacement for the **retime** directive used in Aegisub templates. Pass a *mode* plus optional offsets and it will set both `l.start_time` and `l.end_time` for you—no manual maths required.
+
+	For each of the three phases, you can respectively use:
 	
 	```python
 	# Lead-in
@@ -198,6 +200,8 @@ The details:
 	# Lead-out
 	Utils.retime("syl2end", l, line, syl, offset_end=line.leadout // 2)
 	```
+
+	Note that you'll need to import `Utils` to use it.
 
 **7. Bringing it all together**
 
