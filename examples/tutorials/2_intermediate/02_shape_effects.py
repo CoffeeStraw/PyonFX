@@ -200,6 +200,7 @@ def leadout_effect(line: Line, syl: Syllable, l: Line):
 
     io.write_line(l)
 
+
 @io.track
 def romaji(line: Line, l: Line):
     heartbeat_effect(line, l)
