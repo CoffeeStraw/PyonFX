@@ -101,10 +101,10 @@ def main_echo_effect(line: Line, syl: Syllable, l: Line):
     c1 = line.styleref.color1
     fscx = line.styleref.scale_x
     fscy = line.styleref.scale_y
-    
+
     # Configuration
     theme = ACTOR_THEMES.get(line.actor, ACTOR_THEMES[""])
-    
+
     # Base layer (fully opaque)
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
@@ -122,14 +122,16 @@ def main_echo_effect(line: Line, syl: Syllable, l: Line):
     # Echo layers (progressively larger and more transparent)
     for layer_index in range(1, echo_layer_count + 1):
         l.layer = 1 + layer_index
-        
+
         # Calculate interpolation factor (0.0 to 1.0)
         progress = layer_index / echo_layer_count
-        
+
         # Interpolated values
         echo_fscx = fscx + (max_fscx - fscx) * progress
         echo_fscy = fscy + (max_fscy - fscy) * progress
-        echo_alpha = Convert.alpha_dec_to_ass(min_alpha + (max_alpha - min_alpha) * progress)
+        echo_alpha = Convert.alpha_dec_to_ass(
+            min_alpha + (max_alpha - min_alpha) * progress
+        )
 
         tags = (
             rf"\an5\pos({syl.center},{syl.middle})\alpha{echo_alpha}"
