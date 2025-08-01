@@ -234,6 +234,8 @@ You'll now see an enhanced karaoke experience with:
 - **Pulsing heart decorations** that appear on both sides of lines
 - **Dynamic shape particles** that move around syllables during highlighting
 
+![Shape Effects Preview](imgs/shapes.gif)
+
 ## Conclusion
 
 Great job. You've now learned the fundamentals of PyonFX's shape system. You've discovered how to create geometric animations and build utility functions for reusable animation patterns. Your karaoke effects now include heart decorations with pulsing animations and dynamic particle effects.

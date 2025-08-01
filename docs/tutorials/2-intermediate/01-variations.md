@@ -261,6 +261,8 @@ You'll now see a sophisticated karaoke experience with:
 - **Preserved styling**: Existing colors and transformations from the input file remain intact
 - **Smart automation**: All variations happen automatically based on input file metadata
 
+![Variations Preview](imgs/variations.gif)
+
 ## Conclusion
 
 Excellent work. You've transformed your basic karaoke system into a sophisticated variation system. You've learned to leverage PyonFX's advanced features like actor-based theming, inline effect detection, and color preservation utilities.
