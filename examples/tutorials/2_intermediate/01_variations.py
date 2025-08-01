@@ -45,9 +45,9 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     l.start_time = line.start_time - line.leadin // 2
     l.end_time = line.start_time + syl.start_time
 
-    # Original values
-    original_c1 = line.styleref.color1
-    original_c3 = line.styleref.color3
+    # Original style values
+    c1 = line.styleref.color1
+    c3 = line.styleref.color3
 
     # Configuration
     theme = ACTOR_THEMES.get(line.actor, ACTOR_THEMES[""])
@@ -55,7 +55,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
         rf"\1c{theme['fade']}\3c{theme['outline']}"
-        rf"\t(0,{line.leadin // 2},\1c{original_c1}\3c{original_c3})"
+        rf"\t(0,{line.leadin // 2},\1c{c1}\3c{c3})"
         rf"\fad({line.leadin // 2},0)"
     )
     l.text = f"{{{tags}}}{syl.text}"
@@ -69,7 +69,7 @@ def main_effect(line: Line, syl: Syllable, l: Line):
     l.start_time = line.start_time + syl.start_time
     l.end_time = line.start_time + syl.end_time
 
-    # Original values
+    # Original style values
     c1 = line.styleref.color1
     c3 = line.styleref.color3
     fscx = line.styleref.scale_x
@@ -77,13 +77,14 @@ def main_effect(line: Line, syl: Syllable, l: Line):
 
     # Configuration
     theme = ACTOR_THEMES.get(line.actor, ACTOR_THEMES[""])
-    new_fscx = fscx * 1.25
-    new_fscy = fscy * 1.25
+    t_fscx = fscx * 1.25
+    t_fscy = fscy * 1.25
+    grow_duration = syl.duration // 2
 
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
-        rf"\t(0,{syl.duration // 2},\fscx{new_fscx}\fscy{new_fscy}\1c{theme['highlight']}\3c{theme['outline']})"
-        rf"\t({syl.duration // 2},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
+        rf"\t(0,{grow_duration},\fscx{t_fscx}\fscy{t_fscy}\1c{theme['highlight']}\3c{theme['outline']})"
+        rf"\t({grow_duration},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
     )
     l.text = f"{{{tags}}}{syl.text}"
 
@@ -96,45 +97,43 @@ def main_echo_effect(line: Line, syl: Syllable, l: Line):
     l.start_time = line.start_time + syl.start_time
     l.end_time = line.start_time + syl.end_time
 
-    # Get original color values
+    # Original style values
     c1 = line.styleref.color1
     fscx = line.styleref.scale_x
     fscy = line.styleref.scale_y
-
+    
     # Configuration
     theme = ACTOR_THEMES.get(line.actor, ACTOR_THEMES[""])
-    n_echo_layers = 8
-    target_fscx = fscx * 1.6
-    target_fscy = fscy * 1.6
-    base_alpha = 130
-    target_alpha = 230
-
-    # Base layer
+    
+    # Base layer (fully opaque)
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
-        rf"\alpha&H00&"
         rf"\t(0,{syl.duration // 2},\1c{theme['highlight']})"
         rf"\t({syl.duration // 2},{syl.duration},\1c{c1})"
     )
     l.text = f"{{{tags}}}{syl.text}"
     io.write_line(l)
 
-    # Echo layers
-    for i in range(1, n_echo_layers + 1):
-        l.layer = 1 + i
+    # Echo Configuration
+    echo_layer_count = 8
+    max_fscx, max_fscy = fscx * 1.6, fscy * 1.6
+    min_alpha, max_alpha = 130, 230
 
-        # Target scale increases with each layer
-        current_fscx = fscx + (target_fscx - fscx) * (i / n_echo_layers)
-        current_fscy = fscy + (target_fscy - fscy) * (i / n_echo_layers)
-        # Alpha decreases with each layer (from base_alpha to target_alpha)
-        current_alpha = Convert.alpha_dec_to_ass(
-            base_alpha + (target_alpha - base_alpha) * (i / n_echo_layers)
-        )
+    # Echo layers (progressively larger and more transparent)
+    for layer_index in range(1, echo_layer_count + 1):
+        l.layer = 1 + layer_index
+        
+        # Calculate interpolation factor (0.0 to 1.0)
+        progress = layer_index / echo_layer_count
+        
+        # Interpolated values
+        echo_fscx = fscx + (max_fscx - fscx) * progress
+        echo_fscy = fscy + (max_fscy - fscy) * progress
+        echo_alpha = Convert.alpha_dec_to_ass(min_alpha + (max_alpha - min_alpha) * progress)
 
         tags = (
-            rf"\an5\pos({syl.center},{syl.middle})"
-            rf"\alpha{current_alpha}"
-            rf"\t(0,{syl.duration // 2},\1c{theme['highlight']}\fscx{current_fscx}\fscy{current_fscy})"
+            rf"\an5\pos({syl.center},{syl.middle})\alpha{echo_alpha}"
+            rf"\t(0,{syl.duration // 2},\1c{theme['highlight']}\fscx{echo_fscx}\fscy{echo_fscy})"
             rf"\t({syl.duration // 2},{syl.duration},\1c{c1}\fscx{fscx}\fscy{fscy})"
             rf"\fad({syl.duration // 4},{syl.duration // 4})"
         )
@@ -149,18 +148,20 @@ def leadout_effect(line: Line, syl: Syllable, l: Line):
     l.start_time = line.start_time + syl.end_time
     l.end_time = line.end_time + line.leadout // 2
 
-    # Original values
+    # Original style values
     original_c1 = line.styleref.color1
     original_c3 = line.styleref.color3
 
     # Configuration
     theme = ACTOR_THEMES.get(line.actor, ACTOR_THEMES[""])
+    leadout_duration = line.leadout // 2
+    color_transition_start = l.duration - leadout_duration
 
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
         rf"\1c{original_c1}\3c{original_c3}"
-        rf"\t({l.duration-line.leadout // 2},{l.duration},\1c{theme['fade']}\3c{theme['outline']})"
-        rf"\fad(0,{line.leadout // 2})"
+        rf"\t({color_transition_start},{l.duration},\1c{theme['fade']}\3c{theme['outline']})"
+        rf"\fad(0,{leadout_duration})"
     )
     l.text = f"{{{tags}}}{syl.text}"
 

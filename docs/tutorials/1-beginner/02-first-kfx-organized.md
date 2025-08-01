@@ -63,22 +63,23 @@ def main_effect(line: Line, syl: Syllable, l: Line):
     l.start_time = line.start_time + syl.start_time
     l.end_time = line.start_time + syl.end_time
 
-    # Original values
+    # Original style values
     c1 = line.styleref.color1
     c3 = line.styleref.color3
     fscx = line.styleref.scale_x
     fscy = line.styleref.scale_y
 
-    # New values
-    new_c1 = "&HFFFFFF&"
-    new_c3 = "&HABABAB&"
-    new_fscx = fscx * 1.25
-    new_fscy = fscy * 1.25
+    # Target values
+    t_c1 = "&HFFFFFF&"
+    t_c3 = "&HABABAB&"
+    t_fscx = fscx * 1.25
+    t_fscy = fscy * 1.25
+    grow_duration = syl.duration // 2
 
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
-        rf"\t(0,{syl.duration // 2},\fscx{new_fscx}\fscy{new_fscy}\1c{new_c1}\3c{new_c3})"
-        rf"\t({syl.duration // 2},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
+        rf"\t(0,{grow_duration},\fscx{t_fscx}\fscy{t_fscy}\1c{t_c1}\3c{t_c3})"
+        rf"\t({grow_duration},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
     )
     l.text = f"{{{tags}}}{syl.text}"
 
