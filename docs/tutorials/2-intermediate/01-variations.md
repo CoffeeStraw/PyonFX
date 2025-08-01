@@ -131,13 +131,17 @@ def main_effect(line: Line, syl: Syllable, l: Line):
 
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
-        rf"\t(0,{l.duration // 2},\fscx{new_fscx}\fscy{new_fscy}\1c{theme['highlight']}\3c{theme['outline']})"
-        rf"\t({l.duration // 2},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
+        rf"\1c{original_c1}\3c{original_c3}"
+        rf"\t({l.duration-line.leadout // 2},{l.duration},\1c{theme['fade']}\3c{theme['outline']})"
+        rf"\fad(0,{line.leadout // 2})"
     )
     l.text = f"{{{tags}}}{syl.text}"
 
     io.write_line(l)
 ```
+
+!!! note "Understanding Line Duration"
+    Notice we're using `l.duration` here for the first time. Like `syl.duration` for syllables, `l.duration` is a **derived property** that PyonFX automatically calculates as `l.end_time - l.start_time`. This gives us the total duration of our current line in milliseconds, which is useful for timing transformations that should span the entire line duration.
 
 **5. Creating Special Effects for Dramatic Moments**
 

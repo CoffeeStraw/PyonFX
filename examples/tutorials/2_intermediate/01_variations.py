@@ -82,8 +82,8 @@ def main_effect(line: Line, syl: Syllable, l: Line):
 
     tags = (
         rf"\an5\pos({syl.center},{syl.middle})"
-        rf"\t(0,{l.duration // 2},\fscx{new_fscx}\fscy{new_fscy}\1c{theme['highlight']}\3c{theme['outline']})"
-        rf"\t({l.duration // 2},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
+        rf"\t(0,{syl.duration // 2},\fscx{new_fscx}\fscy{new_fscy}\1c{theme['highlight']}\3c{theme['outline']})"
+        rf"\t({syl.duration // 2},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
     )
     l.text = f"{{{tags}}}{syl.text}"
 
