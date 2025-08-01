@@ -16,7 +16,7 @@ We'll continue with the same [romaji_kanji_translation.ass](https://github.com/C
 
 ## Code Walkthrough
 
-**0. Enhanced Setup with New Imports**
+**0. Familiar Setup with New Imports**
 
 We start with our familiar pattern but import several new PyonFX components:
 
