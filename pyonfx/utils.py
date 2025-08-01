@@ -211,7 +211,7 @@ class Utils:
             0.3125
 
         Notes:
-            Refer to https://easings.net/ for guidance in choosing among the available easing functions.
+            Refer to [https://easings.net/](https://easings.net/) for guidance in choosing among the available easing functions.
 
         See Also:
             [`interpolate`][pyonfx.utils.Utils.interpolate]: Used for interpolating between values with easing.
@@ -302,7 +302,7 @@ class Utils:
             12.5
 
         Notes:
-            Refer to https://easings.net/ for guidance in choosing among the available easing functions.
+            Refer to [https://easings.net/](https://easings.net/) for guidance in choosing among the available easing functions.
 
         See Also:
             [`accelerate`][pyonfx.utils.Utils.accelerate]: Used to transform percentage values with easing.
