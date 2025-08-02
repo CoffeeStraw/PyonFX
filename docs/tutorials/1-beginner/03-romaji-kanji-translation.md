@@ -1,6 +1,6 @@
 # Tutorial: Complete Karaoke with Romaji, Kanji & Translation
 
-Great progress so far! You've built a solid karaoke effect for romaji lines, but if you look at your ASS file, you'll notice there are actually three types of subtitle lines that need attention. In this tutorial, we'll extend your organized effect to handle all subtitle types: romaji (phonetic), kanji (Japanese characters), and translation (Italian) lines.
+You've built a solid karaoke effect for romaji lines, but if you look at your ASS file, you'll notice there are actually three types of subtitle lines that need attention. In this tutorial, we'll extend your organized effect to handle all subtitle types: romaji (phonetic), kanji (Japanese characters), and translation (Italian) lines.
 
 This is where your organized code structure really pays off—we'll reuse your existing effect functions and add specialized handling for each subtitle type.
 
@@ -78,7 +78,7 @@ def kanji(line: Line, l: Line):
         leadout_effect(line, syl, l)
 ```
 
-You might notice this looks identical to the romaji function. While they're the same now, having separate handlers is good practice—in more complex effects, you might want different colors, positioning, or scaling for each subtitle type. This structure makes those future customizations easy.
+You might notice this looks identical to the romaji function. While they're the same now, having separate handlers is good practice—in more complex effects, you might want different colors, positioning, or most likely use a different text segmentation (e.g. chars instead of syls). This structure makes those future customizations easy.
 
 Also, we're using syllable-level processing here because each syllable in our input file happens to be exactly one Japanese character. But what if your kanji line had multi-character syllables? In that case, you'd want to iterate over `line.chars` instead to get true character-by-character effects. Keep this in mind for future projects!
 

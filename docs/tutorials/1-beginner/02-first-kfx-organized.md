@@ -1,6 +1,6 @@
 # Tutorial: Organizing Your First KFX
 
-Welcome back! In the previous tutorial, you created your first KFX, but I bet you noticed something: the code was getting pretty repetitive and hard to manage. When you're building real karaoke effects, you'll often work with dozens of lines and complex timing—having everything in one big loop becomes unwieldy fast.
+In the previous tutorial, you created your first KFX, but I bet you noticed something: the code was getting pretty repetitive and hard to manage. When you're building real karaoke effects, you'll often work with dozens of lines and complex timing—having everything in one big loop becomes unwieldy fast.
 
 In this tutorial, we'll refactor that same effect into clean, organized functions that are easier to read, debug, and reuse. You'll also discover some handy PyonFX utilities that make your code more robust.
 

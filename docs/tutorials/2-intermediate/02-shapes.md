@@ -1,8 +1,6 @@
 # Tutorial: Adding Shapes to your Karaoke Effects
 
-Welcome to the second tutorial of the intermediate series.
-
-You've built a solid karaoke system with variations and theming. In this tutorial, you'll learn how to use PyonFX's `Shape` module to integrate geometric shapes into your karaoke effects. You'll create moving, rotating, and animated shapes that add visual interest to complement your syllable highlighting.
+In this tutorial, you'll learn how to use PyonFX's `Shape` module to integrate geometric shapes into your karaoke effects. You'll create moving, rotating, and animated shapes that add visual interest to complement your syllable highlighting.
 
 ## Materials
 
