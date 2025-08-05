@@ -94,7 +94,7 @@ Before we build our effect, let's understand two important PyonFX features:
 	l.text = "{\\an5\\pos(%.3f,%.3f)}%s" % (syl.center, syl.middle, syl.text)
 
 	# New way (cleaner and more readable)
-	l.text = rf"{{\an5\pos({syl.center},{syl.middle})}}{syl.text}"
+	l.text = rf"{{\an5\pos({syl.center:.3f},{syl.middle:.3f})}}{syl.text}"
 	```
 
 	The `rf` prefix means "raw f-string" - raw strings don't need double backslashes for ASS tags, and f-strings let you put variables directly inside `{}` brackets.
@@ -111,7 +111,7 @@ for syl in line.syls:
     l.start_time = line.start_time - line.leadin // 2
     l.end_time = line.start_time + syl.start_time
 
-	tags = rf"\an5\pos({syl.center},{syl.middle})\fad({line.leadin//2},0)"
+	tags = rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})\fad({line.leadin//2},0)"
 	l.text = f"{{{tags}}}{syl.text}"
 
 	io.write_line(l)
@@ -138,7 +138,7 @@ for syl in line.syls:
 	l.end_time = line.start_time + syl.end_time
 
 	tags = (
-		rf"\an5\pos({syl.center},{syl.middle})"
+		rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})"
 		rf"\t(0,{syl.duration // 2},\fscx125\fscy125\1c&HFFFFFF&\3c&HABABAB&)"
 		rf"\t({syl.duration // 2},{syl.duration},\fscx100\fscy100\1c{line.styleref.color1}\3c{line.styleref.color3})"
 	)
@@ -171,7 +171,7 @@ for syl in line.syls:
 	l.start_time = line.start_time + syl.end_time
 	l.end_time = line.end_time + line.leadout // 2
 
-	tags = rf"\an5\pos({syl.center},{syl.middle})\fad(0,{line.leadout//2})"
+	tags = rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})\fad(0,{line.leadout//2})"
 	l.text = f"{{{tags}}}{syl.text}"
 
 	io.write_line(l)

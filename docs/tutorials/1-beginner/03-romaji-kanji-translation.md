@@ -34,7 +34,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     l.start_time = line.start_time - line.leadin // 2
     l.end_time = line.start_time + syl.start_time
 
-    tags = rf"\an5\pos({syl.center},{syl.middle})\fad({line.leadin // 2},0)"
+    tags = rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})\fad({line.leadin // 2},0)"
     l.text = f"{{{tags}}}{syl.text}"
 
     io.write_line(l)

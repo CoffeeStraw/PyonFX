@@ -89,7 +89,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     theme = ACTOR_THEMES.get(line.actor, ACTOR_THEMES[""])
 
     tags = (
-        rf"\an5\pos({syl.center},{syl.middle})"
+        rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})"
         rf"\1c{theme['fade']}\3c{theme['outline']}"
         rf"\t(0,{line.leadin // 2},\1c{c1}\3c{c3})"
         rf"\fad({line.leadin // 2},0)"
@@ -131,7 +131,7 @@ def highlight_effect(line: Line, syl: Syllable, l: Line):
     grow_duration = syl.duration // 2
 
     tags = (
-        rf"\an5\pos({syl.center},{syl.middle})"
+        rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})"
         rf"\t(0,{grow_duration},\fscx{t_fscx}\fscy{t_fscy}\1c{theme['highlight']}\3c{theme['outline']})"
         rf"\t({grow_duration},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
     )
@@ -161,7 +161,7 @@ def main_echo_effect(line: Line, syl: Syllable, l: Line):
     
     # Base layer (fully opaque)
     tags = (
-        rf"\an5\pos({syl.center},{syl.middle})"
+        rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})"
         rf"\t(0,{syl.duration // 2},\1c{theme['highlight']})"
         rf"\t({syl.duration // 2},{syl.duration},\1c{c1})"
     )
@@ -186,7 +186,7 @@ def main_echo_effect(line: Line, syl: Syllable, l: Line):
         echo_alpha = Convert.alpha_dec_to_ass(min_alpha + (max_alpha - min_alpha) * progress)
 
         tags = (
-            rf"\an5\pos({syl.center},{syl.middle})\alpha{echo_alpha}"
+            rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})\alpha{echo_alpha}"
             rf"\t(0,{syl.duration // 2},\1c{theme['highlight']}\fscx{echo_fscx}\fscy{echo_fscy})"
             rf"\t({syl.duration // 2},{syl.duration},\1c{c1}\fscx{fscx}\fscy{fscy})"
             rf"\fad({syl.duration // 4},{syl.duration // 4})"

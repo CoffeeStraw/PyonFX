@@ -30,7 +30,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     l.end_time = line.start_time + syl.start_time
     # Or use: Utils.retime("start2syl", l, line, syl, offset_start=-line.leadin // 2)
 
-    tags = rf"\an5\pos({syl.center},{syl.middle})\fad({line.leadin // 2},0)"
+    tags = rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})\fad({line.leadin // 2},0)"
     l.text = f"{{{tags}}}{syl.text}"
 
     io.write_line(l)
@@ -57,7 +57,7 @@ def highlight_effect(line: Line, syl: Syllable, l: Line):
     grow_duration = syl.duration // 2
 
     tags = (
-        rf"\an5\pos({syl.center},{syl.middle})"
+        rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})"
         rf"\t(0,{grow_duration},\fscx{t_fscx}\fscy{t_fscy}\1c{t_c1}\3c{t_c3})"
         rf"\t({grow_duration},{syl.duration},\fscx{fscx}\fscy{fscy}\1c{c1}\3c{c3})"
     )
@@ -73,7 +73,7 @@ def leadout_effect(line: Line, syl: Syllable, l: Line):
     l.end_time = line.end_time + line.leadout // 2
     # Or use: Utils.retime("syl2end", l, line, syl, offset_end=line.leadout // 2)
 
-    tags = rf"\an5\pos({syl.center},{syl.middle})\fad(0,{line.leadout // 2})"
+    tags = rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})\fad(0,{line.leadout // 2})"
     l.text = f"{{{tags}}}{syl.text}"
 
     io.write_line(l)

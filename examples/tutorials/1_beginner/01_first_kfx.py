@@ -40,7 +40,7 @@ for line in lines:
         l.end_time = line.start_time + syl.start_time
         # Or use: Utils.retime("start2syl", l, line, syl, offset_start=-line.leadin // 2)
 
-        tags = rf"\an5\pos({syl.center},{syl.middle})\fad({line.leadin//2},0)"
+        tags = rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})\fad({line.leadin//2},0)"
         l.text = f"{{{tags}}}{syl.text}"
 
         io.write_line(l)
@@ -52,7 +52,7 @@ for line in lines:
         # Or use: Utils.retime("syl", l, line, syl)
 
         tags = (
-            rf"\an5\pos({syl.center},{syl.middle})"
+            rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})"
             rf"\t(0,{syl.duration // 2},\fscx125\fscy125\1c&HFFFFFF&\3c&HABABAB&)"
             rf"\t({syl.duration // 2},{syl.duration},\fscx100\fscy100\1c{line.styleref.color1}\3c{line.styleref.color3})"
         )
@@ -66,7 +66,7 @@ for line in lines:
         l.end_time = line.end_time + line.leadout // 2
         # Or use: Utils.retime("syl2end", l, line, syl, offset_end=line.leadout // 2)
 
-        tags = rf"\an5\pos({syl.center},{syl.middle})\fad(0,{line.leadout//2})"
+        tags = rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})\fad(0,{line.leadout//2})"
         l.text = f"{{{tags}}}{syl.text}"
 
         io.write_line(l)

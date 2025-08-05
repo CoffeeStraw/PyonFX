@@ -178,7 +178,7 @@ Finally, we create the ASS drawing and animate it:
 
 ```python
         tags = (
-            rf"\an5\move({start_x},{start_y},{end_x},{end_y})"
+            rf"\an5\move({start_x:.3f},{start_y:.3f},{end_x:.3f},{end_y:.3f})"
             rf"\fad({fade_duration},{fade_duration})"
             rf"\t(\frz{rotation})"
             rf"\fscx{syl.height}\fscy{syl.height}"
