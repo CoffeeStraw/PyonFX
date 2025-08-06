@@ -23,7 +23,7 @@ The `Ass` class is the primary interface for working with ASS files. It handles 
 
 **1. Loading and Parsing the ASS File**
 
-Next, we load the ASS file using the `Ass` class. Upon initialization, the class immediately parses the file, and you can access the data using the `get_data` method:
+Next, we load the ASS file using the `Ass` class. The string you pass to `Ass(...)` is **the path** to your `.ass` subtitle file — it can be either **relative** (like `"hello_world.ass"`) or **absolute** (for example `"C:\\videos\\subs\\hello_world.ass"`). Upon initialization, the class immediately parses the file, and you can access the data using the `get_data` method (see the [Ass](../../reference/ass_core.md#pyonfx.ass_core.Ass) documentation for details):
 
 ```python
 io = Ass("hello_world.ass")

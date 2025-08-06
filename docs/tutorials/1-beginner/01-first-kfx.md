@@ -186,9 +186,9 @@ The details:
 ![Leadout effect visualization](imgs/leadout.gif)
 
 ??? question "Coming from Aegisub's Karaoke Templater? Try `Utils.retime`"
-	`Utils.retime` is PyonFX’s drop-in replacement for the **retime** directive used in Aegisub templates. Pass a *mode* plus optional offsets and it will set both `l.start_time` and `l.end_time` for you—no manual maths required.
+	`Utils.retime` is PyonFX’s drop-in replacement for the **retime** directive used in Aegisub templates. **It only changes the timing**: the helper sets `l.start_time` and `l.end_time` for you, but everything else (layer, tags, colours, etc.) remains under your control—and you still need to call `io.write_line(l)` to actually add the modified line to the script.
 
-	For each of the three phases, you can respectively use:
+	Here’s how you could rely on it for the three phases in this tutorial:
 	
 	```python
 	# Lead-in
@@ -201,7 +201,8 @@ The details:
 	Utils.retime("syl2end", l, line, syl, offset_end=line.leadout // 2)
 	```
 
-	Note that you'll need to import `Utils` to use it.
+	Everything else in the original code stays the same—you still build `l.text`, set `l.layer`, and finish with `io.write_line(l)`.  
+	*Remember to* `from pyonfx import Utils` *beforehand*.
 
 **7. Bringing it all together**
 
