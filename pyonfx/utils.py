@@ -25,6 +25,8 @@ from video_timestamps import ABCTimestamps, TimeType
 from .ass_core import Char, Line, Syllable, Word
 from .convert import ColorModel, Convert
 
+_FloatStr = TypeVar("_FloatStr", float, str)
+
 
 class Utils:
     """
@@ -232,8 +234,6 @@ class Utils:
             raise TypeError("Accelerator must be float, str, or callable")
 
         return fn(pct)
-
-    _FloatStr = TypeVar("_FloatStr", float, str)
 
     @staticmethod
     def interpolate(
@@ -484,8 +484,8 @@ class FrameUtility:
 
     Examples:
         >>> # Assume `io.input_timestamps` is an instance of ABCTimestamps and the video has a 20 fps frame rate (50 ms per frame)
-        >>> FU = FrameUtility(0, 110, io.input_timestamps)
-        >>> for s, e, i, n in FU:
+        >>> fu = FrameUtility(0, 110, io.input_timestamps)
+        >>> for s, e, i, n in fu:
         ...     print(f"Frame {i}/{n}: {s} - {e}")
         Frame 1/3: 0 - 25
         Frame 2/3: 25 - 75
@@ -538,6 +538,11 @@ class FrameUtility:
         self.n_fr = n_fr
         self.i = 0
         self.n = self.end_fr - self.start_fr + 1
+
+    @property
+    def duration(self) -> int:
+        """Derived duration of the frame window in milliseconds."""
+        return self.end_ms - self.start_ms
 
     def __iter__(self):
         # Generate values for the frames on demand. The end time is always clamped to the end_ms value.
@@ -613,8 +618,8 @@ class FrameUtility:
         an optional acceleration (easing) function (`acc`) to modulate the transformation.
 
         Args:
-            start_time: The start time (in milliseconds) of the transformation interval.
-            end_time: The end time (in milliseconds) of the transformation interval.
+            start_time: The start time (in milliseconds) of the transformation interval (relative to the iteration range).
+            end_time: The end time (in milliseconds) of the transformation interval (relative to the iteration range).
             end_value: The final adjustment value to be reached at the end of the interval.
             acc: A float, string, or callable defining the acceleration function. Defaults to 1.0 for linear progression.
                  - If a float is provided, it acts as the exponent for the transformation.
@@ -626,14 +631,14 @@ class FrameUtility:
 
         Examples:
             >>> # Let's assume to have an Ass object named "io" having a 20 fps video (i.e. frames are 50 ms long)
-            >>> FU = FrameUtility(25, 225, io.input_timestamps)
-            >>> for s, e, i, n in FU:
+            >>> fu = FrameUtility(25, 225, io.input_timestamps)
+            >>> for s, e, i, n in fu:
             ...     # We would like to transform the fsc value
             ...     # from 100 up 150 for the first 100 ms,
             ...     # and then from 150 to 100 for the remaining 200 ms
             ...     fsc = 100
-            ...     fsc += FU.add(0, 100, 50)
-            ...     fsc += FU.add(100, 200, -50)
+            ...     fsc += fu.add(0, 100, 50)
+            ...     fsc += fu.add(100, 200, -50)
             ...     print(f"Frame {i}/{n}: {s} - {e}; fsc: {fsc}")
             Frame 1/4: 25 - 75; fsc: 112.5
             Frame 2/4: 75 - 125; fsc: 137.5
@@ -641,7 +646,7 @@ class FrameUtility:
             Frame 4/4: 175 - 225; fsc: 112.5
 
         Notes:
-            This method should be used within a loop iterating a FrameUtility object.
+            Should be called inside a loop iterating over a `FrameUtility` instance.
 
         See Also:
             [`accelerate`][pyonfx.utils.Utils.accelerate]: For transforming percentage values with easing.
@@ -658,6 +663,84 @@ class FrameUtility:
         curr = curr_ms - start_time
         total = end_time - start_time
         return Utils.interpolate(curr / total, 0, end_value, acc)
+
+    def interpolate(
+        self,
+        start_time: float,
+        end_time: float,
+        start_value: _FloatStr,
+        end_value: _FloatStr,
+        acc: (
+            float
+            | Literal[
+                "in_back",
+                "out_back",
+                "in_out_back",
+                "in_bounce",
+                "out_bounce",
+                "in_out_bounce",
+                "in_circ",
+                "out_circ",
+                "in_out_circ",
+                "in_cubic",
+                "out_cubic",
+                "in_out_cubic",
+                "in_elastic",
+                "out_elastic",
+                "in_out_elastic",
+                "in_expo",
+                "out_expo",
+                "in_out_expo",
+                "in_quad",
+                "out_quad",
+                "in_out_quad",
+                "in_quart",
+                "out_quart",
+                "in_out_quart",
+                "in_quint",
+                "out_quint",
+                "in_out_quint",
+                "in_sine",
+                "out_sine",
+                "in_out_sine",
+            ]
+            | Callable[[float], float]
+        ) = 1.0,
+    ) -> _FloatStr:
+        """Interpolate between two values over a time window, aligned to the current frame.
+
+        This behaves like `add`, but instead of interpolating from 0 to `end_value`, it
+        interpolates from `start_value` to `end_value`, supporting numbers and ASS
+        color/alpha strings, with optional easing.
+
+        Args:
+            start_time: Window start time in milliseconds (relative to the iteration range).
+            end_time: Window end time in milliseconds (relative to the iteration range).
+            start_value: Initial value at `start_time` (number or ASS color/alpha string).
+            end_value: Final value at `end_time` (number or ASS color/alpha string).
+            acc: Easing/acceleration to apply; same semantics as in `Utils.interpolate`.
+
+        Returns:
+            The interpolated value for the current frame time.
+
+        Notes:
+            Should be called inside a loop iterating over a `FrameUtility` instance.
+
+        See Also:
+            [`add`][pyonfx.utils.FrameUtility.add].
+        """
+        curr_ms = self.timestamps.frame_to_time(
+            self.i + (self.n_fr - 1) // 2, TimeType.END, 3, True
+        )
+
+        if curr_ms <= start_time:
+            return start_value
+        elif curr_ms >= end_time:
+            return end_value
+
+        curr = curr_ms - start_time
+        total = end_time - start_time
+        return Utils.interpolate(curr / total, start_value, end_value, acc)
 
 
 class ColorUtility:
