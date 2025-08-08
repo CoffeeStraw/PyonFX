@@ -38,7 +38,6 @@ def highlight_effect(line: Line, syl: Syllable, l: Line):
         line.start_time + syl.end_time,
         meta.timestamps,
     )
-
     for s, e, i, n in fu:
         l.layer = 1
         l.start_time = s
@@ -73,23 +72,31 @@ Because it returns just “the contribution for this frame,” you can add multi
 Adding them yields a triangular envelope: 0 → +A → 0. We’ll use that as the jitter amplitude:
 
 ```python
-max_amp = 5.0
+@io.track
+def highlight_effect(line: Line, syl: Syllable, l: Line):
+    # Max amplitude
+    max_amp = 5.0
 
-for s, e, i, n in fu:
-    l.layer = 1
-    l.start_time = s
-    l.end_time = e
+    fu = FrameUtility(
+        line.start_time + syl.start_time,
+        line.start_time + syl.end_time,
+        meta.timestamps,
+    )
+    for s, e, i, n in fu:
+        l.layer = 1
+        l.start_time = s
+        l.end_time = e
 
-    # Grow amplitude in first half, shrink in second half
-    amp = fu.add(0, fu.duration / 2, max_amp)
-    amp += fu.add(fu.duration / 2, fu.duration, -max_amp)
+        # Grow amplitude in first half, shrink in second half
+        amp = fu.add(0, fu.duration / 2, max_amp)
+        amp += fu.add(fu.duration / 2, fu.duration, -max_amp)
 
-    pos_x = syl.center + random.uniform(-amp, amp)
-    pos_y = syl.middle + random.uniform(-amp, amp)
+        pos_x = syl.center + random.uniform(-amp, amp)
+        pos_y = syl.middle + random.uniform(-amp, amp)
 
-    tags = rf"\an5\pos({pos_x:.3f},{pos_y:.3f})"
-    l.text = f"{{{tags}}}{syl.text}"
-    io.write_line(l)
+        tags = rf"\an5\pos({pos_x:.3f},{pos_y:.3f})"
+        l.text = f"{{{tags}}}{syl.text}"
+        io.write_line(l)
 ```
 
 Now the jitter ramps up and back down within the highlight window.
@@ -101,42 +108,52 @@ In the beginner series, you drove the highlight’s color change using ASS `\t(.
 Here, because we’re emitting one subtitle line per frame, we need the exact color for each frame. That’s what interpolation gives us: given a start time/value and an end time/value, compute the in‑between value for the current frame. Using `fu.interpolate(...)` ties the timing directly to the frame iterator, so each `(s, e)` window gets the correct color. If you ever need a value from a plain percentage instead of times, [`Utils.interpolate(...)`](../../reference/utils.md#pyonfx.utils.Utils.interpolate) does the same math from a 0..1 progress. Both variants support easing as a final parameter when you want non‑linear transitions.
 
 ```python
-style_c1 = line.styleref.color1
-style_c3 = line.styleref.color3
-target_c1 = "&HFFFFFF&"
-target_c3 = "&HABABAB&"
+@io.track
+def highlight_effect(line: Line, syl: Syllable, l: Line):
+    # Max amplitude
+    max_amp = 5.0
 
-for s, e, i, n in fu:
-    l.layer = 1
-    l.start_time = s
-    l.end_time = e
+    # Original style values
+    style_c1 = line.styleref.color1
+    style_c3 = line.styleref.color3
 
-    amp = fu.add(0, fu.duration / 2, MAX_AMP)
-    amp += fu.add(fu.duration / 2, fu.duration, -MAX_AMP)
+    # Target values
+    target_c1 = "&HFFFFFF&"
+    target_c3 = "&HABABAB&"
 
-    pos_x = syl.center + random.uniform(-amp, amp)
-    pos_y = syl.middle + random.uniform(-amp, amp)
+    fu = FrameUtility(
+        line.start_time + syl.start_time,
+        line.start_time + syl.end_time,
+        meta.timestamps,
+    )
+    for s, e, i, n in fu:
+        l.layer = 1
+        l.start_time = s
+        l.end_time = e
 
-    # Two-stage colour sweep: toward target, then back to style
-    t1_c1 = fu.interpolate(0, fu.duration / 2, style_c1, target_c1)
-    t1_c3 = fu.interpolate(0, fu.duration / 2, style_c3, target_c3)
-    t2_c1 = fu.interpolate(fu.duration / 2, fu.duration, t1_c1, style_c1)
-    t2_c3 = fu.interpolate(fu.duration / 2, fu.duration, t1_c3, style_c3)
+        # Position (jitter)
+        amp = fu.add(0, fu.duration / 2, max_amp)
+        amp += fu.add(fu.duration / 2, fu.duration, -max_amp)
+        pos_x = syl.center + random.uniform(-amp, amp)
+        pos_y = syl.middle + random.uniform(-amp, amp)
 
-    tags = rf"\an5\pos({pos_x:.3f},{pos_y:.3f})\1c{t2_c1}\3c{t2_c3}"
-    l.text = f"{{{tags}}}{syl.text}"
-    io.write_line(l)
+        # Color
+        t1_c1 = fu.interpolate(0, fu.duration / 2, style_c1, target_c1)
+        t1_c3 = fu.interpolate(0, fu.duration / 2, style_c3, target_c3)
+        t2_c1 = fu.interpolate(fu.duration / 2, fu.duration, t1_c1, style_c1)
+        t2_c3 = fu.interpolate(fu.duration / 2, fu.duration, t1_c3, style_c3)
+
+        tags = rf"\an5\pos({pos_x:.3f},{pos_y:.3f})\1c{t2_c1}\3c{t2_c3}"
+        l.text = f"{{{tags}}}{syl.text}"
+
+        io.write_line(l)
 ```
 
 ### 4. Lead-in and lead-out with Bezier motion and easing
 
-To create polished entry/exit, we can move text along smooth curves before and after the main highlight. We’ll use the third‑party `bezier` package to define quadratic curves and evaluate points along them per frame.
+For the lead-in/lead-out, we will move the text along a smooth Bezier curve before and after the main highlight. We’ll use the third‑party `bezier` package to define quadratic curves and evaluate points along them per frame. Install with `pip install bezier` if needed.
 
-Notes:
-- Install with `pip install bezier` if needed.
-- To bend the progress along the curve, use `Utils.accelerate(progress, easing_name)`. This shapes a 0..1 value into an eased 0..1; common choices here are `"out_quart"` for entry, `"in_quart"` for exit. See [`Utils.accelerate`](../../reference/utils.md#pyonfx.utils.Utils.accelerate).
-
-Leadin sketch:
+For the lead-in, we will have:
 
 ```python
 import bezier
@@ -187,7 +204,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
         - a float exponent (classic ASS‑style acceleration)
         - a named preset (e.g., `"out_quart"`, `"in_back"`, `"in_out_sine"`)
         - a custom Python callable for fully bespoke curves
-    - `Utils.accelerate(...)` is the low-level function that applies a given easing to a progress percentage. In this case, we use it to change the progress along the Bezier curve.
+    - `Utils.accelerate(...)` is the low-level function that applies a given easing to a progress percentage. In this case, we use it to change the progress along the Bezier curve. See [`Utils.accelerate`](../../reference/utils.md#pyonfx.utils.Utils.accelerate).
 
     For a visual gallery of common presets and their shapes, see [easings.net](https://easings.net/). In PyonFX, use their snake_case variants (e.g., `easeOutQuart` → `"out_quart"`).
 
