@@ -80,6 +80,8 @@ nav:
       - Intermediate:
         - "Variations": tutorials/2-intermediate/01-variations.md
         - "Shapes": tutorials/2-intermediate/02-shapes.md
+      - Advanced:
+        - "Frame-by-frame Effects": tutorials/3-advanced/01-frame-by-frame.md
   - Guides:
       - "TBD": guides/404
   - Reference:
