@@ -14,8 +14,9 @@ Exercise:
 
 import random
 
-from pyonfx import Ass, FrameUtility, Line, Syllable, Utils
 import bezier
+
+from pyonfx import Ass, FrameUtility, Line, Syllable, Utils
 
 io = Ass("../../ass/romaji_kanji_translation.ass", vertical_kanji=True)
 meta, styles, lines = io.get_data()
@@ -30,14 +31,16 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     curve = bezier.Curve([[x0, x1, x2], [y0, y1, y2]], degree=2)
 
     # Frame-by-frame movement
-    fu = FrameUtility(line.start_time - line.leadin // 2, line.start_time, meta.timestamps)
+    fu = FrameUtility(
+        line.start_time - line.leadin // 2, line.start_time, meta.timestamps
+    )
     for s, e, i, n in fu:
         l.layer = 0
         l.start_time = s
         l.end_time = e
 
         # Position (evaluate Bezier curve)
-        pct = Utils.accelerate(i/n, "out_quart")
+        pct = Utils.accelerate(i / n, "out_quart")
         curve_point = curve.evaluate(pct)
         x, y = float(curve_point[0][0]), float(curve_point[1][0])
 
@@ -53,7 +56,7 @@ def leadin_effect(line: Line, syl: Syllable, l: Line):
     l.layer = 0
     l.start_time = line.start_time
     l.end_time = line.start_time + syl.start_time
-    
+
     tags = rf"\an5\pos({syl.center:.3f},{syl.middle:.3f})"
     l.text = f"{{{tags}}}{syl.text}"
     io.write_line(l)
@@ -124,7 +127,7 @@ def leadout_effect(line: Line, syl: Syllable, l: Line):
         l.end_time = e
 
         # Position (evaluate Bezier curve)
-        pct = Utils.accelerate(i/n, "in_quart")
+        pct = Utils.accelerate(i / n, "in_quart")
         curve_point = curve.evaluate(pct)
         x, y = float(curve_point[0][0]), float(curve_point[1][0])
 

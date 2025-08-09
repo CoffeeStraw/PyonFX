@@ -159,9 +159,35 @@ def highlight_effect(line: Line, syl: Syllable, l: Line):
 
 ### 4. Lead-in and lead-out with Bezier motion and easing
 
-For the lead-in/lead-out, we will move the text along a smooth Bezier curve before and after the main highlight. We’ll use the third‑party `bezier` package to define quadratic curves and evaluate points along them per frame. Install with `pip install bezier` if needed.
+For the lead‑in/lead‑out, we’ll take advantage of frame-by-frame to move the text along a smooth Bezier curve, something totally impossible otherwise, as the `\t` tag doesn't work on `\pos`, and you can have only a single `\move` per line. A quadratic Bezier curve uses three points: start `P0`, control `P1`, and end `P2`. The curve begins at `P0`, ends at `P2`, and bends toward `P1`.
 
-For the lead-in, we will have:
+First, you might want to create and build your own curve shape. One comfortable way to do so is to use an online tool like: [Desmos: quadratic Bezier preview](https://www.desmos.com/calculator/vrqyunysur). At the link you'll find already the curve shape we'll use next, but you can create your own.
+
+To implement the curve, we’ll use the third‑party `bezier` package to build and sample the curve. Install with `pip install bezier` if needed.
+
+```python
+import bezier
+
+# Control points relative to the syllable
+x0, y0 = syl.center - 60.0, syl.middle - 20.0  # P0 (off-screen-ish start)
+x1, y1 = syl.center - 20.0, syl.middle - 50.0  # P1 (controls the "bow")
+x2, y2 = syl.center, syl.middle                # P2 (arrive at the syllable)
+curve = bezier.Curve([[x0, x1, x2], [y0, y1, y2]], degree=2)
+
+# Lead-in frames: from a bit before the line starts up to the line start
+fu = FrameUtility(line.start_time - line.leadin // 2, line.start_time, meta.timestamps)
+for s, e, i, n in fu:
+    point = curve.evaluate(i / n)
+    x, y = float(point[0][0]), float(point[1][0])
+
+    l.layer = 0
+    l.start_time = s
+    l.end_time = e
+    l.text = f"{{\\an5\\pos({x:.3f},{y:.3f})}}{syl.text}"
+    io.write_line(l)
+```
+
+If you execute the script, you'll se the text moving along the curve we defined! But it's a bit rough: we can add easing (to start faster and settle smoothly) and a soft fade‑in to make it more refined. Here’s the complete lead‑in:
 
 ```python
 import bezier
