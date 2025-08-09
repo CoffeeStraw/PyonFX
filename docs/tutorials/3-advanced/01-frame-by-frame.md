@@ -54,6 +54,8 @@ def highlight_effect(line: Line, syl: Syllable, l: Line):
 
 This already produces a lively highlight with subtle randomness.
 
+![highlight_effect_1](imgs/frame-by-frame-highlight-1.gif)
+
 What powers the loop above is `FrameUtility`, constructed with a start time, an end time, and the video timestamps from `meta`. Iterating it yields, for each frame: `(s, e, i, n)` where `s`/`e` are the current frame’s start/end in milliseconds and `i/n` is normalized progress from 0 to 1 across the span. It also exposes `duration` (the total span length) and helpers we’ll use shortly. See the reference for details: [`FrameUtility`](../../reference/utils.md#pyonfx.utils.FrameUtility).
 
 ### 2. Improve motion: dynamic amplitude with `fu.add(...)`
@@ -100,6 +102,10 @@ def highlight_effect(line: Line, syl: Syllable, l: Line):
 ```
 
 Now the jitter ramps up and back down within the highlight window.
+
+![highlight_effect_2](imgs/frame-by-frame-highlight-2.gif)
+
+This is a detail, but it helps in making the highlight effect transition more smooth and natural.
 
 ### 3. Add color transitions with interpolation
 
@@ -148,6 +154,8 @@ def highlight_effect(line: Line, syl: Syllable, l: Line):
 
         io.write_line(l)
 ```
+
+![highlight_effect_3](imgs/frame-by-frame-highlight-3.gif)
 
 ### 4. Lead-in and lead-out with Bezier motion and easing
 
@@ -218,6 +226,8 @@ As in earlier tutorials, we keep effects modular (`leadin_effect`, `highlight_ef
 io.save()
 io.open_aegisub()
 ```
+
+![frame-by-frame-final](imgs/frame-by-frame-final.gif)
 
 ## Conclusion
 
