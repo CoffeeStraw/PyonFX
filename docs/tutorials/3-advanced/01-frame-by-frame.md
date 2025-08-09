@@ -168,23 +168,30 @@ To implement the curve, we’ll use the third‑party `bezier` package to build 
 ```python
 import bezier
 
-# Control points relative to the syllable
-x0, y0 = syl.center - 60.0, syl.middle - 20.0  # P0 (off-screen-ish start)
-x1, y1 = syl.center - 20.0, syl.middle - 50.0  # P1 (controls the "bow")
-x2, y2 = syl.center, syl.middle                # P2 (arrive at the syllable)
-curve = bezier.Curve([[x0, x1, x2], [y0, y1, y2]], degree=2)
+@io.track
+def leadin_effect(line: Line, syl: Syllable, l: Line):
+    # Control points (start above-left, curve, end at syllable center)
+    x0, y0 = syl.center - 60.0, syl.middle - 20.0
+    x1, y1 = syl.center - 20.0, syl.middle - 50.0
+    x2, y2 = syl.center, syl.middle
+    curve = bezier.Curve([[x0, x1, x2], [y0, y1, y2]], degree=2)
 
-# Lead-in frames: from a bit before the line starts up to the line start
-fu = FrameUtility(line.start_time - line.leadin // 2, line.start_time, meta.timestamps)
-for s, e, i, n in fu:
-    point = curve.evaluate(i / n)
-    x, y = float(point[0][0]), float(point[1][0])
+    # Frame-by-frame movement
+    fu = FrameUtility(line.start_time - line.leadin // 2, line.start_time, meta.timestamps)
+    for s, e, i, n in fu:
+        l.layer = 0
+        l.start_time = s
+        l.end_time = e
 
-    l.layer = 0
-    l.start_time = s
-    l.end_time = e
-    l.text = f"{{\\an5\\pos({x:.3f},{y:.3f})}}{syl.text}"
-    io.write_line(l)
+        # Position (evaluate Bezier curve)
+        pct = i / n
+        curve_point = curve.evaluate(pct)
+        x, y = float(curve_point[0][0]), float(curve_point[1][0])
+        
+        tags = rf"\an5\pos({x:.3f},{y:.3f})"
+        l.text = f"{{{tags}}}{syl.text}"
+        
+        io.write_line(l)
 ```
 
 If you execute the script, you'll se the text moving along the curve we defined! But it's a bit rough: we can add easing (to start faster and settle smoothly) and a soft fade‑in to make it more refined. Here’s the complete lead‑in:
