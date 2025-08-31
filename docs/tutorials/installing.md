@@ -17,27 +17,27 @@ To get started with PyonFX, we recommend that you have some knowledge on:
     ```
 
 ??? note "Ubuntu/Debian"
-    Install prerequisites:
+    Install prerequisites by opening a terminal and running:
 
     ```bash
     sudo apt-get update
     sudo apt-get install libgirepository-2.0-dev gobject-introspection libcairo2-dev python3-dev build-essential gir1.2-gtk-3.0 python3-gi python3-gi-cairo
     ```
 
-    Then, install PyonFX:
+    Then, install PyonFX by copy-pasting this command:
 
     ```bash
     python3 -m pip install --upgrade pyonfx
     ```
 
 ??? note "macOS"
-    Install Homebrew if needed, then install prerequisites:
+    Install Homebrew if needed, then install prerequisites by opening Terminal and running:
 
     ```bash
     brew install python py3cairo pygobject3 pango cairo glib
     ```
 
-    Then, install PyonFX:
+    Then, install PyonFX by copy-pasting this command:
 
     ```bash
     python3 -m pip install --upgrade pyonfx
