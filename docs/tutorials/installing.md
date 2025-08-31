@@ -4,13 +4,13 @@
 
 To get started with PyonFX, we recommend that you have some knowledge on:
 
-- **Python 3**: familiarity with basic constructs like variables, functions, conditions, loops, comparisons, string formatting, lists, and dictionaries[^py];
-- **ASS/SSA Tags**: familiarity with ASS tags[^ass];
+- **Python 3**: familiarity with basic constructs like variables, functions, conditions, loops, comparisons, string formatting, lists, and dictionaries, and how to create and execute Python scripts. For beginners, we suggest starting with this [comprehensive video guide](https://www.youtube.com/watch?v=b093aqAZiPU), which introduces the basics of Python step by step, including script creation and execution. If you want to explore further, ["Think Python 2"](http://greenteapress.com/thinkpython2/thinkpython2.pdf) is an excellent free PDF book (in English) that covers core programming concepts in more depth;
+- **ASS/SSA Tags**: familiarity with ASS tags. For a comprehensive guide to ASS tags, see the [Aegisub official documentation](https://aegisub.org/docs/latest/ass_tags/);
 
 ## Installation
 
 ??? note "Windows"
-    Download and install Python 3 from the [official website](https://www.python.org/downloads/). Ensure you check "Add Python 3.x to PATH". Then, install PyonFX:
+    Download and install Python 3 from the [official website](https://www.python.org/downloads/). Ensure you check "Add Python 3.x to PATH". Then, open a command prompt (cmd) or PowerShell and install PyonFX by copy-pasting this command:
 
     ```bash
     pip install --upgrade pyonfx
@@ -61,7 +61,3 @@ Enhance your development workflow by setting up your environment as follows:
 ## What's next
 
 After completing these steps, you can start learning how to use the library! We prepared a series of tutorials for you, starting from [Exploring ASS values](0-first-steps/01-explore-ass-values.md).
-
-[^py]: For beginners, we suggest starting with this [this comprehensive video guide](https://www.youtube.com/watch?v=b093aqAZiPU), which introduces the basics of Python step by step. If you want to explore further, ["Think Python 2"](http://greenteapress.com/thinkpython2/thinkpython2.pdf) is an excellent free PDF book (in English) that covers core programming concepts in more depth.
-
-[^ass]: For a comprehensive guide to ASS tags, see the [Aegisub official documentation](https://aegisub.org/docs/latest/ass_tags/).
