@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "count": 100000,
+  "results": [
+    {
+      "mode": "buffered",
+      "count": 100000,
+      "elapsed_ns": 1019435000,
+      "tracemalloc_current_bytes": 13530149,
+      "tracemalloc_peak_bytes": 14354213,
+      "process_memory_before": {
+        "working_set_bytes": 93958144,
+        "peak_working_set_bytes": 93958144,
+        "pagefile_bytes": 1662926848,
+        "peak_pagefile_bytes": 1662926848
+      },
+      "process_memory_after": {
+        "working_set_bytes": 107253760,
+        "peak_working_set_bytes": 118611968,
+        "pagefile_bytes": 1676791808,
+        "peak_pagefile_bytes": 1687646208
+      },
+      "output_bytes": 8729944
+    },
+    {
+      "mode": "streaming",
+      "count": 100000,
+      "elapsed_ns": 1042492000,
+      "tracemalloc_current_bytes": 1919,
+      "tracemalloc_peak_bytes": 733032,
+      "process_memory_before": {
+        "working_set_bytes": 93945856,
+        "peak_working_set_bytes": 93945856,
+        "pagefile_bytes": 1662775296,
+        "peak_pagefile_bytes": 1662775296
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94830592,
+        "peak_working_set_bytes": 94830592,
+        "pagefile_bytes": 1664094208,
+        "peak_pagefile_bytes": 1664094208
+      },
+      "output_bytes": 8729944
+    }
+  ]
+}

@@ -1,0 +1,188 @@
+{
+  "schema_version": 1,
+  "tier": "S",
+  "repeats": 7,
+  "warmups": 1,
+  "fixture": {
+    "path": "D:\\Tool\\PyonFX\\PyonFX\\tests\\Ass\\ass_core.ass",
+    "sha256": "sha256:2eae1caabb9fdd364636a98caffebaa19f5df8eba336bf6e277662dfc18e3f62",
+    "bytes": 4011
+  },
+  "environment": {
+    "timestamp_utc": "2026-07-10T16:17:14.863974+00:00",
+    "python": "3.14.0 (tags/v3.14.0:ebf955d, Oct  7 2025, 10:15:03) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Python314\\python.exe",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+    "cpu_count": 24,
+    "numpy": "2.4.2",
+    "scipy": "1.17.1",
+    "shapely": "2.1.2",
+    "git_commit": "c342624ee92f723bb78a1129ea0292ce549bedfb",
+    "git_status_porcelain": "M \"examples/2 - Beginner/1 - First Simple Effect.py\"\n M \"examples/2 - Beginner/2 - Utilities.py\"\n M \"examples/2 - Beginner/3 - Variants.py\"\n M \"examples/2 - Beginner/5 - Image to Pixels Demo.py\"\n M \"examples/3 - Advanced/1 - WIP.py\"\n M \"examples/3 - Advanced/2 - Testing Pixels (WIP).py\"\n M \"examples/3 - Advanced/3 - Morphing.py\"\n M \"examples/3 - Advanced/in.ass\"\n?? benchmarks/"
+  },
+  "benchmarks": [
+    {
+      "name": "ass_parse_basic",
+      "description": "Parse the ASS fixture without extended line data.",
+      "iterations_per_sample": 1,
+      "samples": 7,
+      "sample_total_ns": [
+        1075400,
+        1215600,
+        1098800,
+        1203700,
+        1051800,
+        1144600,
+        1051500
+      ],
+      "per_operation_ns": {
+        "minimum": 1051500.0,
+        "median": 1098800.0,
+        "mean": 1120200.0,
+        "maximum": 1215600.0,
+        "stdev": 68958.94914125843,
+        "coefficient_of_variation": 0.06155949753727766
+      }
+    },
+    {
+      "name": "ass_parse_extended",
+      "description": "Parse the ASS fixture and build line/word/syllable/char data.",
+      "iterations_per_sample": 1,
+      "samples": 7,
+      "sample_total_ns": [
+        7063900,
+        7157500,
+        6960500,
+        7052700,
+        6889800,
+        6798100,
+        6708800
+      ],
+      "per_operation_ns": {
+        "minimum": 6708800.0,
+        "median": 6960500.0,
+        "mean": 6947328.571428572,
+        "maximum": 7157500.0,
+        "stdev": 158908.8492845895,
+        "coefficient_of_variation": 0.022873374657723038
+      }
+    },
+    {
+      "name": "line_deepcopy",
+      "description": "Deep-copy a fully extended karaoke Line.",
+      "iterations_per_sample": 10,
+      "samples": 7,
+      "sample_total_ns": [
+        6165500,
+        6084600,
+        6106100,
+        6074400,
+        6192900,
+        6200900,
+        6047300
+      ],
+      "per_operation_ns": {
+        "minimum": 604730.0,
+        "median": 610610.0,
+        "mean": 612452.8571428572,
+        "maximum": 620090.0,
+        "stdev": 6136.901265529465,
+        "coefficient_of_variation": 0.010020201871795672
+      }
+    },
+    {
+      "name": "line_serialize",
+      "description": "Serialize a fully extended karaoke Line to ASS text.",
+      "iterations_per_sample": 100,
+      "samples": 7,
+      "sample_total_ns": [
+        204500,
+        203400,
+        203500,
+        201400,
+        203200,
+        205700,
+        225900
+      ],
+      "per_operation_ns": {
+        "minimum": 2014.0,
+        "median": 2035.0,
+        "mean": 2068.0,
+        "maximum": 2259.0,
+        "stdev": 85.23301394803933,
+        "coefficient_of_variation": 0.041215190497117665
+      }
+    },
+    {
+      "name": "text_to_shape",
+      "description": "Convert one syllable to a font outline Shape.",
+      "iterations_per_sample": 5,
+      "samples": 7,
+      "sample_total_ns": [
+        2949400,
+        2899000,
+        3007500,
+        2981700,
+        3048000,
+        2949200,
+        3203100
+      ],
+      "per_operation_ns": {
+        "minimum": 579800.0,
+        "median": 596340.0,
+        "mean": 601082.8571428572,
+        "maximum": 640620.0,
+        "stdev": 19846.33443425235,
+        "coefficient_of_variation": 0.03301763508709672
+      }
+    },
+    {
+      "name": "drawing_to_multipolygon",
+      "description": "Parse a glyph drawing and polygonize it with Shapely.",
+      "iterations_per_sample": 5,
+      "samples": 7,
+      "sample_total_ns": [
+        55980900,
+        55671900,
+        55718400,
+        55920300,
+        55935900,
+        55044000,
+        55680500
+      ],
+      "per_operation_ns": {
+        "minimum": 11008800.0,
+        "median": 11143680.0,
+        "mean": 11141482.857142856,
+        "maximum": 11196180.0,
+        "stdev": 64007.56874888201,
+        "coefficient_of_variation": 0.00574497753751391
+      }
+    },
+    {
+      "name": "convert_time",
+      "description": "Format integer millisecond timestamps as ASS time strings.",
+      "iterations_per_sample": 1000,
+      "samples": 7,
+      "sample_total_ns": [
+        739600,
+        734400,
+        754600,
+        752600,
+        721800,
+        742700,
+        790000
+      ],
+      "per_operation_ns": {
+        "minimum": 721.8,
+        "median": 742.7,
+        "mean": 747.9571428571428,
+        "maximum": 790.0,
+        "stdev": 21.597674037023623,
+        "coefficient_of_variation": 0.02887555021471157
+      }
+    }
+  ]
+}

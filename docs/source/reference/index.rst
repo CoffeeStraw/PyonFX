@@ -15,6 +15,15 @@ For Shape functions that will let you do complex calculations with shapes in ASS
 
 For general utility functions, you can go on :ref:`utils-ref` section.
 
+For lightweight output events and bounded-memory writing, see
+:ref:`events-ref`.
+
+For robust Shapely normalization and boolean helpers, see
+:ref:`geometry-ref`.
+
+For reusable effect timing and deterministic random helpers, see
+:ref:`effect-ref`.
+
 
 .. toctree::
    :maxdepth: 2
@@ -23,3 +32,6 @@ For general utility functions, you can go on :ref:`utils-ref` section.
    convert
    shape
    utils
+   events
+   geometry
+   effect
