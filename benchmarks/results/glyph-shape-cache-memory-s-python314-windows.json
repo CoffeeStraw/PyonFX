@@ -1,0 +1,417 @@
+{
+  "schema_version": 1,
+  "timestamp_utc": "2026-07-10T16:45:15.329175+00:00",
+  "tier": "S",
+  "python": "3.14.0 (tags/v3.14.0:ebf955d, Oct  7 2025, 10:15:03) [MSC v.1944 64 bit (AMD64)]",
+  "executable": "C:\\Python314\\python.exe",
+  "platform": "Windows-11-10.0.26200-SP0",
+  "cpu_count": 24,
+  "benchmarks": [
+    {
+      "name": "ass_parse_basic",
+      "description": "Parse the ASS fixture without extended line data.",
+      "iterations": 1,
+      "elapsed_ns": 2891400,
+      "per_operation_ns": 2891400.0,
+      "tracemalloc_current_bytes": 9043,
+      "tracemalloc_peak_bytes": 183958,
+      "process_memory_before": {
+        "working_set_bytes": 94339072,
+        "peak_working_set_bytes": 94339072,
+        "pagefile_bytes": 1662521344,
+        "peak_pagefile_bytes": 1662521344
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94408704,
+        "peak_working_set_bytes": 94408704,
+        "pagefile_bytes": 1662521344,
+        "peak_pagefile_bytes": 1662521344
+      },
+      "key_call_counts": {
+        "font_init": 0,
+        "line_copy": 0,
+        "line_serialize": 0,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "ass_parse_extended",
+      "description": "Parse the ASS fixture and build line/word/syllable/char data.",
+      "iterations": 1,
+      "elapsed_ns": 27119200,
+      "per_operation_ns": 27119200.0,
+      "tracemalloc_current_bytes": 18302,
+      "tracemalloc_peak_bytes": 272947,
+      "process_memory_before": {
+        "working_set_bytes": 94744576,
+        "peak_working_set_bytes": 94744576,
+        "pagefile_bytes": 1662742528,
+        "peak_pagefile_bytes": 1662742528
+      },
+      "process_memory_after": {
+        "working_set_bytes": 95002624,
+        "peak_working_set_bytes": 95002624,
+        "pagefile_bytes": 1662812160,
+        "peak_pagefile_bytes": 1662812160
+      },
+      "key_call_counts": {
+        "font_init": 17,
+        "line_copy": 17,
+        "line_serialize": 0,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "ass_parse_extended_line",
+      "description": "Parse the ASS fixture and build line metrics only.",
+      "iterations": 1,
+      "elapsed_ns": 6661900,
+      "per_operation_ns": 6661900.0,
+      "tracemalloc_current_bytes": 13235,
+      "tracemalloc_peak_bytes": 184190,
+      "process_memory_before": {
+        "working_set_bytes": 94208000,
+        "peak_working_set_bytes": 94208000,
+        "pagefile_bytes": 1663016960,
+        "peak_pagefile_bytes": 1663016960
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94330880,
+        "peak_working_set_bytes": 94330880,
+        "pagefile_bytes": 1663016960,
+        "peak_pagefile_bytes": 1663016960
+      },
+      "key_call_counts": {
+        "font_init": 17,
+        "line_copy": 17,
+        "line_serialize": 0,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "ass_parse_extended_words",
+      "description": "Parse the ASS fixture and build line plus word data.",
+      "iterations": 1,
+      "elapsed_ns": 8399900,
+      "per_operation_ns": 8399900.0,
+      "tracemalloc_current_bytes": 14035,
+      "tracemalloc_peak_bytes": 184190,
+      "process_memory_before": {
+        "working_set_bytes": 94707712,
+        "peak_working_set_bytes": 94707712,
+        "pagefile_bytes": 1662857216,
+        "peak_pagefile_bytes": 1662857216
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94814208,
+        "peak_working_set_bytes": 94814208,
+        "pagefile_bytes": 1662857216,
+        "peak_pagefile_bytes": 1662857216
+      },
+      "key_call_counts": {
+        "font_init": 17,
+        "line_copy": 17,
+        "line_serialize": 0,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "ass_parse_extended_syllables",
+      "description": "Parse the ASS fixture and build line, word, and syllable data.",
+      "iterations": 1,
+      "elapsed_ns": 10930000,
+      "per_operation_ns": 10930000.0,
+      "tracemalloc_current_bytes": 18055,
+      "tracemalloc_peak_bytes": 184190,
+      "process_memory_before": {
+        "working_set_bytes": 95023104,
+        "peak_working_set_bytes": 95023104,
+        "pagefile_bytes": 1663135744,
+        "peak_pagefile_bytes": 1663135744
+      },
+      "process_memory_after": {
+        "working_set_bytes": 95133696,
+        "peak_working_set_bytes": 95133696,
+        "pagefile_bytes": 1663135744,
+        "peak_pagefile_bytes": 1663135744
+      },
+      "key_call_counts": {
+        "font_init": 17,
+        "line_copy": 17,
+        "line_serialize": 0,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "line_deepcopy",
+      "description": "Deep-copy a fully extended karaoke Line.",
+      "iterations": 10,
+      "elapsed_ns": 22293700,
+      "per_operation_ns": 2229370.0,
+      "tracemalloc_current_bytes": 19796,
+      "tracemalloc_peak_bytes": 144064,
+      "process_memory_before": {
+        "working_set_bytes": 94715904,
+        "peak_working_set_bytes": 94715904,
+        "pagefile_bytes": 1662644224,
+        "peak_pagefile_bytes": 1662644224
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94785536,
+        "peak_working_set_bytes": 94785536,
+        "pagefile_bytes": 1662644224,
+        "peak_pagefile_bytes": 1662644224
+      },
+      "key_call_counts": {
+        "font_init": 0,
+        "line_copy": 10,
+        "line_serialize": 0,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "line_serialize",
+      "description": "Serialize a fully extended karaoke Line to ASS text.",
+      "iterations": 100,
+      "elapsed_ns": 1389700,
+      "per_operation_ns": 13897.0,
+      "tracemalloc_current_bytes": 1036,
+      "tracemalloc_peak_bytes": 4642,
+      "process_memory_before": {
+        "working_set_bytes": 94396416,
+        "peak_working_set_bytes": 94396416,
+        "pagefile_bytes": 1662763008,
+        "peak_pagefile_bytes": 1662763008
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94441472,
+        "peak_working_set_bytes": 94441472,
+        "pagefile_bytes": 1662763008,
+        "peak_pagefile_bytes": 1662763008
+      },
+      "key_call_counts": {
+        "font_init": 0,
+        "line_copy": 0,
+        "line_serialize": 100,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "text_to_shape",
+      "description": "Convert one syllable to a font outline Shape.",
+      "iterations": 5,
+      "elapsed_ns": 7977700,
+      "per_operation_ns": 1595540.0,
+      "tracemalloc_current_bytes": 5164,
+      "tracemalloc_peak_bytes": 29775,
+      "process_memory_before": {
+        "working_set_bytes": 94658560,
+        "peak_working_set_bytes": 94658560,
+        "pagefile_bytes": 1662984192,
+        "peak_pagefile_bytes": 1662984192
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94728192,
+        "peak_working_set_bytes": 94728192,
+        "pagefile_bytes": 1662984192,
+        "peak_pagefile_bytes": 1662984192
+      },
+      "key_call_counts": {
+        "font_init": 0,
+        "line_copy": 0,
+        "line_serialize": 0,
+        "shape_init": 5,
+        "text_to_shape": 5,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "text_to_shape_cold",
+      "description": "Convert one syllable after clearing the glyph drawing cache.",
+      "iterations": 5,
+      "elapsed_ns": 27898000,
+      "per_operation_ns": 5579600.0,
+      "tracemalloc_current_bytes": 16097,
+      "tracemalloc_peak_bytes": 53389,
+      "process_memory_before": {
+        "working_set_bytes": 94552064,
+        "peak_working_set_bytes": 94552064,
+        "pagefile_bytes": 1662771200,
+        "peak_pagefile_bytes": 1662771200
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94625792,
+        "peak_working_set_bytes": 94625792,
+        "pagefile_bytes": 1662771200,
+        "peak_pagefile_bytes": 1662771200
+      },
+      "key_call_counts": {
+        "font_init": 5,
+        "line_copy": 0,
+        "line_serialize": 0,
+        "shape_init": 10,
+        "text_to_shape": 5,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "text_to_shape_mixed",
+      "description": "Convert a cycle of non-empty syllables with a warm bounded cache.",
+      "iterations": 20,
+      "elapsed_ns": 86944500,
+      "per_operation_ns": 4347225.0,
+      "tracemalloc_current_bytes": 40372,
+      "tracemalloc_peak_bytes": 87081,
+      "process_memory_before": {
+        "working_set_bytes": 94793728,
+        "peak_working_set_bytes": 94793728,
+        "pagefile_bytes": 1662963712,
+        "peak_pagefile_bytes": 1662963712
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94879744,
+        "peak_working_set_bytes": 94879744,
+        "pagefile_bytes": 1662963712,
+        "peak_pagefile_bytes": 1662963712
+      },
+      "key_call_counts": {
+        "font_init": 14,
+        "line_copy": 0,
+        "line_serialize": 0,
+        "shape_init": 34,
+        "text_to_shape": 20,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "drawing_to_multipolygon",
+      "description": "Parse a glyph drawing and polygonize it with Shapely.",
+      "iterations": 5,
+      "elapsed_ns": 275088000,
+      "per_operation_ns": 55017600.0,
+      "tracemalloc_current_bytes": 56449,
+      "tracemalloc_peak_bytes": 309860,
+      "process_memory_before": {
+        "working_set_bytes": 94539776,
+        "peak_working_set_bytes": 94539776,
+        "pagefile_bytes": 1662922752,
+        "peak_pagefile_bytes": 1662922752
+      },
+      "process_memory_after": {
+        "working_set_bytes": 95830016,
+        "peak_working_set_bytes": 95830016,
+        "pagefile_bytes": 1664602112,
+        "peak_pagefile_bytes": 1664602112
+      },
+      "key_call_counts": {
+        "font_init": 0,
+        "line_copy": 0,
+        "line_serialize": 0,
+        "shape_init": 10,
+        "text_to_shape": 0,
+        "to_multipolygon": 5
+      }
+    },
+    {
+      "name": "convert_time",
+      "description": "Format integer millisecond timestamps as ASS time strings.",
+      "iterations": 1000,
+      "elapsed_ns": 5775400,
+      "per_operation_ns": 5775.4,
+      "tracemalloc_current_bytes": 1136,
+      "tracemalloc_peak_bytes": 4369,
+      "process_memory_before": {
+        "working_set_bytes": 94347264,
+        "peak_working_set_bytes": 94347264,
+        "pagefile_bytes": 1662889984,
+        "peak_pagefile_bytes": 1662889984
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94388224,
+        "peak_working_set_bytes": 94388224,
+        "pagefile_bytes": 1662889984,
+        "peak_pagefile_bytes": 1662889984
+      },
+      "key_call_counts": {
+        "font_init": 0,
+        "line_copy": 0,
+        "line_serialize": 0,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "generate_100_lines",
+      "description": "Deep-copy Lines and write a batch of 100 generated events.",
+      "iterations": 1,
+      "elapsed_ns": 198387800,
+      "per_operation_ns": 198387800.0,
+      "tracemalloc_current_bytes": 20700,
+      "tracemalloc_peak_bytes": 174817,
+      "process_memory_before": {
+        "working_set_bytes": 94601216,
+        "peak_working_set_bytes": 94601216,
+        "pagefile_bytes": 1662914560,
+        "peak_pagefile_bytes": 1662914560
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94744576,
+        "peak_working_set_bytes": 94744576,
+        "pagefile_bytes": 1662914560,
+        "peak_pagefile_bytes": 1662914560
+      },
+      "key_call_counts": {
+        "font_init": 0,
+        "line_copy": 100,
+        "line_serialize": 100,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    },
+    {
+      "name": "generate_100_events",
+      "description": "Construct Events and write a cached batch of 100 events.",
+      "iterations": 1,
+      "elapsed_ns": 1372700,
+      "per_operation_ns": 1372700.0,
+      "tracemalloc_current_bytes": 5144,
+      "tracemalloc_peak_bytes": 42872,
+      "process_memory_before": {
+        "working_set_bytes": 94646272,
+        "peak_working_set_bytes": 94646272,
+        "pagefile_bytes": 1662709760,
+        "peak_pagefile_bytes": 1662709760
+      },
+      "process_memory_after": {
+        "working_set_bytes": 94699520,
+        "peak_working_set_bytes": 94699520,
+        "pagefile_bytes": 1662709760,
+        "peak_pagefile_bytes": 1662709760
+      },
+      "key_call_counts": {
+        "font_init": 0,
+        "line_copy": 0,
+        "line_serialize": 0,
+        "shape_init": 0,
+        "text_to_shape": 0,
+        "to_multipolygon": 0
+      }
+    }
+  ]
+}
