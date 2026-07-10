@@ -1,5 +1,13 @@
 """Create and compare structural fingerprints for ASS output files."""
 
+# PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
+# Copyright (C) 2019-2025 Antonio Strippoli (CoffeeStraw/YellowFlash)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
 from __future__ import annotations
 
 import argparse
@@ -10,7 +18,6 @@ import sys
 from collections import Counter
 from pathlib import Path
 from typing import Any, Sequence
-
 
 # Capture the ASS tag name without consuming its numeric argument. Channel
 # prefixes such as ``\1c`` remain part of the name and are normalized below.
@@ -71,7 +78,9 @@ def _normalize_tag(tag: str) -> str:
     return tag
 
 
-def fingerprint(path: str | Path, *, include_line_hashes: bool = True) -> dict[str, Any]:
+def fingerprint(
+    path: str | Path, *, include_line_hashes: bool = True
+) -> dict[str, Any]:
     """Return a deterministic structural fingerprint for an ASS file."""
 
     file_path = Path(path).resolve()
@@ -120,11 +129,15 @@ def fingerprint(path: str | Path, *, include_line_hashes: bool = True) -> dict[s
         "event_count": len(events),
         "event_types": dict(sorted(event_types.items())),
         "malformed_event_count": malformed,
-        "layers": dict(sorted(layers.items(), key=lambda item: _numeric_sort_key(item[0]))),
+        "layers": dict(
+            sorted(layers.items(), key=lambda item: _numeric_sort_key(item[0]))
+        ),
         "styles": dict(sorted(styles.items())),
         "tags": dict(sorted(tags.items())),
         "drawing_event_count": drawing_events,
-        "drawing_scales": {str(key): value for key, value in sorted(drawing_scales.items())},
+        "drawing_scales": {
+            str(key): value for key, value in sorted(drawing_scales.items())
+        },
         "time_text_range": {
             "first_start": min(start_values) if start_values else None,
             "last_end": max(end_values) if end_values else None,

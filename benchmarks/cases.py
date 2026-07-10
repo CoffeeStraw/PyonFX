@@ -1,5 +1,13 @@
 """Benchmark case definitions used by :mod:`benchmarks.run_baseline`."""
 
+# PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
+# Copyright (C) 2019-2025 Antonio Strippoli (CoffeeStraw/YellowFlash)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -7,7 +15,6 @@ from pathlib import Path
 from typing import Callable
 
 from pyonfx import Ass, Convert, Event, Shape
-
 
 ROOT = Path(__file__).resolve().parents[1]
 ASS_FIXTURE = ROOT / "tests" / "Ass" / "ass_core.ass"
