@@ -73,7 +73,7 @@ def repair_geometry(geometry: object) -> MultiPolygon:
     repaired = geometry
     try:
         repaired = make_valid(repaired)
-    except (GEOSException, ShapelyError, ValueError, TypeError):
+    except GEOSException, ShapelyError, ValueError, TypeError:
         pass
 
     repaired = ensure_multipolygon(repaired)
@@ -82,14 +82,14 @@ def repair_geometry(geometry: object) -> MultiPolygon:
 
     try:
         repaired = ensure_multipolygon(repaired.buffer(0))
-    except (GEOSException, ShapelyError, ValueError, TypeError):
+    except GEOSException, ShapelyError, ValueError, TypeError:
         pass
     if repaired.is_empty or repaired.is_valid:
         return repaired
 
     try:
         repaired = ensure_multipolygon(make_valid(repaired.buffer(0)))
-    except (GEOSException, ShapelyError, ValueError, TypeError):
+    except GEOSException, ShapelyError, ValueError, TypeError:
         pass
     return repaired
 
@@ -130,11 +130,11 @@ def safe_difference(
 
     try:
         return repair_geometry(outer.difference(inner))
-    except (GEOSException, ShapelyError, ValueError, TypeError):
+    except GEOSException, ShapelyError, ValueError, TypeError:
         pass
     try:
         return repair_geometry(outer.buffer(0).difference(inner.buffer(0)))
-    except (GEOSException, ShapelyError, ValueError, TypeError):
+    except GEOSException, ShapelyError, ValueError, TypeError:
         pass
 
     if shrink_fallback is not None:
@@ -142,7 +142,7 @@ def safe_difference(
             shrunken = repair_geometry(inner.buffer(shrink_fallback))
             if not shrunken.is_empty:
                 return repair_geometry(outer.difference(shrunken))
-        except (GEOSException, ShapelyError, ValueError, TypeError):
+        except GEOSException, ShapelyError, ValueError, TypeError:
             pass
     return outer
 
@@ -152,12 +152,12 @@ def safe_intersection(geometry: object, mask_geometry: object) -> MultiPolygon:
 
     try:
         result = geometry.intersection(mask_geometry)
-    except (AttributeError, GEOSException, ShapelyError, ValueError, TypeError):
+    except AttributeError, GEOSException, ShapelyError, ValueError, TypeError:
         try:
             geometry_fixed = repair_geometry(geometry)
             mask_fixed = repair_geometry(mask_geometry)
             result = geometry_fixed.buffer(0).intersection(mask_fixed.buffer(0))
-        except (GEOSException, ShapelyError, ValueError, TypeError):
+        except GEOSException, ShapelyError, ValueError, TypeError:
             return MultiPolygon()
     fast_path = _coerce_valid_multipolygon(result)
     if fast_path is not None:

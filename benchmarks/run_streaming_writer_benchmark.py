@@ -1,5 +1,13 @@
 """Compare buffered and streaming Event output in isolated processes."""
 
+# PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
+# Copyright (C) 2019-2025 Antonio Strippoli (CoffeeStraw/YellowFlash)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
 from __future__ import annotations
 
 import argparse
@@ -14,7 +22,6 @@ from typing import Any, Iterator, Sequence
 
 from benchmarks.run_memory_baseline import _process_memory_info
 from pyonfx import Ass, Event
-
 
 ROOT = Path(__file__).resolve().parents[1]
 FIXTURE = ROOT / "tests" / "Ass" / "ass_core.ass"
@@ -96,7 +103,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv)
     if args.count < 1:
         raise ValueError("--count must be at least 1")
-    report = _child(args.child_mode, args.count) if args.child_mode else _parent(args.count)
+    report = (
+        _child(args.child_mode, args.count) if args.child_mode else _parent(args.count)
+    )
     serialized = json.dumps(report, ensure_ascii=False, indent=2) + "\n"
     if args.output is None:
         sys.stdout.write(serialized)

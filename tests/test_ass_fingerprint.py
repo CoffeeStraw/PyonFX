@@ -1,9 +1,16 @@
+# PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
+# Copyright (C) 2019-2025 Antonio Strippoli (CoffeeStraw/YellowFlash)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
 from __future__ import annotations
 
 from pathlib import Path
 
 from benchmarks.ass_fingerprint import compare_fingerprints, fingerprint
-
 
 ASS_HEADER = """[Script Info]
 ScriptType: v4.00+
@@ -17,7 +24,9 @@ Format: Layer, Start, End, Style, Name, MarginL, MarginR, MarginV, Effect, Text
 """
 
 
-def _write(path: Path, dialogue: str, *, bom: bool = False, newline: str = "\n") -> None:
+def _write(
+    path: Path, dialogue: str, *, bom: bool = False, newline: str = "\n"
+) -> None:
     content = (ASS_HEADER + dialogue).replace("\n", newline)
     encoding = "utf-8-sig" if bom else "utf-8"
     path.write_text(content, encoding=encoding, newline="")

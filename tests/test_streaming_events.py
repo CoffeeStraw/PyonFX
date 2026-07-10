@@ -1,3 +1,11 @@
+# PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
+# Copyright (C) 2019-2025 Antonio Strippoli (CoffeeStraw/YellowFlash)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -5,7 +13,6 @@ from pathlib import Path
 import pytest
 
 from pyonfx import Ass, Event
-
 
 FIXTURE = Path(__file__).resolve().parent / "Ass" / "ass_core.ass"
 
@@ -24,8 +31,12 @@ def _events(count: int):
 def test_save_events_matches_buffered_save(tmp_path: Path) -> None:
     buffered_path = tmp_path / "buffered.ass"
     streamed_path = tmp_path / "streamed.ass"
-    buffered = Ass(str(FIXTURE), str(buffered_path), keep_original=False, extended=False)
-    streamed = Ass(str(FIXTURE), str(streamed_path), keep_original=False, extended=False)
+    buffered = Ass(
+        str(FIXTURE), str(buffered_path), keep_original=False, extended=False
+    )
+    streamed = Ass(
+        str(FIXTURE), str(streamed_path), keep_original=False, extended=False
+    )
 
     buffered.write_events(_events(250))
     buffered.save(quiet=True)

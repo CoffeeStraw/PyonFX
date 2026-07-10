@@ -1,3 +1,11 @@
+# PyonFX: An easy way to create KFX (Karaoke Effects) and complex typesetting using the ASS format (Advanced Substation Alpha).
+# Copyright (C) 2019-2025 Antonio Strippoli (CoffeeStraw/YellowFlash)
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU Lesser General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+
 from __future__ import annotations
 
 from pathlib import Path
@@ -5,7 +13,6 @@ from pathlib import Path
 import pytest
 
 from pyonfx import Ass
-
 
 FIXTURE = Path(__file__).resolve().parent / "Ass" / "ass_core.ass"
 
@@ -38,7 +45,9 @@ def test_words_feature_builds_line_and_words(tmp_path: Path) -> None:
     assert line.chars == []
 
 
-def test_syllables_feature_builds_dependency_chain_without_chars(tmp_path: Path) -> None:
+def test_syllables_feature_builds_dependency_chain_without_chars(
+    tmp_path: Path,
+) -> None:
     io = _selective(tmp_path, "syllables")
     line = io.lines[11]
     assert line.words
