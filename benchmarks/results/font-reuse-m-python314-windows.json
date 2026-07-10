@@ -1,0 +1,303 @@
+{
+  "schema_version": 1,
+  "tier": "M",
+  "repeats": 7,
+  "warmups": 1,
+  "fixture": {
+    "path": "D:\\Tool\\PyonFX\\PyonFX\\tests\\Ass\\ass_core.ass",
+    "sha256": "sha256:2eae1caabb9fdd364636a98caffebaa19f5df8eba336bf6e277662dfc18e3f62",
+    "bytes": 4011
+  },
+  "environment": {
+    "timestamp_utc": "2026-07-10T16:39:20.069652+00:00",
+    "python": "3.14.0 (tags/v3.14.0:ebf955d, Oct  7 2025, 10:15:03) [MSC v.1944 64 bit (AMD64)]",
+    "executable": "C:\\Python314\\python.exe",
+    "platform": "Windows-11-10.0.26200-SP0",
+    "machine": "AMD64",
+    "processor": "AMD64 Family 25 Model 97 Stepping 2, AuthenticAMD",
+    "cpu_count": 24,
+    "numpy": "2.4.2",
+    "scipy": "1.17.1",
+    "shapely": "2.1.2",
+    "git_commit": "c342624ee92f723bb78a1129ea0292ce549bedfb",
+    "git_status_porcelain": "M \"examples/2 - Beginner/1 - First Simple Effect.py\"\n M \"examples/2 - Beginner/2 - Utilities.py\"\n M \"examples/2 - Beginner/3 - Variants.py\"\n M \"examples/2 - Beginner/5 - Image to Pixels Demo.py\"\n M \"examples/3 - Advanced/1 - WIP.py\"\n M \"examples/3 - Advanced/2 - Testing Pixels (WIP).py\"\n M \"examples/3 - Advanced/3 - Morphing.py\"\n M \"examples/3 - Advanced/in.ass\"\n M pyonfx/__init__.py\n M pyonfx/ass_core.py\n?? benchmarks/\n?? pyonfx/effect/\n?? pyonfx/events.py\n?? pyonfx/geometry.py\n?? tests/test_ass_fingerprint.py\n?? tests/test_effect_timing.py\n?? tests/test_events.py\n?? tests/test_font_reuse.py\n?? tests/test_geometry_helpers.py\n?? tests/test_selective_extended.py"
+  },
+  "benchmarks": [
+    {
+      "name": "ass_parse_basic",
+      "description": "Parse the ASS fixture without extended line data.",
+      "iterations_per_sample": 5,
+      "samples": 7,
+      "sample_total_ns": [
+        6018500,
+        6942400,
+        5996300,
+        6229200,
+        6073000,
+        6364200,
+        6480100
+      ],
+      "per_operation_ns": {
+        "minimum": 1199260.0,
+        "median": 1245840.0,
+        "mean": 1260105.7142857143,
+        "maximum": 1388480.0,
+        "stdev": 67193.80101793689,
+        "coefficient_of_variation": 0.05332393961567376
+      }
+    },
+    {
+      "name": "ass_parse_extended",
+      "description": "Parse the ASS fixture and build line/word/syllable/char data.",
+      "iterations_per_sample": 3,
+      "samples": 7,
+      "sample_total_ns": [
+        34173400,
+        28721600,
+        28936800,
+        26193500,
+        22651100,
+        24319500,
+        23651900
+      ],
+      "per_operation_ns": {
+        "minimum": 7550366.666666667,
+        "median": 8731166.666666666,
+        "mean": 8983228.57142857,
+        "maximum": 11391133.333333334,
+        "stdev": 1334119.7332890788,
+        "coefficient_of_variation": 0.14851227737122116
+      }
+    },
+    {
+      "name": "ass_parse_extended_line",
+      "description": "Parse the ASS fixture and build line metrics only.",
+      "iterations_per_sample": 5,
+      "samples": 7,
+      "sample_total_ns": [
+        11818500,
+        10810700,
+        11350900,
+        11718000,
+        12186300,
+        11097800,
+        13197300
+      ],
+      "per_operation_ns": {
+        "minimum": 2162140.0,
+        "median": 2343600.0,
+        "mean": 2347985.714285714,
+        "maximum": 2639460.0,
+        "stdev": 158260.78339849313,
+        "coefficient_of_variation": 0.06740278803043655
+      }
+    },
+    {
+      "name": "ass_parse_extended_words",
+      "description": "Parse the ASS fixture and build line plus word data.",
+      "iterations_per_sample": 5,
+      "samples": 7,
+      "sample_total_ns": [
+        17388800,
+        15165500,
+        16935300,
+        15191300,
+        16451300,
+        15228700,
+        16963500
+      ],
+      "per_operation_ns": {
+        "minimum": 3033100.0,
+        "median": 3290260.0,
+        "mean": 3237840.0,
+        "maximum": 3477760.0,
+        "stdev": 193739.8362065307,
+        "coefficient_of_variation": 0.05983613650042333
+      }
+    },
+    {
+      "name": "ass_parse_extended_syllables",
+      "description": "Parse the ASS fixture and build line, word, and syllable data.",
+      "iterations_per_sample": 5,
+      "samples": 7,
+      "sample_total_ns": [
+        18996200,
+        28539800,
+        25664900,
+        17200100,
+        29540300,
+        18727700,
+        18155600
+      ],
+      "per_operation_ns": {
+        "minimum": 3440020.0,
+        "median": 3799240.0,
+        "mean": 4480702.857142857,
+        "maximum": 5908060.0,
+        "stdev": 1062908.1076260274,
+        "coefficient_of_variation": 0.23721905725830617
+      }
+    },
+    {
+      "name": "line_deepcopy",
+      "description": "Deep-copy a fully extended karaoke Line.",
+      "iterations_per_sample": 100,
+      "samples": 7,
+      "sample_total_ns": [
+        70096200,
+        71023700,
+        71130800,
+        69685800,
+        69392800,
+        71897400,
+        66434000
+      ],
+      "per_operation_ns": {
+        "minimum": 664340.0,
+        "median": 700962.0,
+        "mean": 699515.2857142857,
+        "maximum": 718974.0,
+        "stdev": 17843.474369399828,
+        "coefficient_of_variation": 0.02550834089519514
+      }
+    },
+    {
+      "name": "line_serialize",
+      "description": "Serialize a fully extended karaoke Line to ASS text.",
+      "iterations_per_sample": 1000,
+      "samples": 7,
+      "sample_total_ns": [
+        2138700,
+        2545500,
+        1824300,
+        2140900,
+        2010600,
+        2078300,
+        2135200
+      ],
+      "per_operation_ns": {
+        "minimum": 1824.3,
+        "median": 2135.2,
+        "mean": 2124.785714285714,
+        "maximum": 2545.5,
+        "stdev": 217.1992973328983,
+        "coefficient_of_variation": 0.10222174211384598
+      }
+    },
+    {
+      "name": "text_to_shape",
+      "description": "Convert one syllable to a font outline Shape.",
+      "iterations_per_sample": 50,
+      "samples": 7,
+      "sample_total_ns": [
+        31643800,
+        37374200,
+        30582700,
+        30077900,
+        33403300,
+        30246300,
+        30935700
+      ],
+      "per_operation_ns": {
+        "minimum": 601558.0,
+        "median": 618714.0,
+        "mean": 640754.0,
+        "maximum": 747484.0,
+        "stdev": 52204.477343104074,
+        "coefficient_of_variation": 0.08147350986978477
+      }
+    },
+    {
+      "name": "drawing_to_multipolygon",
+      "description": "Parse a glyph drawing and polygonize it with Shapely.",
+      "iterations_per_sample": 50,
+      "samples": 7,
+      "sample_total_ns": [
+        672360100,
+        664577800,
+        669636400,
+        674020000,
+        696371100,
+        691771200,
+        671908800
+      ],
+      "per_operation_ns": {
+        "minimum": 13291556.0,
+        "median": 13447202.0,
+        "mean": 13544701.142857144,
+        "maximum": 13927422.0,
+        "stdev": 239151.8553662983,
+        "coefficient_of_variation": 0.017656488160494855
+      }
+    },
+    {
+      "name": "convert_time",
+      "description": "Format integer millisecond timestamps as ASS time strings.",
+      "iterations_per_sample": 10000,
+      "samples": 7,
+      "sample_total_ns": [
+        8765800,
+        8533500,
+        8894700,
+        8880300,
+        10462300,
+        8625900,
+        9117700
+      ],
+      "per_operation_ns": {
+        "minimum": 853.35,
+        "median": 888.03,
+        "mean": 904.0028571428572,
+        "maximum": 1046.23,
+        "stdev": 65.55910125331842,
+        "coefficient_of_variation": 0.07252090049861235
+      }
+    },
+    {
+      "name": "generate_100_lines",
+      "description": "Deep-copy Lines and write a batch of 100 generated events.",
+      "iterations_per_sample": 10,
+      "samples": 7,
+      "sample_total_ns": [
+        779330200,
+        796213500,
+        733674800,
+        716388500,
+        759126700,
+        813493800,
+        804534400
+      ],
+      "per_operation_ns": {
+        "minimum": 71638850.0,
+        "median": 77933020.0,
+        "mean": 77182312.85714285,
+        "maximum": 81349380.0,
+        "stdev": 3684926.682163949,
+        "coefficient_of_variation": 0.047743149249548915
+      }
+    },
+    {
+      "name": "generate_100_events",
+      "description": "Construct Events and write a cached batch of 100 events.",
+      "iterations_per_sample": 10,
+      "samples": 7,
+      "sample_total_ns": [
+        3099500,
+        2886600,
+        2538900,
+        2805500,
+        2235800,
+        2482700,
+        2511100
+      ],
+      "per_operation_ns": {
+        "minimum": 223580.0,
+        "median": 253890.0,
+        "mean": 265144.28571428574,
+        "maximum": 309950.0,
+        "stdev": 29251.29162797366,
+        "coefficient_of_variation": 0.11032216496452907
+      }
+    }
+  ]
+}

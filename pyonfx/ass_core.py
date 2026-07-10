@@ -28,7 +28,7 @@ from collections import defaultdict
 from dataclasses import dataclass, fields
 from fractions import Fraction
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any, Callable, Iterable
 
 from tabulate import tabulate
 from video_timestamps import (
@@ -39,6 +39,7 @@ from video_timestamps import (
 )
 
 from .convert import Convert
+from .events import Event
 from .font import Font
 
 
@@ -599,6 +600,7 @@ class Ass:
         keep_original (bool): If True, you will find all the lines of the input file commented before the new lines generated.
         extended (bool): Calculate more informations from lines (usually you will not have to touch this).
         vertical_kanji (bool): If True, line text with alignment 4, 5 or 6 will be positioned vertically. Additionally, ``line`` fields will be re-calculated based on the re-positioned ``line.chars``.
+        extended_features (iterable of str or None): Optional subset of extended data to build. Supported values are ``line``, ``words``, ``syllables``, and ``chars``. Dependencies are added automatically. ``None`` preserves the full historical behavior.
         progress (bool): If True, a progress bar will be displayed when iterating over the lines.
 
     Attributes:
@@ -655,6 +657,7 @@ class Ass:
         keep_original: bool = True,
         extended: bool = True,
         vertical_kanji: bool = False,
+        extended_features: Iterable[str] | None = None,
     ):
         # Progress/statistics
         self._saved = False
@@ -722,11 +725,48 @@ class Ass:
                     )
 
         # Add extended information to lines and meta?
+        if extended_features is not None and not extended:
+            raise ValueError("extended_features requires extended=True")
         if extended:
-            self._process_extended_line_data(vertical_kanji)
+            features = (
+                None if extended_features is None else frozenset(extended_features)
+            )
+            self._process_extended_line_data(vertical_kanji, features)
 
-    def _process_extended_line_data(self, vertical_kanji: bool) -> None:
-        """Process extended line data including positioning, words, syllables, and characters."""
+    def _process_extended_line_data(
+        self,
+        vertical_kanji: bool,
+        features: frozenset[str] | None = None,
+    ) -> None:
+        """Process selected extended line data.
+
+        ``None`` preserves the historical ``extended=True`` behavior and builds
+        the full line → words → syllables → chars dependency chain.
+        """
+
+        requested = (
+            frozenset({"line", "words", "syllables", "chars"})
+            if features is None
+            else features
+        )
+        valid_features = {"line", "words", "syllables", "chars"}
+        unknown = requested - valid_features
+        if unknown:
+            raise ValueError(f"unknown extended features: {sorted(unknown)}")
+        if not requested:
+            return
+        if vertical_kanji and "chars" not in requested:
+            raise ValueError("vertical_kanji requires the chars extended feature")
+
+        dependencies = {
+            "line": {"line"},
+            "words": {"line", "words"},
+            "syllables": {"line", "words", "syllables"},
+            "chars": {"line", "words", "syllables", "chars"},
+        }
+        expanded: set[str] = set()
+        for feature in requested:
+            expanded.update(dependencies[feature])
 
         def _split_raw_segments(
             lines: list[Line],
@@ -1297,15 +1337,15 @@ class Ass:
             # Compute line fields
             _compute_line_fields(line, font, split_index)
 
-            # Build words
-            _build_words(line, font)
+            if "words" in expanded:
+                _build_words(line, font)
 
-            # Build syllables
-            syllable_data = _parse_syllables(line.raw_text)
-            _build_syllables(line, syllable_data, font, split_k_offset)
+            if "syllables" in expanded:
+                syllable_data = _parse_syllables(line.raw_text)
+                _build_syllables(line, syllable_data, font, split_k_offset)
 
-            # Build chars
-            _build_chars(line, font)
+            if "chars" in expanded:
+                _build_chars(line, font)
 
         # Add leadin/leadout
         _assign_lead_times(lines_by_styles)
@@ -1355,6 +1395,75 @@ class Ass:
         self._output.append(line.serialize())
         self._plines += 1
 
+    def write_event(self, event: Event) -> None:
+        """Append one lightweight Event to the output buffer.
+
+        Use :meth:`write_events` when multiple events are already available;
+        the batch method reuses formatted time strings within the batch.
+        """
+
+        if not isinstance(event, Event):
+            raise TypeError(f"event must be Event, got {type(event).__name__}")
+        self._output.append(event.serialize())
+        self._plines += 1
+
+    def write_events(self, events: Iterable[Event]) -> None:
+        """Append multiple lightweight Events with batch time caching."""
+
+        serialized: list[str] = []
+        append = serialized.append
+        time_cache: dict[int, str] = {}
+        for index, event in enumerate(events):
+            if not isinstance(event, Event):
+                raise TypeError(
+                    f"events[{index}] must be Event, got {type(event).__name__}"
+                )
+            append(event.serialize(time_cache))
+        self._output.extend(serialized)
+        self._plines += len(serialized)
+
+    def save_events(
+        self,
+        events: Iterable[Event],
+        *,
+        batch_size: int = 4096,
+        quiet: bool = False,
+    ) -> None:
+        """Stream Event objects to the output file without retaining them all.
+
+        Existing header, style, original-line, and previously buffered output is
+        written first. Streamed events follow in bounded batches, then Aegisub
+        Extradata is appended using the same layout as :meth:`save`.
+        """
+
+        if batch_size < 1:
+            raise ValueError("batch_size must be at least 1")
+
+        time_cache: dict[int, str] = {}
+        batch: list[str] = []
+        streamed_count = 0
+        with open(self.path_output, "w", encoding="utf-8-sig") as output:
+            output.writelines(self._output)
+            for index, event in enumerate(events):
+                if not isinstance(event, Event):
+                    raise TypeError(
+                        f"events[{index}] must be Event, got {type(event).__name__}"
+                    )
+                batch.append(event.serialize(time_cache))
+                streamed_count += 1
+                if len(batch) >= batch_size:
+                    output.writelines(batch)
+                    batch.clear()
+            if batch:
+                output.writelines(batch)
+            if self._output_extradata:
+                output.write("\n[Aegisub Extradata]\n")
+                output.writelines(self._output_extradata)
+
+        self._plines += streamed_count
+        self._saved = True
+        self._report_save_statistics(quiet)
+
     def save(self, quiet: bool = False) -> None:
         """Write everything inside the private output list to a file.
 
@@ -1370,7 +1479,9 @@ class Ass:
                 f.writelines(self._output_extradata)
 
         self._saved = True
+        self._report_save_statistics(quiet)
 
+    def _report_save_statistics(self, quiet: bool) -> None:
         if quiet:
             return
 

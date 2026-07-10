@@ -269,8 +269,15 @@ class Shape:
         Returns:
             A MultiPolygon where each polygon represents a compound with outer shell and holes.
         """
+        return Shape._cached_multipolygon(self.drawing_cmds, tolerance)
+
+    @staticmethod
+    @functools.lru_cache(maxsize=128)
+    def _cached_multipolygon(drawing_cmds: str, tolerance: float) -> MultiPolygon:
+        """Polygonize immutable drawing text for the shared bounded cache."""
+
         # Work on a copy to avoid modifying the original shape
-        shape_copy = Shape(self.drawing_cmds)
+        shape_copy = Shape(drawing_cmds)
 
         # 1. Ensure the outline is fully linear by flattening Béziers.
         shape_copy.flatten(tolerance)
